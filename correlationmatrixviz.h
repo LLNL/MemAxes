@@ -21,6 +21,7 @@ signals:
 public slots:
     void setMin(int v);
     void setMax(int v);
+    void selectionChangedSlot();
 
 private:
     QColor valToColor(qreal val);

@@ -65,9 +65,6 @@ void ScatterPlotViz::paint(QPainter *painter, QPaintEvent *event, int elapsed)
 {
     painter->fillRect(event->rect(), backgroundColor);
 
-    if(!vizProcessed)
-        return;
-
     int m = 20;
     plotBBox = QRectF(m,m,
                       event->rect().width()-m-m,

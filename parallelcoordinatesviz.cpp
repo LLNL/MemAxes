@@ -13,6 +13,7 @@ ParallelCoordinatesViz::ParallelCoordinatesViz() :
 {
     cursorPos.setX(-1);
     selecting = -1;
+    movingAxis = -1;
 
     selOpacity = 0.1;
     unselOpacity = 0.01;
@@ -21,6 +22,16 @@ ParallelCoordinatesViz::ParallelCoordinatesViz() :
     this->installEventFilter(this);
     this->setMouseTracking(true);
 
+    // QGL
+    QColor qtPurple = QColor::fromCmykF(0.39, 0.39, 0.0, 0.0);
+    qglClearColor(qtPurple.light());
+
+    glShadeModel(GL_FLAT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void ParallelCoordinatesViz::processViz()
@@ -37,13 +48,15 @@ void ParallelCoordinatesViz::processViz()
     axesPositions.resize(data->numDimensions);
     axesOrder.resize(data->numDimensions);
 
-    pointLines.resize(data->numElements*(data->numDimensions-1));
+    linePositions.resize(data->numElements*(data->numDimensions-1)*2);
+    lineColors.resize(data->numElements*(data->numDimensions-1)*2);
 
     for(int i=0; i<data->numDimensions; i++)
     {
         dimMins[i] = *(data->begin+i);
         dimMaxes[i] = *(data->begin+i);
 
+        axesOrder[i] = i;
         axesPositions[i] = i*(1.0/(data->numDimensions-1));
     }
 
@@ -86,6 +99,24 @@ void ParallelCoordinatesViz::mousePressEvent(QMouseEvent *event)
         selecting = cursorPos.x();
         firstSel = mouseEvent->pos().y();
     }
+
+    if(mouseEvent->pos().y() > 0
+            && mouseEvent->pos().y() < plotBBox.top())
+    {
+        int xval = mouseEvent->pos().x();
+
+        qreal dist;
+        int closestAxis = plotBBox.width();
+        for(int i=0; i<data->numDimensions; i++)
+        {
+            dist = abs(40+axesPositions[i]*plotBBox.width()-xval);
+            if(dist < closestAxis)
+            {
+                closestAxis = dist;
+                movingAxis = i;
+            }
+        }
+    }
 }
 
 void ParallelCoordinatesViz::mouseReleaseEvent(QMouseEvent *event)
@@ -105,6 +136,7 @@ void ParallelCoordinatesViz::mouseReleaseEvent(QMouseEvent *event)
 
     selecting = -1;
     lastSel = -1;
+    movingAxis = -1;
 }
 
 bool ParallelCoordinatesViz::eventFilter(QObject *obj, QEvent *event)
@@ -113,6 +145,7 @@ bool ParallelCoordinatesViz::eventFilter(QObject *obj, QEvent *event)
         return false;
 
     static qreal prevCursor = cursorPos.x();
+    static QPoint prevMouse;
 
     qreal axisMargin = 10;
     if (event->type() == QEvent::MouseMove)
@@ -154,6 +187,33 @@ bool ParallelCoordinatesViz::eventFilter(QObject *obj, QEvent *event)
             repaint();
 
         prevCursor = cursorPos.x();
+
+        // Move axes
+        if(movingAxis != -1)
+        {
+            qreal delta = mouseEvent->pos().x() - prevMouse.x();
+            axesPositions[movingAxis] += delta/plotBBox.width();
+
+            for(int i=0; i<data->numDimensions-1; i++)
+            {
+                // sort moved axes
+                for(int j=i+1; j<data->numDimensions; j++)
+                {
+                    if(     axesPositions[axesOrder[j]] <
+                            axesPositions[axesOrder[i]])
+                    {
+                        int tmp = axesOrder[j];
+                        axesOrder[j] = axesOrder[i];
+                        axesOrder[i] = tmp;
+                    }
+                }
+            }
+
+            if(delta != 0)
+                repaint();
+        }
+
+        prevMouse = mouseEvent->pos();
     }
 
     return false;
@@ -179,38 +239,140 @@ void ParallelCoordinatesViz::processSelection()
     if(selAxes == 0)
     {
         data->selection.fill(0);
-        emit repaintAll();
-        return;
     }
-
-    int elem = 0;
-    QVector<qreal>::Iterator p;
-    int select;
-    for(p=data->begin; p!=data->end; p+=data->numDimensions)
+    else
     {
-        select = 0;
-        for(int i=0; i<data->numDimensions; i++)
+        int elem = 0;
+        QVector<qreal>::Iterator p;
+        int select;
+        for(p=data->begin; p!=data->end; p+=data->numDimensions)
         {
-            if(selMins[i] != -1
-               && dataSelMins[i] <= *(p+i)
-               && *(p+i) <= dataSelMaxes[i])
+            select = 0;
+            for(int i=0; i<data->numDimensions; i++)
             {
-                select++;
+                if(selMins[i] != -1
+                   && dataSelMins[i] <= *(p+i)
+                   && *(p+i) <= dataSelMaxes[i])
+                {
+                    select++;
+                }
             }
+            data->selection[elem] = (select == selAxes) ? 1 : 0;
+            elem++;
         }
-        data->selection[elem] = (select == selAxes) ? 1 : 0;
-        elem++;
     }
 
-    emit repaintAll();
+    emit selectionChangedSig();
+}
+
+void ParallelCoordinatesViz::recalcLines(QRect rect, int dirtyAxis)
+{
+    QVector4D col;
+    QVector2D a, b;
+    int i, axis, nextAxis, elem, idx;
+    QVector<double>::Iterator p;
+
+    int mx=40;
+    int my=30;
+
+    QRect box = QRect(mx+mx,my+my,
+                      rect.width()-mx-mx-mx-mx,
+                      rect.height()-my-my-my-my);
+
+    qreal boxLeft = box.left();
+    qreal boxBottom = box.bottom();
+    qreal boxWidth = box.width();
+    qreal boxHeight = box.height();
+
+    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
+    {
+        if(data->selection[elem] != 0)
+            col = QVector4D(1,0,0,selOpacity);
+        else
+            col = QVector4D(0,0,0,unselOpacity);
+
+        idx = elem*(data->numDimensions-1)*2;
+
+        for(i=0; i<data->numDimensions-1; i++)
+        {
+            if(dirtyAxis != -1  && i != dirtyAxis)
+                continue;
+
+            axis = axesOrder[i];
+            nextAxis = axesOrder[i+1];
+
+            a = QVector2D(boxLeft+axesPositions[axis]*boxWidth,boxBottom);
+            a -= QVector2D(0,scale(*(p+axis),dimMins[axis],dimMaxes[axis],0,boxHeight));
+
+            b = QVector2D(boxLeft+axesPositions[nextAxis]*boxWidth,boxBottom);
+            b -= QVector2D(0,scale(*(p+nextAxis),dimMins[nextAxis],dimMaxes[nextAxis],0,boxHeight));
+
+            linePositions[idx+i*2] = a;
+            linePositions[idx+i*2+1] = b;
+
+            lineColors[idx+i*2] = col;
+            lineColors[idx+i*2+1] = col;
+        }
+    }
+}
+
+void ParallelCoordinatesViz::paintGL(QRect rect)
+{
+    makeCurrent();
+
+    qglClearColor(backgroundColor.color());
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    rect.setWidth(rect.width()*2);
+    rect.setHeight(rect.height()*2);
+
+    // Set up matrices for 2d drawing
+    glViewport(0,0,rect.width(),rect.height());
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, rect.width(), rect.height(), 0, 0, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Draw elements
+    recalcLines(rect);
+
+    if(0)
+    {
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+
+        glVertexPointer(2,GL_DOUBLE,0,linePositions.constData());
+        glColorPointer(4,GL_DOUBLE,0,lineColors.constData());
+
+        glDrawArrays(GL_LINES,0,linePositions.size()/2);
+    }
+    else
+    {
+        glBegin(GL_LINES);
+        for(int i=0; i<linePositions.size(); i++)
+        {
+            glColor4f(lineColors[i].x(),lineColors[i].y(),lineColors[i].z(),lineColors[i].w());
+            glVertex2f(linePositions[i].x(),linePositions[i].y());
+        }
+        glEnd();
+    }
+
+    // Reset matrices
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
 }
 
 void ParallelCoordinatesViz::paint(QPainter *painter, QPaintEvent *event, int elapsed)
 {
-    painter->fillRect(event->rect(), backgroundColor);
-
-    if(!vizProcessed)
-        return;
+    //painter->fillRect(event->rect(), backgroundColor);
 
     int mx=40;
     int my=30;
@@ -256,54 +418,6 @@ void ParallelCoordinatesViz::paint(QPainter *painter, QPaintEvent *event, int el
         b.setY(cursorPos.y());
 
         painter->drawLine(a,b);
-    }
-
-    QVector<QPointF> polyLinePoint;
-    polyLinePoint.resize(data->numDimensions);
-    qreal boxLeft = plotBBox.left();
-    qreal boxBottom = plotBBox.bottom();
-    qreal boxWidth = plotBBox.width();
-    qreal boxHeight = plotBBox.height();
-
-    int elem = 0;
-    QVector<qreal>::Iterator p;
-
-    // Draw unselected elements
-    painter->setOpacity(unselOpacity);
-    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    for(p=data->begin; p!=data->end; p+=data->numDimensions, elem++)
-    {
-        if(data->selection[elem] != 0)
-            continue;
-
-        for(int i=0; i<data->numDimensions; i++)
-        {
-            a = QPointF(boxLeft+axesPositions[i]*boxWidth,boxBottom);
-            a -= QPointF(0,scale(*(p+i),dimMins[i],dimMaxes[i],0,boxHeight));
-
-            polyLinePoint[i] = a;
-        }
-        painter->drawPolyline(&polyLinePoint[0],polyLinePoint.size());
-    }
-
-    painter->setOpacity(selOpacity);
-    painter->setPen(QPen(Qt::red, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-
-    // Draw selected elements
-    elem = 0;
-    for(p=data->begin; p!=data->end; p+=data->numDimensions, elem++)
-    {
-        if(data->selection[elem] == 0)
-            continue;
-
-        for(int i=0; i<data->numDimensions; i++)
-        {
-            a = QPointF(boxLeft+axesPositions[i]*boxWidth,boxBottom);
-            a -= QPointF(0,scale(*(p+i),dimMins[i],dimMaxes[i],0,boxHeight));
-
-            polyLinePoint[i] = a;
-        }
-        painter->drawPolyline(&polyLinePoint[0],polyLinePoint.size());
     }
 
     // Draw selection boxes

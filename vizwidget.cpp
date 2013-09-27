@@ -1,5 +1,7 @@
 #include "vizwidget.h"
 
+#include <QPaintEvent>
+
 VizWidget::VizWidget()
 {
     // GLWidget options
@@ -12,8 +14,18 @@ VizWidget::VizWidget()
     vizProcessed = false;
 }
 
+void VizWidget::paintGL(QRect rect)
+{
+    // add custom gl calls here
+}
+
 void VizWidget::paintEvent(QPaintEvent *event)
 {
+    if(!vizProcessed)
+        return;
+
+    paintGL(event->rect());
+
     QPainter painter;
     painter.begin(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -21,9 +33,19 @@ void VizWidget::paintEvent(QPaintEvent *event)
     painter.end();
 }
 
+void VizWidget::resizeGL(int width, int height)
+{
+    winRect = QRect(0,0,width,height);
+}
+
 void VizWidget::processViz()
 {
 
+}
+
+void VizWidget::selectionChangedSlot()
+{
+    repaint();
 }
 
 void VizWidget::paint(QPainter *painter, QPaintEvent *event, int elapsed)

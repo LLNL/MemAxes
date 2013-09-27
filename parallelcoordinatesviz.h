@@ -3,6 +3,9 @@
 
 #include "vizwidget.h"
 
+#include <QVector2D>
+#include <QVector4D>
+
 class ParallelCoordinatesViz : public VizWidget
 {
     Q_OBJECT
@@ -10,8 +13,10 @@ public:
     ParallelCoordinatesViz();
 
 public:
+    void paintGL(QRect rect);
     void paint(QPainter *painter, QPaintEvent *event, int elapsed);
     void processViz();
+    void recalcLines(QRect rect, int dirtyAxis = -1);
 
 signals:
 
@@ -40,16 +45,19 @@ private:
     QVector<int> axesOrder;
     QVector<qreal> axesPositions;
 
-    QVector<QLineF> pointLines;
-
     QPointF cursorPos;
 
     int selecting;
+    int movingAxis;
+
     qreal firstSel;
     qreal lastSel;
 
     qreal selOpacity;
     qreal unselOpacity;
+
+    QVector<QVector2D> linePositions;
+    QVector<QVector4D> lineColors;
 };
 
 #endif // PARALLELCOORDINATESVIZ_H

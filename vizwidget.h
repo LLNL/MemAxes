@@ -13,22 +13,26 @@ public:
 
 public:
     void setData(DataObject *d) { data = d; }
+    virtual void paintGL(QRect rect);
     virtual void paint(QPainter *painter, QPaintEvent *event, int elapsed);
     virtual void processViz();
 
 signals:
-    void repaintAll();
+    void selectionChangedSig();
 
 public slots:
+    virtual void selectionChangedSlot();
 
 protected:
     void paintEvent(QPaintEvent *event);
+    void resizeGL(int width, int height);
 
 protected:
     DataObject *data;
     bool vizProcessed;
     QBrush backgroundColor;
     QBrush selectColor;
+    QRect winRect;
 };
 
 #endif // VIZWIDGET_H

@@ -8,6 +8,10 @@ using namespace std;
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+// Correlation matrix based on selection
+// 3D scatterplot using cubes as elements
+// Reset parallel coordinates spacing
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -45,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     for(int i=0; i<vizWidgets.size(); i++)
     {
-        connect(vizWidgets[i], SIGNAL(repaintAll()), this, SLOT(repaintAllVizWidgets()));
+        connect(vizWidgets[i], SIGNAL(selectionChangedSig()), this, SLOT(selectionChanged()));
     }
 }
 
@@ -54,11 +58,11 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::repaintAllVizWidgets()
+void MainWindow::selectionChanged()
 {
     for(int i=0; i<vizWidgets.size(); i++)
     {
-        vizWidgets[i]->repaint();
+        vizWidgets[i]->selectionChangedSlot();
     }
 }
 
@@ -79,9 +83,8 @@ int MainWindow::importData()
     {
         vizWidgets[i]->setData(dobj);
         vizWidgets[i]->processViz();
+        vizWidgets[i]->repaint();
     }
-
-    repaintAllVizWidgets();
 
     return 0;
 }
@@ -100,7 +103,7 @@ DataObject* MainWindow::parseCSVFile(QString dataFileName)
     QTextStream dataStream(&dataFile);
     QString line;
     QStringList lineValues;
-    long long elemid = 0;
+    qint64 elemid = 0;
 
     // Get metadata from first line
     line = dataStream.readLine();

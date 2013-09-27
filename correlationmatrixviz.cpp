@@ -119,8 +119,21 @@ void CorrelationMatrixViz::processViz()
     expectedValues.fill(0);
     meanXY.fill(0);
 
-    for(p=data->begin; p!=data->end; p+=data->numDimensions)
+    qint64 elem;
+    qint64 numselected = 0;
+    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
+        if(data->selection[elem])
+            numselected++;
+    }
+
+    qint64 numelem = (numselected == 0) ? data->numElements : numselected;
+
+    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
+    {
+        if(numselected > 0 && data->selection[elem] == 0)
+            continue;
+
         for(int i=0; i<data->numDimensions; i++)
         {
             x = *(p+i);
@@ -137,10 +150,10 @@ void CorrelationMatrixViz::processViz()
     // Divide by data->numElements to get mean
     for(int i=0; i<data->numDimensions; i++)
     {
-        expectedValues[i] /= (qreal)data->numElements;
+        expectedValues[i] /= (qreal)numelem;
         for(int j=0; j<data->numDimensions; j++)
         {
-            meanXY[ROWMAJOR_2D(i,j,data->numDimensions)] /= (qreal)data->numElements;
+            meanXY[ROWMAJOR_2D(i,j,data->numDimensions)] /= (qreal)numelem;
         }
     }
 
@@ -161,8 +174,11 @@ void CorrelationMatrixViz::processViz()
     standardDeviations.resize(data->numDimensions);
     standardDeviations.fill(0);
 
-    for(p=data->begin; p!=data->end; p+=data->numDimensions)
+    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
+        if(numselected > 0 && data->selection[elem] == 0)
+            continue;
+
         for(int i=0; i<data->numDimensions; i++)
         {
             x = *(p+i);
@@ -172,7 +188,7 @@ void CorrelationMatrixViz::processViz()
 
     for(int i=0; i<data->numDimensions; i++)
     {
-        standardDeviations[i] = sqrt(standardDeviations[i]/(qreal)data->numElements);
+        standardDeviations[i] = sqrt(standardDeviations[i]/(qreal)numelem);
     }
 
     // Correlation Coeff = cov(xy) / stdev(x)*stdev(y)
@@ -236,9 +252,6 @@ void CorrelationMatrixViz::paint(QPainter *painter, QPaintEvent *event, int elap
 {
     // Draw Correlation Matrix
     painter->fillRect(event->rect(), backgroundColor);
-
-    if(!vizProcessed)
-        return;
 
     qreal m = 20;
     qreal lm = 50;
@@ -353,5 +366,11 @@ void CorrelationMatrixViz::setMax(int v)
     // Assumes slider is 0-99
     qreal vn = normalize(v,0,99);
     maxVal = lerp(vn,-1.0,1.0);
+    repaint();
+}
+
+void CorrelationMatrixViz::selectionChangedSlot()
+{
+    processViz();
     repaint();
 }

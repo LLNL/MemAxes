@@ -23,7 +23,7 @@ public:
     ~MainWindow();
 
 public slots:
-    void repaintAllVizWidgets();
+    void selectionChanged();
     int importData();
     DataObject* parseCSVFile(QString dataFileName);
 
