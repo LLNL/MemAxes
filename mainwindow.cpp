@@ -1,16 +1,26 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
 #include <iostream>
 using namespace std;
 
 #include <QTimer>
 #include <QFileDialog>
-#include <QTextStream>
 
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "parallelcoordinatesviz.h"
+#include "volumevizwidget.h"
 
-// Correlation matrix based on selection
-// 3D scatterplot using cubes as elements
-// Reset parallel coordinates spacing
+// for 11/6
+// ****contour plots
+// ****Metrics about your selection (% of total, avg lat, etc)
+// ***** include temp/pressure/etc in different pcoords axes
+
+// ***Reset parallel coordinates spacing
+// ****Application domain view
+// *ip -> code domain (addr2line)
+// **data addresses -> symbols
+
+// memory topology vis
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -20,32 +30,38 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowTitle(tr("CorrelaViz"));
 
     // Create viz widgets
-    CorrelationMatrixViz *correlationMatrixViz = new CorrelationMatrixViz();
-    ui->correlMatrixLayout->addWidget(correlationMatrixViz);
+    volumeVizWidget = new VolumeVizWidget(this);
+    ui->volumeVizLayout->addWidget(volumeVizWidget);
 
-    ScatterPlotViz *scatterPlotViz = new ScatterPlotViz();
-    ui->scatterPlotLayout->addWidget(scatterPlotViz);
+    SelectionVizWidget *selectionVizWidget = new SelectionVizWidget(this);
+    ui->selectionLayout->addWidget(selectionVizWidget);
 
-    ParallelCoordinatesViz *parallelCoordinatesViz = new ParallelCoordinatesViz();
+    connect(ui->dimSelector,SIGNAL(valueChanged(int)),selectionVizWidget,SLOT(setDim(int)));
+
+    ParallelCoordinatesVizWidget *parallelCoordinatesViz = new ParallelCoordinatesVizWidget(this);
     ui->parallelCoordinatesLayout->addWidget(parallelCoordinatesViz);
 
     // Make UI connections
     // mainwindow
     connect(ui->actionImport_Data, SIGNAL(triggered()),this,SLOT(importData()));
 
-    // correlationmatrix
-    connect(ui->minSlider, SIGNAL(valueChanged(int)), correlationMatrixViz, SLOT(setMin(int)));
-    connect(ui->maxSlider, SIGNAL(valueChanged(int)), correlationMatrixViz, SLOT(setMax(int)));
-    connect(correlationMatrixViz, SIGNAL(selectedDims(int,int)), scatterPlotViz, SLOT(setDims(int,int)));
+    connect(ui->minAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMinOpacity(int)));
+    connect(ui->midAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMidOpacity(int)));
+    connect(ui->maxAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMaxOpacity(int)));
+    connect(ui->minVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMinVal(double)));
+    connect(ui->midVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMidVal(double)));
+    connect(ui->maxVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMaxVal(double)));
+    connect(volumeVizWidget, SIGNAL(minValSet(double)), ui->minVal, SLOT(setValue(double)));
+    connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
+    connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
 
     // pcoords
     connect(ui->selOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setSelOpacity(int)));
     connect(ui->unselOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setUnselOpacity(int)));
 
     // Add to viz widgets
-    vizWidgets.push_back(correlationMatrixViz);
-    vizWidgets.push_back(scatterPlotViz);
     vizWidgets.push_back(parallelCoordinatesViz);
+    vizWidgets.push_back(selectionVizWidget);
 
     for(int i=0; i<vizWidgets.size(); i++)
     {
@@ -64,6 +80,8 @@ void MainWindow::selectionChanged()
     {
         vizWidgets[i]->selectionChangedSlot();
     }
+    volumeVizWidget->processSelection();
+    volumeVizWidget->update();
 }
 
 int MainWindow::importData()
@@ -73,8 +91,9 @@ int MainWindow::importData()
                                                      "",
                                                      tr("Files (*.*)"));
 
-    DataObject *dobj = parseCSVFile(dataFileName);
-    if(dobj == NULL)
+    DataObject *dobj = new DataObject();
+    int err = dobj->parseCSVFile(dataFileName);
+    if(err != 0)
         return -1;
 
     dataObjects.push_back(dobj);
@@ -82,60 +101,9 @@ int MainWindow::importData()
     for(int i=0; i<vizWidgets.size(); i++)
     {
         vizWidgets[i]->setData(dobj);
-        vizWidgets[i]->processViz();
         vizWidgets[i]->repaint();
     }
+    volumeVizWidget->setData(dobj);
 
     return 0;
 }
-
-DataObject* MainWindow::parseCSVFile(QString dataFileName)
-{
-    DataObject *dobj = new DataObject();
-
-    // Open the file
-    QFile dataFile(dataFileName);
-
-    if (!dataFile.open(QIODevice::ReadOnly | QIODevice::Text))
-         return NULL;
-
-    // Create text stream
-    QTextStream dataStream(&dataFile);
-    QString line;
-    QStringList lineValues;
-    qint64 elemid = 0;
-
-    // Get metadata from first line
-    line = dataStream.readLine();
-    dobj->meta = line.split(',');
-    dobj->numDimensions = dobj->meta.size();
-
-    // Get data
-    while(!dataStream.atEnd())
-    {
-        line = dataStream.readLine();
-        lineValues = line.split(',');
-
-        if(lineValues.size() != dobj->numDimensions)
-        {
-            cerr << "ERROR: element dimensions do not match metadata!" << endl;
-            cerr << "At element " << elemid << endl;
-            return NULL;
-        }
-
-        for(int i=0; i<lineValues.size(); i++)
-        {
-            dobj->vals.push_back(lineValues[i].toDouble());
-        }
-
-        elemid++;
-    }
-
-    // Close and return
-    dataFile.close();
-
-    dobj->init();
-
-    return dobj;
-}
-

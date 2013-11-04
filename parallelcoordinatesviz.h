@@ -6,25 +6,29 @@
 #include <QVector2D>
 #include <QVector4D>
 
-class ParallelCoordinatesViz : public VizWidget
+class ParallelCoordinatesVizWidget
+        : public VizWidget
 {
     Q_OBJECT
-public:
-    ParallelCoordinatesViz();
 
 public:
-    void paintGL(QRect rect);
-    void paint(QPainter *painter, QPaintEvent *event, int elapsed);
-    void processViz();
-    void recalcLines(QRect rect, int dirtyAxis = -1);
+    ParallelCoordinatesVizWidget(QWidget *parent = 0);
+
+public:
+    void recalcLines(int dirtyAxis = -1);
 
 signals:
 
 public slots:
+    void selectionChangedSlot();
     void setSelOpacity(int val);
     void setUnselOpacity(int val);
 
 protected:
+    void processData();
+    void paintGL();
+    void drawQtPainter(QPainter *painter);
+
     void leaveEvent(QEvent *e);
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
@@ -56,8 +60,8 @@ private:
     qreal selOpacity;
     qreal unselOpacity;
 
-    QVector<QVector2D> linePositions;
-    QVector<QVector4D> lineColors;
+    QVector<GLfloat> verts;
+    QVector<GLfloat> colors;
 };
 
 #endif // PARALLELCOORDINATESVIZ_H

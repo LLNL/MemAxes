@@ -9,13 +9,10 @@ class VizWidget : public QGLWidget
 {
     Q_OBJECT
 public:
-    VizWidget();
+    VizWidget(QWidget *parent = 0);
+    ~VizWidget();
 
-public:
-    void setData(DataObject *d) { data = d; }
-    virtual void paintGL(QRect rect);
-    virtual void paint(QPainter *painter, QPaintEvent *event, int elapsed);
-    virtual void processViz();
+    QSize sizeHint() const;
 
 signals:
     void selectionChangedSig();
@@ -23,16 +20,28 @@ signals:
 public slots:
     virtual void selectionChangedSlot();
 
+public:
+    void setData(DataObject* iData);
+
 protected:
+    void initializeGL();
     void paintEvent(QPaintEvent *event);
-    void resizeGL(int width, int height);
+
+    virtual void processData();
+    virtual void paintGL();
+    virtual void drawNativeGL();
+    virtual void drawQtPainter(QPainter *painter);
+
+private:
+    void beginNativeGL();
+    void endNativeGL();
 
 protected:
     DataObject *data;
-    bool vizProcessed;
-    QBrush backgroundColor;
-    QBrush selectColor;
-    QRect winRect;
+    bool processed;
+
+    int margin;
+    QColor bgColor;
 };
 
 #endif // VIZWIDGET_H

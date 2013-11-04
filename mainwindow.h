@@ -6,9 +6,8 @@
 #include <QVector>
 
 #include "vizwidget.h"
-#include "correlationmatrixviz.h"
-#include "scatterplotviz.h"
-#include "parallelcoordinatesviz.h"
+#include "volumevizwidget.h"
+#include "selectionviz.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,12 +24,13 @@ public:
 public slots:
     void selectionChanged();
     int importData();
-    DataObject* parseCSVFile(QString dataFileName);
 
 private:
     Ui::MainWindow *ui;
 
     QVector<VizWidget*> vizWidgets;
+    VolumeVizWidget *volumeVizWidget;
+
     QVector<DataObject*> dataObjects;
 };
 

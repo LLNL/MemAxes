@@ -8,8 +8,8 @@ using namespace std;
 
 #include "util.h"
 
-ParallelCoordinatesViz::ParallelCoordinatesViz() :
-    VizWidget()
+ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
+    : VizWidget(parent)
 {
     cursorPos.setX(-1);
     selecting = -1;
@@ -17,6 +17,8 @@ ParallelCoordinatesViz::ParallelCoordinatesViz() :
 
     selOpacity = 0.1;
     unselOpacity = 0.01;
+
+    this->setMaximumHeight(200);
 
     // Event Filters
     this->installEventFilter(this);
@@ -26,15 +28,14 @@ ParallelCoordinatesViz::ParallelCoordinatesViz() :
     QColor qtPurple = QColor::fromCmykF(0.39, 0.39, 0.0, 0.0);
     qglClearColor(qtPurple.light());
 
-    glShadeModel(GL_FLAT);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void ParallelCoordinatesViz::processViz()
+#define LINES_PER_DATAPT    (data->numDimensions-1)
+#define POINTS_PER_LINE     2
+#define FLOATS_PER_POINT    2
+#define FLOATS_PER_COLOR    4
+
+void ParallelCoordinatesVizWidget::processData()
 {
     dimMins.resize(data->numDimensions);
     dimMaxes.resize(data->numDimensions);
@@ -48,8 +49,8 @@ void ParallelCoordinatesViz::processViz()
     axesPositions.resize(data->numDimensions);
     axesOrder.resize(data->numDimensions);
 
-    linePositions.resize(data->numElements*(data->numDimensions-1)*2);
-    lineColors.resize(data->numElements*(data->numDimensions-1)*2);
+    verts.resize(data->numElements*LINES_PER_DATAPT*POINTS_PER_LINE*FLOATS_PER_POINT);
+    colors.resize(data->numElements*LINES_PER_DATAPT*POINTS_PER_LINE*FLOATS_PER_COLOR);
 
     for(int i=0; i<data->numDimensions; i++)
     {
@@ -70,27 +71,18 @@ void ParallelCoordinatesViz::processViz()
         }
     }
 
-    vizProcessed = true;
+    recalcLines();
+
+    processed = true;
 }
 
-void ParallelCoordinatesViz::setSelOpacity(int val)
+void ParallelCoordinatesVizWidget::leaveEvent(QEvent *e)
 {
-    selOpacity = (qreal)val/1000.0;
+    VizWidget::leaveEvent(e);
     repaint();
 }
 
-void ParallelCoordinatesViz::setUnselOpacity(int val)
-{
-    unselOpacity = (qreal)val/1000.0;
-    repaint();
-}
-
-void ParallelCoordinatesViz::leaveEvent(QEvent *e)
-{
-    repaint();
-}
-
-void ParallelCoordinatesViz::mousePressEvent(QMouseEvent *event)
+void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *event)
 {
     QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
 
@@ -119,9 +111,10 @@ void ParallelCoordinatesViz::mousePressEvent(QMouseEvent *event)
     }
 }
 
-void ParallelCoordinatesViz::mouseReleaseEvent(QMouseEvent *event)
+void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
 {
-    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    Q_UNUSED(event);
+    //QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
 
     if(lastSel == -1)
     {
@@ -139,9 +132,11 @@ void ParallelCoordinatesViz::mouseReleaseEvent(QMouseEvent *event)
     movingAxis = -1;
 }
 
-bool ParallelCoordinatesViz::eventFilter(QObject *obj, QEvent *event)
+bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
 {
-    if(!vizProcessed)
+    Q_UNUSED(obj);
+
+    if(!processed)
         return false;
 
     static qreal prevCursor = cursorPos.x();
@@ -209,6 +204,8 @@ bool ParallelCoordinatesViz::eventFilter(QObject *obj, QEvent *event)
                 }
             }
 
+            recalcLines(movingAxis);
+
             if(delta != 0)
                 repaint();
         }
@@ -219,7 +216,7 @@ bool ParallelCoordinatesViz::eventFilter(QObject *obj, QEvent *event)
     return false;
 }
 
-void ParallelCoordinatesViz::processSelection()
+void ParallelCoordinatesVizWidget::processSelection()
 {
     QVector<qreal> dataSelMins(selMins);
     QVector<qreal> dataSelMaxes(selMaxes);
@@ -238,7 +235,7 @@ void ParallelCoordinatesViz::processSelection()
 
     if(selAxes == 0)
     {
-        data->selection.fill(0);
+        data->deselectAll();
     }
     else
     {
@@ -257,129 +254,149 @@ void ParallelCoordinatesViz::processSelection()
                     select++;
                 }
             }
-            data->selection[elem] = (select == selAxes) ? 1 : 0;
+            if(select == selAxes)
+                data->selectData(elem,1);
+            else
+                data->deselectData(elem);
             elem++;
         }
     }
 
+    recalcLines();
+
     emit selectionChangedSig();
 }
 
-void ParallelCoordinatesViz::recalcLines(QRect rect, int dirtyAxis)
+void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
 {
     QVector4D col;
     QVector2D a, b;
     int i, axis, nextAxis, elem, idx;
     QVector<double>::Iterator p;
 
-    int mx=40;
-    int my=30;
-
-    QRect box = QRect(mx+mx,my+my,
-                      rect.width()-mx-mx-mx-mx,
-                      rect.height()-my-my-my-my);
-
-    qreal boxLeft = box.left();
-    qreal boxBottom = box.bottom();
-    qreal boxWidth = box.width();
-    qreal boxHeight = box.height();
-
     for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
-        if(data->selection[elem] != 0)
+        if(data->selected(elem) != 0)
             col = QVector4D(1,0,0,selOpacity);
         else
             col = QVector4D(0,0,0,unselOpacity);
 
-        idx = elem*(data->numDimensions-1)*2;
+        idx = elem*LINES_PER_DATAPT*POINTS_PER_LINE;
 
         for(i=0; i<data->numDimensions-1; i++)
         {
-            if(dirtyAxis != -1  && i != dirtyAxis)
+            if(dirtyAxis != -1  && i != dirtyAxis && i != dirtyAxis-1)
                 continue;
 
             axis = axesOrder[i];
             nextAxis = axesOrder[i+1];
 
-            a = QVector2D(boxLeft+axesPositions[axis]*boxWidth,boxBottom);
-            a -= QVector2D(0,scale(*(p+axis),dimMins[axis],dimMaxes[axis],0,boxHeight));
+            a = QVector2D(axesPositions[axis],
+                          scale(*(p+axis),dimMins[axis],dimMaxes[axis],0,1));
 
-            b = QVector2D(boxLeft+axesPositions[nextAxis]*boxWidth,boxBottom);
-            b -= QVector2D(0,scale(*(p+nextAxis),dimMins[nextAxis],dimMaxes[nextAxis],0,boxHeight));
+            b = QVector2D(axesPositions[nextAxis],
+                          scale(*(p+nextAxis),dimMins[nextAxis],dimMaxes[nextAxis],0,1));
 
-            linePositions[idx+i*2] = a;
-            linePositions[idx+i*2+1] = b;
+            verts[idx*FLOATS_PER_POINT+i*POINTS_PER_LINE*FLOATS_PER_POINT+0] = a.x();
+            verts[idx*FLOATS_PER_POINT+i*POINTS_PER_LINE*FLOATS_PER_POINT+1] = a.y();
 
-            lineColors[idx+i*2] = col;
-            lineColors[idx+i*2+1] = col;
+            verts[idx*FLOATS_PER_POINT+i*POINTS_PER_LINE*FLOATS_PER_POINT+2] = b.x();
+            verts[idx*FLOATS_PER_POINT+i*POINTS_PER_LINE*FLOATS_PER_POINT+3] = b.y();
+
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+0] = col.x();
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+1] = col.y();
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+2] = col.z();
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+3] = col.w();
+
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+4] = col.x();
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+5] = col.y();
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+6] = col.z();
+            colors[idx*FLOATS_PER_COLOR+i*POINTS_PER_LINE*FLOATS_PER_COLOR+7] = col.w();
         }
     }
 }
 
-void ParallelCoordinatesViz::paintGL(QRect rect)
+void ParallelCoordinatesVizWidget::selectionChangedSlot()
 {
-    makeCurrent();
+    recalcLines();
+    repaint();
+}
 
-    qglClearColor(backgroundColor.color());
+void ParallelCoordinatesVizWidget::setSelOpacity(int val)
+{
+    selOpacity = (qreal)val/1000.0;
+    recalcLines();
+    repaint();
+}
+
+void ParallelCoordinatesVizWidget::setUnselOpacity(int val)
+{
+    unselOpacity = (qreal)val/1000.0;
+    recalcLines();
+    repaint();
+}
+
+void ParallelCoordinatesVizWidget::paintGL()
+{
     glClear(GL_COLOR_BUFFER_BIT);
 
-    rect.setWidth(rect.width()*2);
-    rect.setHeight(rect.height()*2);
+    if(!processed)
+        return;
 
-    // Set up matrices for 2d drawing
-    glViewport(0,0,rect.width(),rect.height());
+    makeCurrent();
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, rect.width(), rect.height(), 0, 0, 1);
+    int mx=40;
+    int my=30;
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    // Qt 5.X BUG
+    //int width2x = width()*2;
+    //int height2x = height()*2;
+    //int mx2x = mx*2;
+    //int my2x = my*2;
+    //glViewport(mx2x,
+    //           my2x,
+    //           width2x-2*mx2x,
+    //           height2x-2*my2x);
 
-    // Draw elements
-    recalcLines(rect);
-
-    if(0)
-    {
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
-
-        glVertexPointer(2,GL_DOUBLE,0,linePositions.constData());
-        glColorPointer(4,GL_DOUBLE,0,lineColors.constData());
-
-        glDrawArrays(GL_LINES,0,linePositions.size()/2);
-    }
-    else
-    {
-        glBegin(GL_LINES);
-        for(int i=0; i<linePositions.size(); i++)
-        {
-            glColor4f(lineColors[i].x(),lineColors[i].y(),lineColors[i].z(),lineColors[i].w());
-            glVertex2f(linePositions[i].x(),linePositions[i].y());
-        }
-        glEnd();
-    }
-
-    // Reset matrices
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+    glViewport(mx,
+               my,
+               width()-2*mx,
+               height()-2*my);
 
     glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    glLoadIdentity();
+    glOrtho(0.0, 1.0, 0.0, 1.0, 0, 1);
+
+    glShadeModel(GL_FLAT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    glVertexPointer(FLOATS_PER_POINT,GL_FLOAT,0,verts.constData());
+    glColorPointer(FLOATS_PER_COLOR,GL_FLOAT,0,colors.constData());
+
+    glDrawArrays(GL_LINES,0,verts.size()/POINTS_PER_LINE);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
 }
 
-void ParallelCoordinatesViz::paint(QPainter *painter, QPaintEvent *event, int elapsed)
+void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
 {
-    //painter->fillRect(event->rect(), backgroundColor);
+    if(!processed)
+        return;
 
     int mx=40;
     int my=30;
 
     plotBBox = QRectF(mx,my,
-                      event->rect().width()-mx-mx,
-                      event->rect().height()-my-my);
+                      width()-mx-mx,
+                      height()-my-my);
 
     // Draw axes
     QPointF a = plotBBox.bottomLeft();

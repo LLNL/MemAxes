@@ -3,17 +3,16 @@
 
 #include "vizwidget.h"
 
-class CorrelationMatrixViz : public VizWidget
+class CorrelationMatrixViz
+        : public VizWidget
 {
     Q_OBJECT
 
 public:
-    CorrelationMatrixViz();
+    CorrelationMatrixViz(QWidget *parent = 0);
 
 public:
     void print();
-    void processViz();
-    void paint(QPainter *painter, QPaintEvent *event, int elapsed);
 
 signals:
     void selectedDims(int x, int y);
@@ -24,10 +23,12 @@ public slots:
     void selectionChangedSlot();
 
 private:
-    QColor valToColor(qreal val);
     QPoint matrixID(QPoint pixel);
 
 protected:
+    void processData();
+    void drawQtPainter(QPainter *painter);
+
     void leaveEvent(QEvent *);
     void mouseReleaseEvent(QMouseEvent *e);
     bool eventFilter(QObject *obj, QEvent *event);

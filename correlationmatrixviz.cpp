@@ -9,7 +9,8 @@ using namespace std;
 
 #include "util.h"
 
-CorrelationMatrixViz::CorrelationMatrixViz()
+CorrelationMatrixViz::CorrelationMatrixViz(QWidget *parent)
+    : VizWidget(parent)
 {
     VizWidget();
 
@@ -49,9 +50,11 @@ void CorrelationMatrixViz::mouseReleaseEvent(QMouseEvent *event)
 
 bool CorrelationMatrixViz::eventFilter(QObject *obj, QEvent *event)
 {
+    Q_UNUSED(obj);
+
     static int prevHighlighted = highlighted;
 
-    if(!vizProcessed)
+    if(!processed)
         return false;
 
     if (event->type() == QEvent::MouseMove)
@@ -105,7 +108,7 @@ void CorrelationMatrixViz::print()
     }
 }
 
-void CorrelationMatrixViz::processViz()
+void CorrelationMatrixViz::processData()
 {
     // ******** Calc correlation coefficients *********
     correlationMatrix.resize(data->numDimensions*data->numDimensions);
@@ -123,7 +126,7 @@ void CorrelationMatrixViz::processViz()
     qint64 numselected = 0;
     for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
-        if(data->selection[elem])
+        if(data->selected(elem))
             numselected++;
     }
 
@@ -131,7 +134,7 @@ void CorrelationMatrixViz::processViz()
 
     for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
-        if(numselected > 0 && data->selection[elem] == 0)
+        if(numselected > 0 && data->selected(elem) == 0)
             continue;
 
         for(int i=0; i<data->numDimensions; i++)
@@ -176,7 +179,7 @@ void CorrelationMatrixViz::processViz()
 
     for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
-        if(numselected > 0 && data->selection[elem] == 0)
+        if(numselected > 0 && data->selected(elem) == 0)
             continue;
 
         for(int i=0; i<data->numDimensions; i++)
@@ -202,34 +205,7 @@ void CorrelationMatrixViz::processViz()
         }
     }
 
-    vizProcessed = true;
-}
-
-QColor CorrelationMatrixViz::valToColor(qreal val)
-{
-    if(val >= maxVal)
-        return colorBarMax;
-    if(val <= minVal)
-        return colorBarMin;
-
-    //qreal minH = colorBarMin.hueF();
-    //qreal minS = colorBarMin.saturationF();
-    //qreal minV = colorBarMin.valueF();
-
-    //qreal maxH = colorBarMax.hueF();
-    //qreal maxS = colorBarMax.saturationF();
-    //qreal maxV = colorBarMax.valueF();
-
-    qreal sv = normalize(val,minVal,maxVal);
-
-    QColor result;
-    qreal newH = lerp(sv,colorBarMin.redF(),colorBarMax.redF());//minH,maxH);
-    qreal newS = lerp(sv,colorBarMin.greenF(),colorBarMax.greenF());//minS,maxS);
-    qreal newV = lerp(sv,colorBarMin.blueF(),colorBarMax.blueF());//minV,maxV);
-
-    result.setRgbF(newH,newS,newV);
-
-    return result;
+    processed = true;
 }
 
 QPoint CorrelationMatrixViz::matrixID(QPoint pixel)
@@ -243,23 +219,24 @@ QPoint CorrelationMatrixViz::matrixID(QPoint pixel)
     return QPoint(floor(sx),floor(sy));
 }
 
-void CorrelationMatrixViz::leaveEvent(QEvent *)
+void CorrelationMatrixViz::leaveEvent(QEvent *e)
 {
+    VizWidget::leaveEvent(e);
     repaint();
 }
 
-void CorrelationMatrixViz::paint(QPainter *painter, QPaintEvent *event, int elapsed)
+void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
 {
-    // Draw Correlation Matrix
-    painter->fillRect(event->rect(), backgroundColor);
+    if(!processed)
+        return;
 
     qreal m = 20;
     qreal lm = 50;
     qreal tw = 70;
 
     matrixBBox = QRect(lm,m,
-                       (event->rect().right()-m-tw) - (event->rect().left()+lm),
-                       (event->rect().bottom()-m) - (event->rect().top()+m));
+                       (rect().right()-m-tw) - (rect().left()+lm),
+                       (rect().bottom()-m) - (rect().top()+m));
 
     qreal deltax = matrixBBox.width() / data->numDimensions;
     qreal deltay = matrixBBox.height() / data->numDimensions;
@@ -315,7 +292,9 @@ void CorrelationMatrixViz::paint(QPainter *painter, QPaintEvent *event, int elap
         b = a + QPointF(deltax,deltay);
         for(int j=0; j<data->numDimensions; j++)
         {
-            painter->setBrush(valToColor(correlationMatrix[ROWMAJOR_2D(i,j,data->numDimensions)]));
+            painter->setBrush(
+                        valToColor(correlationMatrix[ROWMAJOR_2D(i,j,data->numDimensions)],
+                                   minVal, maxVal, colorBarMin, colorBarMax));
 
             if(ROWMAJOR_2D(i,j,data->numDimensions) == selected)
             {
@@ -371,6 +350,6 @@ void CorrelationMatrixViz::setMax(int v)
 
 void CorrelationMatrixViz::selectionChangedSlot()
 {
-    processViz();
+    processData();
     repaint();
 }
