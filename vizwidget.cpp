@@ -33,6 +33,11 @@ void VizWidget::selectionChangedSlot()
     repaint();
 }
 
+void VizWidget::visibilityChangedSlot()
+{
+    repaint();
+}
+
 void VizWidget::initializeGL()
 {
     glEnable(GL_MULTISAMPLE);

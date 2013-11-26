@@ -27,7 +27,6 @@ HEADERS  += mainwindow.h \
             util.h \
             vizwidget.h \
             parallelcoordinatesviz.h \
-            qtlogo.h \
     volumevizwidget.h \
     selectionviz.h
 

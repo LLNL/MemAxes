@@ -19,6 +19,7 @@ signals:
 
 public slots:
     virtual void selectionChangedSlot();
+    virtual void visibilityChangedSlot();
 
 public:
     void setData(DataObject* iData);

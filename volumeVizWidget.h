@@ -30,13 +30,20 @@ protected:
     virtual void processData();
 
 public slots:
-    void processSelection();
+    void selectionChangedSlot();
+
     void setMinVal(double val);
     void setMidVal(double val);
     void setMaxVal(double val);
+
     void setMinOpacity(int val);
     void setMidOpacity(int val);
     void setMaxOpacity(int val);
+
+    void setXDim(int val);
+    void setYDim(int val);
+    void setZDim(int val);
+    void setWDim(int val);
 
 signals:
     void minValSet(double val);
@@ -69,7 +76,7 @@ private:
     int xdim;
     int ydim;
     int zdim;
-    int valdim;
+    int wdim;
 
     qreal minVal;
     qreal midVal;

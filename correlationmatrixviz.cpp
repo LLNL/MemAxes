@@ -78,133 +78,10 @@ bool CorrelationMatrixViz::eventFilter(QObject *obj, QEvent *event)
     return false;
 }
 
-void CorrelationMatrixViz::print()
-{
-    cout << "Printing means : " << endl;
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        cout << expectedValues[i] << "\t\t";
-    }
-    cout << endl;
-
-    cout << "Printing covariance matrix : " << endl;
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        for(int j=0; j<data->numDimensions; j++)
-        {
-            cout << covarianceMatrix[ROWMAJOR_2D(i,j,data->numDimensions)] << "\t\t";
-        }
-        cout << endl;
-    }
-
-    cout << "Printing correlation coefficient matrix : " << endl;
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        for(int j=0; j<data->numDimensions; j++)
-        {
-            cout << correlationMatrix[ROWMAJOR_2D(i,j,data->numDimensions)] << "\t\t";
-        }
-        cout << endl;
-    }
-}
-
 void CorrelationMatrixViz::processData()
 {
-    // ******** Calc correlation coefficients *********
-    correlationMatrix.resize(data->numDimensions*data->numDimensions);
-    QVector<qreal>::Iterator p;
-    qreal x, y;
-
-    // Means and combined means
-    QVector<qreal> meanXY;
-    expectedValues.resize(data->numDimensions);
-    meanXY.resize(data->numDimensions*data->numDimensions);
-    expectedValues.fill(0);
-    meanXY.fill(0);
-
-    qint64 elem;
-    qint64 numselected = 0;
-    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
-    {
-        if(data->selected(elem))
-            numselected++;
-    }
-
-    qint64 numelem = (numselected == 0) ? data->numElements : numselected;
-
-    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
-    {
-        if(numselected > 0 && data->selected(elem) == 0)
-            continue;
-
-        for(int i=0; i<data->numDimensions; i++)
-        {
-            x = *(p+i);
-            expectedValues[i] += x;
-
-            for(int j=0; j<data->numDimensions; j++)
-            {
-                y = *(p+j);
-                meanXY[ROWMAJOR_2D(i,j,data->numDimensions)] += x*y;
-            }
-        }
-    }
-
-    // Divide by data->numElements to get mean
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        expectedValues[i] /= (qreal)numelem;
-        for(int j=0; j<data->numDimensions; j++)
-        {
-            meanXY[ROWMAJOR_2D(i,j,data->numDimensions)] /= (qreal)numelem;
-        }
-    }
-
-    // Covariance = E(XY) - E(X)*E(Y)
-    // TODO: Possibly switch to E((x-E(x))*(y-E(y)) to avoid floating-point error
-    covarianceMatrix.resize(data->numDimensions*data->numDimensions);
-
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        for(int j=0; j<data->numDimensions; j++)
-        {
-            covarianceMatrix[ROWMAJOR_2D(i,j,data->numDimensions)] =
-                meanXY[ROWMAJOR_2D(i,j,data->numDimensions)] - expectedValues[i]*expectedValues[j];
-        }
-    }
-
-    // Standard deviation of each dim
-    standardDeviations.resize(data->numDimensions);
-    standardDeviations.fill(0);
-
-    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
-    {
-        if(numselected > 0 && data->selected(elem) == 0)
-            continue;
-
-        for(int i=0; i<data->numDimensions; i++)
-        {
-            x = *(p+i);
-            standardDeviations[i] += (x-expectedValues[i])*(x-expectedValues[i]);
-        }
-    }
-
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        standardDeviations[i] = sqrt(standardDeviations[i]/(qreal)numelem);
-    }
-
-    // Correlation Coeff = cov(xy) / stdev(x)*stdev(y)
-    for(int i=0; i<data->numDimensions; i++)
-    {
-        for(int j=0; j<data->numDimensions; j++)
-        {
-            correlationMatrix[ROWMAJOR_2D(i,j,data->numDimensions)] =
-                    covarianceMatrix[ROWMAJOR_2D(i,j,data->numDimensions)] /
-                    (standardDeviations[i]*standardDeviations[j]);
-        }
-    }
-
+    data->calcTotalStatistics();
+    data->calcSelectionStatistics();
     processed = true;
 }
 
@@ -293,7 +170,7 @@ void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
         for(int j=0; j<data->numDimensions; j++)
         {
             painter->setBrush(
-                        valToColor(correlationMatrix[ROWMAJOR_2D(i,j,data->numDimensions)],
+                        valToColor(data->selectionCorrelationBtwn(i,j),
                                    minVal, maxVal, colorBarMin, colorBarMax));
 
             if(ROWMAJOR_2D(i,j,data->numDimensions) == selected)
@@ -350,6 +227,6 @@ void CorrelationMatrixViz::setMax(int v)
 
 void CorrelationMatrixViz::selectionChangedSlot()
 {
-    processData();
+    data->calcSelectionStatistics();
     repaint();
 }

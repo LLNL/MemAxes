@@ -16,7 +16,7 @@ VolumeVizWidget::VolumeVizWidget(QWidget *parent)
     xdim = 9;
     ydim = 10;
     zdim = 11;
-    valdim = 4;
+    wdim = 4;
 
     minAlpha = 0.05;
     midAlpha = 0.5;
@@ -60,7 +60,7 @@ void VolumeVizWidget::processData()
     qreal minz = *(data->begin+zdim);
     qreal maxz = minz;
 
-    minVal = *(data->begin+valdim);
+    minVal = *(data->begin+wdim);
     midVal = minVal;
     maxVal = minVal;
 
@@ -71,7 +71,7 @@ void VolumeVizWidget::processData()
         x = *(p+xdim);
         y = *(p+ydim);
         z = *(p+zdim);
-        v = *(p+valdim);
+        v = *(p+wdim);
 
         minx = min((qreal)x,minx);
         maxx = max((qreal)x,maxx);
@@ -107,7 +107,7 @@ void VolumeVizWidget::processData()
         x = *(p+xdim);
         y = *(p+ydim);
         z = *(p+zdim);
-        v = *(p+valdim);
+        v = *(p+wdim);
 
         volumeData[ROWMAJOR(x,y,z,width,height)] += v;
     }
@@ -140,7 +140,7 @@ void VolumeVizWidget::processData()
     renderer->ResetCamera();
 }
 
-void VolumeVizWidget::processSelection()
+void VolumeVizWidget::selectionChangedSlot()
 {
     volumeData.clear();
     volumeData.resize(width*height*depth);
@@ -156,10 +156,13 @@ void VolumeVizWidget::processSelection()
         if(seldef && data->selected(elem) == 0)
             continue;
 
+        if(!data->visible(elem))
+            continue;
+
         x = *(p+xdim);
         y = *(p+ydim);
         z = *(p+zdim);
-        v = *(p+valdim);
+        v = *(p+wdim);
 
         volumeData[ROWMAJOR(x,y,z,width,height)] += v;
     }
@@ -218,4 +221,32 @@ void VolumeVizWidget::setMaxOpacity(int val)
 {
     maxAlpha = (qreal)val / (qreal)100.0;
     updateTransferFunction();
+}
+
+void VolumeVizWidget::setXDim(int val)
+{
+    xdim = val;
+    selectionChangedSlot();
+    update();
+}
+
+void VolumeVizWidget::setYDim(int val)
+{
+    ydim = val;
+    selectionChangedSlot();
+    update();
+}
+
+void VolumeVizWidget::setZDim(int val)
+{
+    zdim = val;
+    selectionChangedSlot();
+    update();
+}
+
+void VolumeVizWidget::setWDim(int val)
+{
+    wdim = val;
+    selectionChangedSlot();
+    update();
 }

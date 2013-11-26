@@ -21,6 +21,7 @@ signals:
 
 public slots:
     void selectionChangedSlot();
+    void visibilityChangedSlot();
     void setSelOpacity(int val);
     void setUnselOpacity(int val);
 

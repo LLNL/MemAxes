@@ -12,7 +12,6 @@ public:
     CorrelationMatrixViz(QWidget *parent = 0);
 
 public:
-    void print();
 
 signals:
     void selectedDims(int x, int y);
@@ -34,11 +33,6 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event);
 
 private:
-    QVector<qreal> standardDeviations;
-    QVector<qreal> expectedValues;
-    QVector<qreal> covarianceMatrix;
-    QVector<qreal> correlationMatrix;
-
     QColor colorBarMin;
     QColor colorBarMax;
 
