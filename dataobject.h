@@ -38,6 +38,8 @@ public:
 
     void filterByDimRange(int dim, qreal vmin, qreal vmax);
     void selectByDimRange(int dim, qreal vmin, qreal vmax);
+    void selectBySourceFileName(QString str);
+    void selectByVarName(QString str);
 
     void filterBySelection();
 
@@ -72,6 +74,8 @@ public:
     long long numVisible;
 
     QVector<qreal> vals;
+    QVector<QString> fileNames;
+    QVector<QString> varNames;
     QVector<qreal>::Iterator begin;
     QVector<qreal>::Iterator end;
 

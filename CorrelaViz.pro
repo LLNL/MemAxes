@@ -19,7 +19,11 @@ SOURCES  += main.cpp\
             vizwidget.cpp \
             parallelcoordinatesviz.cpp \
     volumevizwidget.cpp \
-    selectionviz.cpp
+    selectionviz.cpp \
+    codeeditor.cpp \
+    codeviz.cpp \
+    varviz.cpp \
+    memtopoviz.cpp
 
 HEADERS  += mainwindow.h \
             correlationmatrixviz.h \
@@ -28,7 +32,11 @@ HEADERS  += mainwindow.h \
             vizwidget.h \
             parallelcoordinatesviz.h \
     volumevizwidget.h \
-    selectionviz.h
+    selectionviz.h \
+    codeeditor.h \
+    codeviz.h \
+    varviz.h \
+    memtopoviz.h
 
 FORMS    += mainwindow.ui
 

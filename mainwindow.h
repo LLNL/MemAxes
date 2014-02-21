@@ -8,6 +8,10 @@
 #include "vizwidget.h"
 #include "volumevizwidget.h"
 #include "selectionviz.h"
+#include "codeviz.h"
+#include "varviz.h"
+#include "memtopoviz.h"
+#include "codeeditor.h"
 
 namespace Ui {
 class MainWindow;
@@ -28,12 +32,21 @@ public slots:
     void selectionChanged();
     void visibilityChanged();
     int importData();
+    int importMemTopo();
+    int selectSourceDir();
     void iterationChanged(int val);
+    void selectLine(int line);
     void doFilterSelection();
     void doResetFilter();
+    void doResetSelection();
 
 private:
     Ui::MainWindow *ui;
+    CodeEditor *codeEditor;
+    CodeViz *codeViz;
+    MemTopoViz *memViz;
+    VarViz *varViz;
+    QString sourceDir;
 
     QVector<VizWidget*> vizWidgets;
     VolumeVizWidget *volumeVizWidget;

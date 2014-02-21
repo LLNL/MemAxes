@@ -13,10 +13,10 @@ VolumeVizWidget::VolumeVizWidget(QWidget *parent)
     this->setMinimumSize(400,400);
 
     // dims and data
-    xdim = 9;
-    ydim = 10;
-    zdim = 11;
-    wdim = 4;
+    xdim = 12;
+    ydim = 13;
+    zdim = 14;
+    wdim = 7;
 
     minAlpha = 0.05;
     midAlpha = 0.5;
@@ -98,20 +98,6 @@ void VolumeVizWidget::processData()
 
     cout << width << "x" << height << "x" << depth << endl;
 
-    volumeData.clear();
-    volumeData.resize(width*height*depth);
-    volumeData.fill(0);
-
-    for(p=data->begin; p!=data->end; p+=data->numDimensions)
-    {
-        x = *(p+xdim);
-        y = *(p+ydim);
-        z = *(p+zdim);
-        v = *(p+wdim);
-
-        volumeData[ROWMAJOR(x,y,z,width,height)] += v;
-    }
-
     // QVector<float> to vtkImageData
     imageImport->SetDataSpacing(1, 1, 1);
     imageImport->SetDataOrigin(0, 0, 0);
@@ -119,18 +105,17 @@ void VolumeVizWidget::processData()
     imageImport->SetDataExtentToWholeExtent();
     imageImport->SetDataScalarTypeToFloat();
     imageImport->SetNumberOfScalarComponents(1);
-    imageImport->SetImportVoidPointer((void*)volumeData.constData());
-    imageImport->Update();
 
-    volRendMapper->SetInput(imageImport->GetOutput());
     volRendMapper->SetSampleDistance(0.2);
+
+    selectionChangedSlot();
 
     updateTransferFunction();
 
     // Set properties for volume rendering
     volumeProps->SetColor(colorTransferFunction);
     volumeProps->SetScalarOpacity(opacityFunction);
-    volumeProps->SetInterpolationTypeToLinear();
+    volumeProps->SetInterpolationTypeToNearest();
     volumeProps->ShadeOff();
 
     volume->SetProperty(volumeProps);
@@ -164,10 +149,18 @@ void VolumeVizWidget::selectionChangedSlot()
         z = *(p+zdim);
         v = *(p+wdim);
 
+        if(x >= width || y >= height || z >= depth)
+            continue;
+
+        if(x < 0 || y < 0 || z < 0)
+            continue;
+
         volumeData[ROWMAJOR(x,y,z,width,height)] += v;
     }
 
     imageImport->SetImportVoidPointer((void*)volumeData.constData());
+    imageImport->Update();
+    volRendMapper->SetInput(imageImport->GetOutput());
 }
 
 void VolumeVizWidget::updateTransferFunction()
@@ -226,27 +219,43 @@ void VolumeVizWidget::setMaxOpacity(int val)
 void VolumeVizWidget::setXDim(int val)
 {
     xdim = val;
-    selectionChangedSlot();
-    update();
+
+    if(processed)
+    {
+        selectionChangedSlot();
+        update();
+    }
 }
 
 void VolumeVizWidget::setYDim(int val)
 {
     ydim = val;
-    selectionChangedSlot();
-    update();
+
+    if(processed)
+    {
+        selectionChangedSlot();
+        update();
+    }
 }
 
 void VolumeVizWidget::setZDim(int val)
 {
     zdim = val;
-    selectionChangedSlot();
-    update();
+
+    if(processed)
+    {
+        selectionChangedSlot();
+        update();
+    }
 }
 
 void VolumeVizWidget::setWDim(int val)
 {
     wdim = val;
-    selectionChangedSlot();
-    update();
+
+    if(processed)
+    {
+        selectionChangedSlot();
+        update();
+    }
 }

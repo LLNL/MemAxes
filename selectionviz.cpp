@@ -9,7 +9,7 @@ using namespace std;
 SelectionVizWidget::SelectionVizWidget(QWidget *parent) :
     VizWidget(parent)
 {
-    dim = 4;
+    dim = 0;
 }
 
 void SelectionVizWidget::processData()

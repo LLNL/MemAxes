@@ -18,7 +18,10 @@ ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
     selOpacity = 0.1;
     unselOpacity = 0.01;
 
-    this->setMaximumHeight(300);
+    numHistBins = 100;
+
+    showBoxPlots = false;
+    showHistograms = false;
 
     // Event Filters
     this->installEventFilter(this);
@@ -40,6 +43,9 @@ void ParallelCoordinatesVizWidget::processData()
     dimMins.resize(data->numDimensions);
     dimMaxes.resize(data->numDimensions);
 
+    dimMins.fill(std::numeric_limits<double>::max());
+    dimMaxes.fill(std::numeric_limits<double>::min());
+
     selMins.resize(data->numDimensions);
     selMaxes.resize(data->numDimensions);
 
@@ -52,16 +58,17 @@ void ParallelCoordinatesVizWidget::processData()
     verts.resize(data->numElements*LINES_PER_DATAPT*POINTS_PER_LINE*FLOATS_PER_POINT);
     colors.resize(data->numElements*LINES_PER_DATAPT*POINTS_PER_LINE*FLOATS_PER_COLOR);
 
+    histVals.resize(data->numDimensions);
+    histMaxVals.resize(data->numDimensions);
+    histMaxVals.fill(0);
+
     for(int i=0; i<data->numDimensions; i++)
     {
-        //dimMins[i] = *(data->begin+i);
-        //dimMaxes[i] = *(data->begin+i);
-
-        dimMins[i] = std::numeric_limits<double>::max();
-        dimMaxes[i] = std::numeric_limits<double>::min();
-
         axesOrder[i] = i;
         axesPositions[i] = i*(1.0/(data->numDimensions-1));
+
+        histVals[i].resize(numHistBins);
+        histVals[i].fill(0);
     }
 
     int elem;
@@ -78,9 +85,38 @@ void ParallelCoordinatesVizWidget::processData()
         }
     }
 
-    recalcLines();
+    // Get histogram values
+    for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
+    {
+        if(data->selectionDefined() && !data->selected(elem))
+            continue;
+
+        for(int i=0; i<data->numDimensions; i++)
+        {
+            int histBin = floor(scale(*(p+i),dimMins[i],dimMaxes[i],0,numHistBins));
+
+            if(histBin >= numHistBins)
+                histBin = numHistBins-1;
+            if(histBin < 0)
+                histBin = 0;
+
+            histVals[i][histBin] += 1;
+            histMaxVals[i] = fmax(histMaxVals[i],histVals[i][histBin]);
+        }
+    }
+
+    // Scale hist values to [0,1]
+    for(int i=0; i<data->numDimensions; i++)
+    {
+        for(int j=0; j<numHistBins; j++)
+        {
+            histVals[i][j] = scale(histVals[i][j],0,histMaxVals[i],0,1);
+        }
+    }
 
     processed = true;
+
+    recalcLines();
 }
 
 void ParallelCoordinatesVizWidget::leaveEvent(QEvent *e)
@@ -89,9 +125,10 @@ void ParallelCoordinatesVizWidget::leaveEvent(QEvent *e)
     repaint();
 }
 
-void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *event)
+void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
 {
-    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    if(!processed)
+        return;
 
     if(cursorPos.x() != -1)
     {
@@ -121,18 +158,16 @@ void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *event)
 void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     Q_UNUSED(event);
-    //QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+
+    if(!processed)
+        return;
 
     if(lastSel == -1)
-    {
         if(selecting != -1)
-        {
             selMins[selecting] = -1;
-            processSelection();
-        }
 
-        repaint();
-    }
+    processSelection();
+    repaint();
 
     selecting = -1;
     lastSel = -1;
@@ -166,7 +201,7 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
             selMins[selecting] = 1.0-scale(selmax,plotBBox.top(),plotBBox.bottom(),0,1);
             selMaxes[selecting] = 1.0-scale(selmin,plotBBox.top(),plotBBox.bottom(),0,1);
 
-            processSelection();
+            //processSelection();
         }
 
         // Get cursor location
@@ -211,7 +246,7 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
                 }
             }
 
-            recalcLines(movingAxis);
+            recalcLines();
 
             if(delta != 0)
                 repaint();
@@ -227,6 +262,9 @@ void ParallelCoordinatesVizWidget::processSelection()
 {
     QVector<qreal> dataSelMins(selMins);
     QVector<qreal> dataSelMaxes(selMaxes);
+
+    if(!processed)
+        return;
 
     int selAxes = 0;
     for(int i=0; i<dataSelMins.size(); i++)
@@ -281,6 +319,9 @@ void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
     int i, axis, nextAxis, elem, idx;
     QVector<double>::Iterator p;
 
+    if(!processed)
+        return;
+
     for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
     {
         if(!data->visible(elem))
@@ -327,13 +368,15 @@ void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
 
 void ParallelCoordinatesVizWidget::selectionChangedSlot()
 {
-    recalcLines();
+    processData();
+    //recalcLines();
     repaint();
 }
 
 void ParallelCoordinatesVizWidget::visibilityChangedSlot()
 {
     processData();
+    //recalcLines();
     repaint();
 }
 
@@ -351,6 +394,18 @@ void ParallelCoordinatesVizWidget::setUnselOpacity(int val)
     repaint();
 }
 
+void ParallelCoordinatesVizWidget::setShowBoxPlots(bool checked)
+{
+    showBoxPlots = checked;
+    repaint();
+}
+
+void ParallelCoordinatesVizWidget::setShowHistograms(bool checked)
+{
+    showHistograms = checked;
+    repaint();
+}
+
 void ParallelCoordinatesVizWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -362,16 +417,6 @@ void ParallelCoordinatesVizWidget::paintGL()
 
     int mx=40;
     int my=30;
-
-    // Qt 5.X BUG
-    //int width2x = width()*2;
-    //int height2x = height()*2;
-    //int mx2x = mx*2;
-    //int my2x = my*2;
-    //glViewport(mx2x,
-    //           my2x,
-    //           width2x-2*mx2x,
-    //           height2x-2*my2x);
 
     glViewport(mx,
                my,
@@ -458,7 +503,6 @@ void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
 
     painter->setPen(QPen(Qt::yellow, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->setBrush(Qt::NoBrush);
-    painter->setOpacity(0.8);
     for(int i=0; i<data->numDimensions; i++)
     {
         if(selMins[i] != -1)
@@ -472,50 +516,79 @@ void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
         }
     }
 
-    if(!data->selectionDefined())
-        return;
-
-    // Draw boxplots
-    int boxPlotWidth = 20;
-    int halfBoxPlotWidth = boxPlotWidth/2;
-
-    painter->setPen(Qt::NoPen);
-    for(int i=0; i<data->numDimensions; i++)
+    if(showHistograms)
     {
-        qreal outlierMin = scale(data->selectionMinAt(i),dimMins[i],dimMaxes[i],0,1);
-        qreal outlierMax = scale(data->selectionMaxAt(i),dimMins[i],dimMaxes[i],0,1);
+        // Draw histograms
+        a = plotBBox.bottomLeft();
+        b = plotBBox.topLeft();
 
-        qreal stddevMin = scale(data->selectionMeanAt(i)-data->selectionStddevAt(i),dimMins[i],dimMaxes[i],0,1);
-        qreal stddevMax = scale(data->selectionMeanAt(i)+data->selectionStddevAt(i),dimMins[i],dimMaxes[i],0,1);
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(Qt::black);
+        painter->setOpacity(0.7);
 
-        qreal meanPos = scale(data->selectionMeanAt(i),dimMins[i],dimMaxes[i],0,1);
+        for(int i=0; i<data->numDimensions; i++)
+        {
+            a.setX(plotBBox.left() + axesPositions[i]*plotBBox.width());
+            b.setX(a.x());
 
-        a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfBoxPlotWidth,
-                    plotBBox.top() + plotBBox.height()*(1.0-outlierMin));
-        b = QPointF(a.x() + boxPlotWidth,
-                    plotBBox.top() + plotBBox.height()*(1.0-outlierMax));
+            for(int j=0; j<numHistBins; j++)
+            {
+                qreal histTop = a.y()-(j+1)*(plotBBox.height()/numHistBins);
+                qreal histLeft = a.x()-30*histVals[i][j];
+                qreal histBottom = a.y()-(j)*(plotBBox.height()/numHistBins);
+                qreal histRight = a.x()+30*histVals[i][j];
+                painter->drawRect(QRectF(QPointF(histLeft,histTop),QPointF(histRight,histBottom)));
+            }
 
-        painter->setBrush(QBrush(Qt::blue));
-        painter->setOpacity(0.3);
-        painter->drawRect(QRectF(a,b));
-
-        a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfBoxPlotWidth,
-                    plotBBox.top() + plotBBox.height()*(1.0-stddevMin));
-        b = QPointF(a.x() + boxPlotWidth,
-                    plotBBox.top() + plotBBox.height()*(1.0-stddevMax));
-
-        painter->setBrush(QBrush(Qt::blue));
-        painter->setOpacity(0.4);
-        painter->drawRect(QRectF(a,b));
-
-        a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfBoxPlotWidth,
-                    plotBBox.top() + plotBBox.height()*(1.0-meanPos) - 0.5);
-        b = QPointF(a.x() + boxPlotWidth,
-                    plotBBox.top() + plotBBox.height()*(1.0-meanPos) + 0.5);
-
-        painter->setOpacity(1);
-        painter->setBrush(QBrush(Qt::black));
-        painter->drawRect(QRectF(a,b));
+            painter->drawLine(a,b);
+        }
     }
 
+    if(showBoxPlots)
+    {
+        // Draw boxplots
+        int boxPlotWidth = 20;
+        int halfBoxPlotWidth = boxPlotWidth/2;
+
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(Qt::NoBrush);
+        painter->setOpacity(0.8);
+        for(int i=0; i<data->numDimensions; i++)
+        {
+            qreal outlierMin = scale(data->selectionMinAt(i),dimMins[i],dimMaxes[i],0,1);
+            qreal outlierMax = scale(data->selectionMaxAt(i),dimMins[i],dimMaxes[i],0,1);
+
+            qreal stddevMin = scale(data->selectionMeanAt(i)-data->selectionStddevAt(i),dimMins[i],dimMaxes[i],0,1);
+            qreal stddevMax = scale(data->selectionMeanAt(i)+data->selectionStddevAt(i),dimMins[i],dimMaxes[i],0,1);
+
+            qreal meanPos = scale(data->selectionMeanAt(i),dimMins[i],dimMaxes[i],0,1);
+
+            a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfBoxPlotWidth,
+                        plotBBox.top() + plotBBox.height()*(1.0-outlierMin));
+            b = QPointF(a.x() + boxPlotWidth,
+                        plotBBox.top() + plotBBox.height()*(1.0-outlierMax));
+
+            painter->setBrush(QBrush(Qt::blue));
+            painter->setOpacity(0.3);
+            painter->drawRect(QRectF(a,b));
+
+            a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfBoxPlotWidth,
+                        plotBBox.top() + plotBBox.height()*(1.0-stddevMin));
+            b = QPointF(a.x() + boxPlotWidth,
+                        plotBBox.top() + plotBBox.height()*(1.0-stddevMax));
+
+            painter->setBrush(QBrush(Qt::blue));
+            painter->setOpacity(0.4);
+            painter->drawRect(QRectF(a,b));
+
+            a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfBoxPlotWidth,
+                        plotBBox.top() + plotBBox.height()*(1.0-meanPos) - 0.5);
+            b = QPointF(a.x() + boxPlotWidth,
+                        plotBBox.top() + plotBBox.height()*(1.0-meanPos) + 0.5);
+
+            painter->setOpacity(1);
+            painter->setBrush(QBrush(Qt::black));
+            painter->drawRect(QRectF(a,b));
+        }
+    }
 }

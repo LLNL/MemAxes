@@ -18,12 +18,15 @@ public:
     void recalcLines(int dirtyAxis = -1);
 
 signals:
+    void lineSelected(int line);
 
 public slots:
     void selectionChangedSlot();
     void visibilityChangedSlot();
     void setSelOpacity(int val);
     void setUnselOpacity(int val);
+    void setShowBoxPlots(bool checked);
+    void setShowHistograms(bool checked);
 
 protected:
     void processData();
@@ -39,7 +42,13 @@ private:
     void processSelection();
 
 private:
+    int lineDim;
+    int numHistBins;
+
     QRectF plotBBox;
+
+    QVector<QVector<qreal> > histVals;
+    QVector<qreal> histMaxVals;
 
     QVector<qreal> dimMins;
     QVector<qreal> dimMaxes;
@@ -54,6 +63,9 @@ private:
 
     int selecting;
     int movingAxis;
+
+    bool showBoxPlots;
+    bool showHistograms;
 
     qreal firstSel;
     qreal lastSel;

@@ -12,8 +12,6 @@ using namespace std;
 CorrelationMatrixViz::CorrelationMatrixViz(QWidget *parent)
     : VizWidget(parent)
 {
-    VizWidget();
-
     // Set painting variables
     colorBarMin = QColor(0,0,255);
     colorBarMax = QColor(255,0,0);
