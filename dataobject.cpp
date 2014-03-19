@@ -9,6 +9,7 @@ using namespace std;
 DataObject::DataObject()
 {
     numSelected = 0;
+    selectionMode = L_XOR;
 }
 
 void DataObject::init()
@@ -23,6 +24,195 @@ void DataObject::init()
     selection.fill(VISIBLE);
 }
 
+void DataObject::selectData(unsigned int index)
+{
+    if(selection[index] == VISIBLE)
+    {
+        selection[index] = SELECTED;
+        numSelected++;
+    }
+}
+
+void DataObject::deselectData(unsigned int index)
+{
+    if(selection[index] == SELECTED)
+    {
+        selection[index] = VISIBLE;
+        numSelected--;
+    }
+}
+
+void DataObject::logicalSelectData(unsigned int index, bool select)
+{
+    if(select && (selectionMode == L_OR || selectionMode == L_XOR))
+        this->selectData(index);
+    else if(!select && selectionMode == L_AND)
+        this->deselectData(index);
+}
+
+void DataObject::selectAllVisible()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(visible(elem))
+            selectData(elem);
+    }
+}
+
+void DataObject::deselectAll()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+        deselectData(elem);
+}
+
+void DataObject::showData(unsigned int index)
+{
+    if(!visible(index))
+    {
+        selection[index] = VISIBLE;
+        numVisible++;
+    }
+}
+
+void DataObject::showAll()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(!visible(elem))
+            showData(elem);
+    }
+}
+
+void DataObject::hideData(unsigned int index)
+{
+    if(visible(index))
+    {
+        selection[index] = INVISIBLE;
+        numVisible--;
+    }
+}
+
+void DataObject::hideAll()
+{
+    selection.fill(INVISIBLE);
+    numVisible = 0;
+}
+
+void DataObject::selectBySourceFileName(QString str)
+{
+    if(selectionMode == L_XOR)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = (fileNames[elem] == str);
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
+{
+    if(selectionMode == L_XOR)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = within(*(p+dim),vmin,vmax);
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
+{
+    if(selectionMode == L_XOR)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = true;
+
+        for(int i=0; i<dims.size(); i++)
+        {
+            if(!within(*(p+dims[i]),mins[i],maxes[i]))
+            {
+                select = false;
+                break;
+            }
+        }
+
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByVarName(QString str)
+{
+    if(selectionMode == L_XOR)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = (varNames[elem] == str);
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::hideSelected()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(selected(elem))
+            hideData(elem);
+    }
+}
+
+void DataObject::hideUnselected()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(!selected(elem) && visible(elem))
+            hideData(elem);
+    }
+}
+
+bool DataObject::selected(unsigned int index)
+{
+    return selection[index] == SELECTED;
+}
+
+bool DataObject::visible(unsigned int index)
+{
+    return selection[index] != INVISIBLE;
+}
+
+bool DataObject::selectionDefined()
+{
+    return numSelected > 0;
+}
+
+bool DataObject::skip(unsigned int index)
+{
+    bool sel = !selectionDefined() || (selectionDefined() && selected(index));
+    return !(sel && visible(index));
+}
+
+// Things get messy here
 
 int createUniqueID(QVector<QString> existing, QString name)
 {
@@ -45,21 +235,39 @@ int encDepth(int enc)
         case(0x2): return -1; // cache hit pending (don't draw)
         case(0x3): return 2; // L2
         case(0x4): return 3; // L3
-        case(0x5): return 3; // from another core L2/L1
-        case(0x6): return 3; // from another core L2/L1
+        case(0x5): return 3; // from another core L2/L1 (clean)
+        case(0x6): return 3; // from another core L2/L1 (dirty)
         case(0x7): return 3; // no LLC now
         case(0x8): return 4; // local ram?
         case(0x9): return -1; // reserved (shouldn't happen)
         case(0xA): return 4; // local RAM (clean)
-        case(0xB): return 5; // remote RAM (clean)
+        case(0xB): return 4; // remote RAM (clean)
         case(0xC): return 4; // local RAM (dirty)
-        case(0xD): return 5; // remote RAM (dirty)
+        case(0xD): return 4; // remote RAM (dirty)
         case(0xE): return -1; // I/O
         case(0xF): return -1; // Uncacheable
     }
 
     return -1;
 }
+
+int encDirty(int enc)
+{
+    int src = enc & 0xF;
+    switch(src)
+    {
+        case(0x5): return 0; // from another core L2/L1 (clean)
+        case(0x6): return 1; // from another core L2/L1 (dirty)
+        case(0xA): return 0; // local RAM (clean)
+        case(0xB): return 0; // remote RAM (clean)
+        case(0xC): return 1; // local RAM (dirty)
+        case(0xD): return 1; // remote RAM (dirty)
+    }
+
+    // N/A
+    return -1;
+}
+
 
 std::string encToString(int enc)
 {
@@ -113,11 +321,14 @@ int DataObject::parseCSVFile(QString dataFileName)
     QStringList lineValues;
     qint64 elemid = 0;
 
+    // HARD CODE
+
     // Get metadata from first line
     line = dataStream.readLine();
     this->meta = line.split(',');
     this->meta.insert(7,"STLB Miss");
     this->meta.insert(7,"Locked");
+    this->meta.insert(7,"Dirtiness");
     this->numDimensions = this->meta.size();
 
     // Get data
@@ -126,7 +337,7 @@ int DataObject::parseCSVFile(QString dataFileName)
         line = dataStream.readLine();
         lineValues = line.split(',');
 
-        if(lineValues.size() != this->numDimensions-2)
+        if(lineValues.size() != this->numDimensions-3)
         {
             cerr << "ERROR: element dimensions do not match metadata!" << endl;
             cerr << "At element " << elemid << endl;
@@ -151,6 +362,7 @@ int DataObject::parseCSVFile(QString dataFileName)
             else if(i==6) // DSE
             {
                 this->vals.push_back(encDepth(lineValues[i].toInt()));
+                this->vals.push_back(encDirty(lineValues[i].toInt()));
                 this->vals.push_back(encLocked(lineValues[i].toInt()));
                 this->vals.push_back(encStlb(lineValues[i].toInt()));
             }
@@ -365,137 +577,3 @@ void DataObject::calcSelectionStatistics()
         }
     }
 }
-
-void DataObject::selectData(unsigned int index)
-{
-    if(selection[index] == VISIBLE)
-    {
-        selection[index] = SELECTED;
-        numSelected++;
-    }
-}
-
-void DataObject::deselectData(unsigned int index)
-{
-    if(selection[index] == SELECTED)
-    {
-        selection[index] = VISIBLE;
-        numSelected--;
-    }
-}
-
-void DataObject::deselectAll()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(selected(elem))
-            deselectData(elem);
-    }
-}
-
-void DataObject::showData(unsigned int index)
-{
-    if(!visible(index))
-    {
-        selection[index] = VISIBLE;
-        numVisible++;
-    }
-}
-
-void DataObject::showAll()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(!visible(elem))
-            showData(elem);
-    }
-}
-
-void DataObject::hideData(unsigned int index)
-{
-    if(visible(index))
-    {
-        selection[index] = INVISIBLE;
-        numVisible--;
-    }
-}
-
-void DataObject::hideAll()
-{
-    selection.fill(INVISIBLE);
-    numVisible = 0;
-}
-
-void DataObject::filterByDimRange(int dim, qreal vmin, qreal vmax)
-{
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        if(*(p+dim) >= vmin && *(p+dim) <= vmax)
-            this->showData(elem);
-    }
-}
-
-void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
-{
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        if(*(p+dim) >= vmin && *(p+dim) < vmax)
-            this->selectData(elem);
-    }
-}
-
-void DataObject::selectBySourceFileName(QString str)
-{
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        if(fileNames[elem] == str)
-            this->selectData(elem);
-    }
-}
-
-void DataObject::selectByVarName(QString str)
-{
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        if(varNames[elem] == str)
-            this->selectData(elem);
-    }
-}
-
-void DataObject::filterBySelection()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(selected(elem))
-            deselectData(elem);
-        else if(visible(elem))
-            hideData(elem);
-    }
-}
-
-bool DataObject::selected(unsigned int index)
-{
-    return selection[index] == SELECTED;
-}
-
-bool DataObject::visible(unsigned int index)
-{
-    return selection[index] != INVISIBLE;
-}
-
-bool DataObject::selectionDefined()
-{
-    return numSelected > 0;
-}
-

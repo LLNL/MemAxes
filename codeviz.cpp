@@ -18,17 +18,17 @@ bool operator<(const lineBlock &lhs, const lineBlock &rhs)
 CodeViz::CodeViz(QWidget *parent) :
     VizWidget(parent)
 {
-    margin = 10;
+    margin = 0;
     metricDim = 0;
     lineNumDim = 0;
 
     numVisibleSourceBlocks = 2;
     numVisibleLineBlocks = 8;
 
+    this->setMinimumHeight(20);
     this->installEventFilter(this);
 
-    // HARD CODE
-    sourceDir = "/Users/chai/Documents/Data/XSBench";
+    sourceDir = "NOT SELECTED";
 }
 
 CodeViz::~CodeViz()
@@ -45,7 +45,8 @@ int CodeViz::getFileID(QString name)
     }
 
     // First time we see this name, new entry
-    QFile *src = new QFile(sourceDir+"/"+name);
+    QString srcFile = sourceDir+"/"+name;
+    QFile *src = new QFile(srcFile);
     src->open(QIODevice::ReadOnly | QIODevice::Text);
 
     sourceBlock newBlock = {name, src, 0, QRect(), 0, QVector<lineBlock>()};
@@ -76,12 +77,14 @@ void CodeViz::processData()
     sourceMaxVal = 0;
     sourceBlocks.clear();
 
+    processed = false;
+
     // Get metric values
     int elem = 0;
     QVector<qreal>::Iterator p;
     for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
     {
-        if(data->selectionDefined() && !data->selected(elem))
+        if(data->skip(elem))
             continue;
 
         int sourceIdx = this->getFileID(data->fileNames[elem]);
@@ -95,14 +98,20 @@ void CodeViz::processData()
                                                   sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);
     }
 
+    if(sourceBlocks.empty())
+    {
+        cout << "COW" << endl;
+        return;
+    }
+
     // Sort based on value
     qSort(sourceBlocks.begin(),sourceBlocks.end());
 
-    for(int j=0; j<numVisibleLineBlocks && j<sourceBlocks.size(); j++)
-    {
+    for(int j=0; j<sourceBlocks.size(); j++)
         qSort(sourceBlocks[j].lineBlocks.begin(),sourceBlocks[j].lineBlocks.end());
-    }
 
+    // ERROR: ASSERT failure in QVector<T>::operator[]: "index out of range" below
+    // hide a selection then select something else
     emit sourceFileSelected(sourceBlocks[0].file);
     emit sourceLineSelected(sourceBlocks[0].lineBlocks[0].line);
 
@@ -117,32 +126,32 @@ void CodeViz::selectionChangedSlot()
 
 void CodeViz::drawQtPainter(QPainter *painter)
 {
-    drawSpace = QRect(this->rect().left()+margin,
-                      this->rect().top()+margin,
-                      width()-margin*2,
-                      height()-margin*2);
+    drawSpace = rect();
 
     painter->fillRect(drawSpace, bgColor);
 
     if(!processed)
         return;
 
-    int blockheight = 20;
-    for(int i=0; i<numVisibleSourceBlocks && i<sourceBlocks.size(); i++)
+    int numBlocks = min(numVisibleSourceBlocks,sourceBlocks.size());
+    int blockHeight = drawSpace.height() / numBlocks;
+    for(int i=0; i<numBlocks; i++)
     {
         sourceBlocks[i].block.setLeft(drawSpace.left());
-        sourceBlocks[i].block.setTop(drawSpace.top()+i*blockheight*numVisibleLineBlocks);
+        sourceBlocks[i].block.setTop(drawSpace.top()+i*blockHeight);
         sourceBlocks[i].block.setWidth(sourceBlocks[i].val/sourceMaxVal*drawSpace.width());
-        sourceBlocks[i].block.setHeight(blockheight*numVisibleLineBlocks);
+        sourceBlocks[i].block.setHeight(blockHeight);
 
         painter->fillRect(sourceBlocks[i].block,Qt::lightGray);
 
-        for(int j=0; j<numVisibleLineBlocks && j<sourceBlocks[i].lineBlocks.size(); j++)
+        int numLines = min(numVisibleLineBlocks,sourceBlocks[i].lineBlocks.size());
+        int lineHeight = blockHeight / numLines;
+        for(int j=0; j<numLines; j++)
         {
             sourceBlocks[i].lineBlocks[j].block.setLeft(drawSpace.left());
-            sourceBlocks[i].lineBlocks[j].block.setTop(sourceBlocks[i].block.top()+blockheight*j);
+            sourceBlocks[i].lineBlocks[j].block.setTop(sourceBlocks[i].block.top()+j*lineHeight);
             sourceBlocks[i].lineBlocks[j].block.setWidth(sourceBlocks[i].lineBlocks[j].val/sourceBlocks[i].lineMaxVal*sourceBlocks[i].block.width());
-            sourceBlocks[i].lineBlocks[j].block.setHeight(blockheight);
+            sourceBlocks[i].lineBlocks[j].block.setHeight(lineHeight);
 
             painter->fillRect(sourceBlocks[i].lineBlocks[j].block,Qt::gray);
             painter->setPen(Qt::white);
@@ -160,13 +169,17 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
 {
     for(int i=0; i<sourceBlocks.size(); i++)
     {
-        if(sourceBlocks[i].block.contains(e->pos()))
+        QRect sourceSelectionBox(sourceBlocks[i].block.left(),
+                                 sourceBlocks[i].block.top(),
+                                 rect().width(),
+                                 sourceBlocks[i].block.height());
+        if(sourceSelectionBox.contains(e->pos()))
         {
             for(int j=0; j<sourceBlocks[i].lineBlocks.size(); j++)
             {
                 QRect lineSelectionBox(sourceBlocks[i].block.left(),
                                        sourceBlocks[i].lineBlocks[j].block.top(),
-                                       sourceBlocks[i].block.width(),
+                                       rect().width(),
                                        sourceBlocks[i].lineBlocks[j].block.height());
                 if(lineSelectionBox.contains(e->pos()))
                 {

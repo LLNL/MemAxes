@@ -11,6 +11,11 @@ qreal normalize(qreal val, qreal min, qreal max);
 qreal scale(qreal val, qreal omin, qreal omax, qreal nmin, qreal nmax);
 qreal lerp(qreal val, qreal min, qreal max);
 qreal clamp(qreal val, qreal min, qreal max);
+bool within(qreal val, qreal min, qreal max);
+
+QPointF polarToCartesian(qreal mag, qreal theta);
+QPointF polarToCartesian(QPointF point);
+QPointF cartesianToPolar(QPointF point);
 
 QColor valToColor(qreal val, qreal minVal, qreal maxVal,
                   QColor colorBarMin, QColor colorBarMax);

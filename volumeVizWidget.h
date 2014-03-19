@@ -40,6 +40,7 @@ public slots:
     void setMidOpacity(int val);
     void setMaxOpacity(int val);
 
+    void setMapDim(int val);
     void setXDim(int val);
     void setYDim(int val);
     void setZDim(int val);
@@ -73,6 +74,7 @@ private:
     vtkSmartPointer<vtkVolume> volume;
     vtkSmartPointer<vtkRenderer> renderer;
 
+    int mapdim;
     int xdim;
     int ydim;
     int zdim;

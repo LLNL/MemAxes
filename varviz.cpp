@@ -13,12 +13,13 @@ bool operator<(const varBlock &lhs, const varBlock &rhs)
 VarViz::VarViz(QWidget *parent) :
     VizWidget(parent)
 {
-    margin = 10;
+    margin = 0;
     metricDim = 0;
     varDim = 0;
 
     numVariableBlocks = 8;
 
+    this->setMinimumHeight(20);
     this->installEventFilter(this);
 }
 
@@ -51,7 +52,7 @@ void VarViz::processData()
     QVector<qreal>::Iterator p;
     for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
     {
-        if(data->selectionDefined() && !data->selected(elem))
+        if(data->skip(elem))
             continue;
 
         int varIdx = this->getVariableID(data->varNames[elem]);
@@ -73,18 +74,19 @@ void VarViz::selectionChangedSlot()
 
 void VarViz::drawQtPainter(QPainter *painter)
 {
-    drawSpace = QRect(this->rect().left()+margin,
-                      this->rect().top()+margin,
-                      width()-margin*2,
-                      height()-margin*2);
+    drawSpace = rect();
 
-    painter->fillRect(drawSpace, bgColor);
+    painter->fillRect(rect(), bgColor);
 
     if(!processed)
         return;
 
-    int blockheight = 20;
-    for(int i=0; i<numVariableBlocks && i<varBlocks.size(); i++)
+    int numBlocks = min(numVariableBlocks, varBlocks.size());
+    if(numBlocks == 0)
+        return;
+
+    int blockheight = drawSpace.height() / numBlocks;
+    for(int i=0; i<numBlocks; i++)
     {
         varBlocks[i].block.setLeft(drawSpace.left());
         varBlocks[i].block.setTop(drawSpace.top()+i*blockheight);

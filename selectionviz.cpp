@@ -9,7 +9,7 @@ using namespace std;
 SelectionVizWidget::SelectionVizWidget(QWidget *parent) :
     VizWidget(parent)
 {
-    dim = 0;
+    mode = WEIGHTBY_CYCLES;
 }
 
 void SelectionVizWidget::processData()
@@ -37,56 +37,56 @@ void SelectionVizWidget::drawQtPainter(QPainter *painter)
         return;
 
     int m = 20;
+    int rectWidth = 15;
+    float selSumData,totalSumData;
+
+    if(mode == WEIGHTBY_CYCLES)
+    {
+        int dim = data->meta.indexOf("latency");
+        selSumData = data->selectionSumAt(dim);
+        totalSumData = data->sumAt(dim);
+    }
+    else if(mode == WEIGHTBY_SAMPLES)
+    {
+        selSumData = data->numSelected;
+        totalSumData = data->numElements;
+    }
+    else
+    {
+        cerr << "COCKATOOS" << endl;
+        return;
+    }
 
     QRect bbox = QRect(m,m,width()-m-m,height()-m-m);
-    QPoint cursor = bbox.topLeft() + QPoint(0,15);
+    qreal selectionPercent = selSumData/totalSumData;
+    qreal unselectionPercent = 1.0 - selectionPercent;
 
-    qreal ptotal = data->selectionSumAt(dim)/data->sumAt(dim);
+    QString blueLabel = QString::number(unselectionPercent*100) + "% (" +
+                        QString::number(data->numElements-data->numSelected) + " accesses)";
 
-    painter->drawText(cursor,"Dimension: "+data->meta[dim]);
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"Selection: "+QString::number(data->numSelected)+" / "+QString::number(data->numElements));
+    QString redLabel = QString::number(selectionPercent*100) + "% (" +
+                        QString::number(data->numSelected) + " accesses)";
 
-    cursor += QPoint(0,240);
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"Min: "+QString::number(data->minAt(dim)));
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"Max: "+QString::number(data->maxAt(dim)));
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"Mean: "+QString::number(data->meanAt(dim)));
-
-    cursor = bbox.topLeft() + QPoint(200,245);
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"selMin: "+QString::number(data->selectionMinAt(dim)));
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"selMax: "+QString::number(data->selectionMaxAt(dim)));
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"selMean: "+QString::number(data->selectionMeanAt(dim)));
-
-    cursor += QPoint(0,15);
-    painter->drawText(cursor,"Percent total: "+
-                      QString::number(100.0*ptotal));
-
-    // pie chart
-    int diameter = min(bbox.width(),bbox.height());
-    diameter = min(diameter,200);
+    QPoint cursor = bbox.bottomLeft();
+    cursor -= QPoint(0,20);
 
     painter->setBrush(QBrush(Qt::gray));
-    painter->drawPie(bbox.center().x()-diameter/2,bbox.top()+30,diameter,diameter,16*90,16*360);
-    painter->setBrush(QBrush(Qt::red));
-    painter->drawPie(bbox.center().x()-diameter/2,bbox.top()+30,diameter,diameter,16*90,-ptotal*(16*360));
+    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
+    painter->drawRect(cursor.x(), cursor.y(), rectWidth, rectWidth);
+    painter->drawText(QPoint(cursor.x()+rectWidth+5,cursor.y()+rectWidth),blueLabel);
+
+    cursor = QPoint(cursor.x(),cursor.y()+20);
+
+    painter->setBrush(QBrush(QColor(178,24,43)));
+    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
+    painter->drawRect(cursor.x(), cursor.y(), rectWidth, rectWidth);
+    painter->drawText(QPoint(cursor.x()+rectWidth+5,cursor.y()+rectWidth),redLabel);
+
+    // pie chart
+    int diameter = min(bbox.width(),bbox.height())-25;
+
+    painter->setBrush(QBrush(Qt::gray));
+    painter->drawPie(bbox.center().x()-diameter/2,bbox.top(),diameter,diameter,16*90,16*360);
+    painter->setBrush(QBrush(QColor(178,24,43)));
+    painter->drawPie(bbox.center().x()-diameter/2,bbox.top(),diameter,diameter,16*90,-selectionPercent*(16*360));
 }
-
-void SelectionVizWidget::setDim(int v)
-{
-    dim = v;
-    repaint();
-}
-
-

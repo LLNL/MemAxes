@@ -5,6 +5,12 @@
 
 #include <QSpinBox>
 
+enum weightMode
+{
+    WEIGHTBY_SAMPLES = 0,
+    WEIGHTBY_CYCLES
+};
+
 class SelectionVizWidget : public VizWidget
 {
     Q_OBJECT
@@ -20,10 +26,12 @@ protected:
     void drawQtPainter(QPainter *painter);
 
 public slots:
-    void setDim(int v);
+    void setWeightModeSamples(bool on) { if(on) { mode = WEIGHTBY_SAMPLES; repaint();} }
+    void setWeightModeLatency(bool on) { if(on) { mode = WEIGHTBY_CYCLES; repaint();} }
 
 private:
-    int dim;
+    weightMode mode;
+
 };
 
 #endif // SELECTIONVIZ_H

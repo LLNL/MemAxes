@@ -15,7 +15,6 @@ qreal scale(qreal val, qreal omin, qreal omax, qreal nmin, qreal nmax)
     return nmin + (nmax-nmin) * ((val-omin) / (omax-omin));
 }
 
-
 qreal clamp(qreal val, qreal min, qreal max)
 {
     if(val<min)
@@ -23,6 +22,56 @@ qreal clamp(qreal val, qreal min, qreal max)
     else if(val>max)
         return max;
     return val;
+}
+
+bool within(qreal val, qreal min, qreal max)
+{
+    return val >= min && val <= max;
+}
+
+QPointF polarToCartesian(qreal mag, qreal theta)
+{
+    return polarToCartesian(QPointF(mag,theta));
+}
+
+QPointF polarToCartesian(QPointF point)
+{
+    float mag = point.x();
+    float theta = point.y();
+
+    float radAngle = -2*M_PI*((theta/16)/360);
+    float xpos = mag * cos(radAngle);
+    float ypos = mag * sin(radAngle);
+
+    return QPointF(xpos,ypos);
+}
+
+#include <iostream>
+using namespace std;
+QPointF cartesianToPolar(QPointF point)
+{
+    QPointF xp(point.x(),-point.y());
+
+    float mag = sqrt(xp.x()*xp.x() + xp.y()*xp.y());
+    float theta = atan(xp.y() / xp.x());
+
+    theta = 360*(theta/(2*M_PI));
+
+    bool xpos = xp.x()>0;
+    bool ypos = xp.y()>0;
+
+    if(xpos && ypos)
+        theta = theta;
+    else if(!xpos && !ypos)
+        theta = 180+theta;
+    else if(!xpos && ypos)
+        theta = 180+theta;
+    else //if(xpos && !ypos)
+        theta = 360+theta;
+
+    theta *= 16;
+
+    return QPointF(mag,theta);
 }
 
 QColor valToColor(qreal val, qreal minVal, qreal maxVal,

@@ -12,36 +12,21 @@ using namespace std;
 
 // BIG TODO LIST
 
-// INTERFACE FIXES
-// Reset parallel coordinates spacing
-// Multiple selections, selection groups (classification)
-// Drag pcoord selection
-// VolumeViz selection changed
+// BUGS
+// Interconnect lines (minimum size 1px)
+// Check HARD CODE!
+
+// Dirty vs clean
+// STLB miss cycles
 
 // NEW FEATURES
-// Application domain view
-// data addresses -> symbols (classification)
-// Histogram/violin plot
-// Filter/select by threshold/scatterplot
+// Mem topo 1d memory range
+// Multiple selections, selection groups (classification)
 
 // APPLICATIONS
-// XSBench w tanzima
-// openmp scheduling policies
+// LibNUMA (move_pages(x,x,NULL,...)
 
-// FUTURE
-// memory topology vis
-
-// HARD-CODED
-// CSV parsing knows what to expect
-// VTK volume hard-coded to 16x16x16, ew
-// source directory for codeviz
-
-// CANT FIX
-// "invalid drawable" on initialization of pcoords viz
-// PostScript font performance note
-// VTK not supported in mavericks
-//      WARNING: Method userSpaceScaleFactor in class NSView is deprecated on 10.7 and later. It should not be used in new applications. Use convertRectToBacking: instead.
-//      Crash on close
+// UNFIXABLE BUG - "invalid drawable" on initialization of pcoords viz
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,14 +40,24 @@ MainWindow::MainWindow(QWidget *parent) :
      */
     currDataObject = NULL;
 
+    // File buttons
     connect(ui->actionImport_Data, SIGNAL(triggered()),this,SLOT(importData()));
     connect(ui->actionImport_Memory_Topology, SIGNAL(triggered()),this,SLOT(importMemTopo()));
     connect(ui->actionImport_Source, SIGNAL(triggered()),this,SLOT(selectSourceDir()));
-    connect(ui->timeSlider, SIGNAL(valueChanged(int)), this, SLOT(iterationChanged(int)));
-    connect(ui->filterSelection, SIGNAL(clicked()), this, SLOT(doFilterSelection()));
-    connect(ui->resetFilter, SIGNAL(clicked()), this, SLOT(doResetFilter()));
-    connect(ui->resetSelection, SIGNAL(clicked()), this, SLOT(doResetSelection()));
 
+    // Selection mode
+    connect(ui->selectModeXOR, SIGNAL(toggled(bool)), this, SLOT(setSelectModeXOR(bool)));
+    connect(ui->selectModeOR, SIGNAL(toggled(bool)), this, SLOT(setSelectModeOR(bool)));
+    connect(ui->selectModeAND, SIGNAL(toggled(bool)), this, SLOT(setSelectModeAND(bool)));
+
+    // Selection buttons
+    connect(ui->deselectAll, SIGNAL(clicked()), this, SLOT(deselectAll()));
+    connect(ui->selectAllVisible, SIGNAL(clicked()), this, SLOT(selectAllVisible()));
+
+    // Visibility buttons
+    connect(ui->hideSelected, SIGNAL(clicked()), this, SLOT(hideSelected()));
+    connect(ui->showSelectedOnly, SIGNAL(clicked()), this, SLOT(showSelectedOnly()));
+    connect(ui->showAll, SIGNAL(clicked()), this, SLOT(showAll()));
 
     /*
      * Code Viz
@@ -71,8 +66,9 @@ MainWindow::MainWindow(QWidget *parent) :
     codeViz = new CodeViz(this);
     ui->codeVizLayout->addWidget(codeViz);
 
-    connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setMetricDim(int)));
-    connect(ui->lineNum, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setLineNumDim(int)));
+    connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
+    //connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setMetricDim(int)));
+    //connect(ui->lineNum, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setLineNumDim(int)));
 
     vizWidgets.push_back(codeViz);
 
@@ -83,8 +79,8 @@ MainWindow::MainWindow(QWidget *parent) :
     varViz = new VarViz(this);
     ui->varVizLayout->addWidget(varViz);
 
-    connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), varViz, SLOT(setMetricDim(int)));
-    connect(ui->varSel, SIGNAL(currentIndexChanged(int)), varViz, SLOT(setVarDim(int)));
+    //connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), varViz, SLOT(setMetricDim(int)));
+    //connect(ui->varSel, SIGNAL(currentIndexChanged(int)), varViz, SLOT(setVarDim(int)));
 
     vizWidgets.push_back(varViz);
 
@@ -101,14 +97,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), codeEditor, SLOT(setFile(QFile*)));
     connect(codeViz, SIGNAL(sourceLineSelected(int)), codeEditor, SLOT(setLine(int)));
-    connect(codeEditor, SIGNAL(lineSelected(int)), this, SLOT(selectLine(int)));
 
 
     /*
      * Volume Viz
      */
 
-    /*
     volumeVizWidget = new VolumeVizWidget(this);
     ui->volVizLayout->addWidget(volumeVizWidget);
 
@@ -124,12 +118,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
 
-    connect(ui->vol_xdim_box, SIGNAL(currentIndexChanged(int)), volumeVizWidget, SLOT(setXDim(int)));
-    connect(ui->vol_ydim_box, SIGNAL(currentIndexChanged(int)), volumeVizWidget, SLOT(setYDim(int)));
-    connect(ui->vol_zdim_box, SIGNAL(currentIndexChanged(int)), volumeVizWidget, SLOT(setZDim(int)));
-    connect(ui->vol_wdim_box, SIGNAL(currentIndexChanged(int)), volumeVizWidget, SLOT(setWDim(int)));
-    */
-
     /*
      * Memory Topology Viz
      */
@@ -137,7 +125,8 @@ MainWindow::MainWindow(QWidget *parent) :
     memViz = new MemTopoViz(this);
     ui->memoryLayout->addWidget(memViz);
 
-    //connect(ui->dimSel,SIGNAL(currentIndexChanged(int)),selectionVizWidget,SLOT(setDim(int)));
+    connect(ui->memTopoColorByCycles,SIGNAL(toggled(bool)),memViz,SLOT(setColorByCycles(bool)));
+    connect(ui->memTopoColorBySamples,SIGNAL(toggled(bool)),memViz,SLOT(setColorBySamples(bool)));
 
     vizWidgets.push_back(memViz);
 
@@ -145,12 +134,13 @@ MainWindow::MainWindow(QWidget *parent) :
      * Selection Viz
      */
 
-    SelectionVizWidget *selectionVizWidget = new SelectionVizWidget(this);
-    ui->selectionLayout->addWidget(selectionVizWidget);
+    selViz = new SelectionVizWidget(this);
+    ui->selectionLayout->addWidget(selViz);
 
-    connect(ui->dimSel,SIGNAL(currentIndexChanged(int)),selectionVizWidget,SLOT(setDim(int)));
+    connect(ui->selectionChartWeightByCycles,SIGNAL(toggled(bool)),selViz,SLOT(setWeightModeLatency(bool)));
+    connect(ui->selectionChartWeightBySamples,SIGNAL(toggled(bool)),selViz,SLOT(setWeightModeSamples(bool)));
 
-    vizWidgets.push_back(selectionVizWidget);
+    vizWidgets.push_back(selViz);
 
     /*
      * Parallel Coords Viz
@@ -184,28 +174,24 @@ MainWindow::~MainWindow()
 void MainWindow::selectionChanged()
 {
     for(int i=0; i<vizWidgets.size(); i++)
-    {
         vizWidgets[i]->selectionChangedSlot();
-    }
-    //volumeVizWidget->selectionChangedSlot();
-    //volumeVizWidget->update();
+    volumeVizWidget->selectionChangedSlot();
 }
 
 void MainWindow::visibilityChanged()
 {
     for(int i=0; i<vizWidgets.size(); i++)
-    {
         vizWidgets[i]->visibilityChangedSlot();
-    }
-    //volumeVizWidget->selectionChangedSlot();
-    //volumeVizWidget->update();
+    volumeVizWidget->selectionChangedSlot();
 }
 
 int MainWindow::importData()
 {
     // Open a file using a dialog
+
+    // HARD CODE
     QString dataFileName = QFileDialog::getOpenFileName(this, tr("Import Data"),
-                                                     "/Users/chai/Documents/Data",
+                                                     "/Users/chai/Sources/case_studies/DATA",
                                                      tr("Files (*.*)"));
 
     DataObject *dobj = new DataObject();
@@ -217,51 +203,29 @@ int MainWindow::importData()
     dataObjects.push_back(dobj);
     currDataObject = dobj;
 
-    // Set viz widget meta info
-    ui->vol_xdim_box->clear();
-    ui->vol_ydim_box->clear();
-    ui->vol_zdim_box->clear();
-    ui->vol_wdim_box->clear();
-    ui->vol_tdim_box->clear();
-    ui->dimSel->clear();
-    ui->codeMetric->clear();
-    ui->lineNum->clear();
-    ui->varSel->clear();
-
-    // Add dimension names
-    ui->vol_xdim_box->addItems(currDataObject->meta);
-    ui->vol_ydim_box->addItems(currDataObject->meta);
-    ui->vol_zdim_box->addItems(currDataObject->meta);
-    ui->vol_wdim_box->addItems(currDataObject->meta);
-    ui->vol_tdim_box->addItems(currDataObject->meta);
-    ui->dimSel->addItems(currDataObject->meta);
-    ui->codeMetric->addItems(currDataObject->meta);
-    ui->lineNum->addItems(currDataObject->meta);
-    ui->varSel->addItems(currDataObject->meta);
-
     // Set default values
-    ui->vol_xdim_box->setCurrentIndex(currDataObject->meta.indexOf("xidx"));
-    ui->vol_ydim_box->setCurrentIndex(currDataObject->meta.indexOf("yidx"));
-    ui->vol_zdim_box->setCurrentIndex(currDataObject->meta.indexOf("zidx"));
-    ui->vol_wdim_box->setCurrentIndex(currDataObject->meta.indexOf("latency"));
-    ui->vol_tdim_box->setCurrentIndex(currDataObject->meta.indexOf("iter"));
-    ui->dimSel->setCurrentIndex(currDataObject->meta.indexOf("latency"));
-    ui->codeMetric->setCurrentIndex(currDataObject->meta.indexOf("latency"));
-    ui->lineNum->setCurrentIndex(currDataObject->meta.indexOf("line"));
-    ui->varSel->setCurrentIndex(currDataObject->meta.indexOf("variable"));
+    volumeVizWidget->setMapDim(currDataObject->meta.indexOf("map3D"));
+    volumeVizWidget->setXDim(currDataObject->meta.indexOf("xidx"));
+    volumeVizWidget->setYDim(currDataObject->meta.indexOf("yidx"));
+    volumeVizWidget->setZDim(currDataObject->meta.indexOf("zidx"));
+    volumeVizWidget->setWDim(currDataObject->meta.indexOf("latency"));
 
     memViz->setEncDim(currDataObject->meta.indexOf("dataSource"));
     memViz->setLatDim(currDataObject->meta.indexOf("latency"));
     memViz->setCpuDim(currDataObject->meta.indexOf("cpu"));
     memViz->setNodeDim(currDataObject->meta.indexOf("node"));
 
+    varViz->setMetricDim(currDataObject->meta.indexOf("latency"));
+    varViz->setVarDim(currDataObject->meta.indexOf("variable"));
+
+    codeViz->setLineNumDim(currDataObject->meta.indexOf("line"));
+    codeViz->setMetricDim(currDataObject->meta.indexOf("latency"));
+
+
     // Set viz widgets to use new data
     for(int i=0; i<vizWidgets.size(); i++)
-    {
         vizWidgets[i]->setData(currDataObject);
-        vizWidgets[i]->repaint();
-    }
-    //volumeVizWidget->setData(currDataObject);
+    volumeVizWidget->setData(currDataObject);
 
     return 0;
 }
@@ -270,57 +234,81 @@ int MainWindow::importMemTopo()
 {
     // Open a file using a dialog
     QFileDialog dirDiag(this);
-    QString topoFilename = dirDiag.getOpenFileName(this, tr("Select Source Directory"),
-                                        "/Users/chai/Documents/Data/Hardware");
+
+    // HARD CODE
+    QString topoFilename = dirDiag.getOpenFileName(this, tr("Select Memory Topology File"),
+                                                   "/Users/chai/Documents/Data/Hardware");
 
     memViz->loadHierarchyFromXML(topoFilename);
+
+    if(currDataObject)
+        memViz->setData(currDataObject);
 
     return 0;
 }
 
 int MainWindow::selectSourceDir()
 {
-    // Open a file using a dialog
-    QFileDialog dirDiag(this);
-    dirDiag.setFileMode(QFileDialog::DirectoryOnly);
-    sourceDir = dirDiag.getOpenFileName(this, tr("Select Source Directory"),
-                                        "/Users/chai/Documents/Data");
+    // HARD CODE
+    sourceDir = QFileDialog::getExistingDirectory(this, tr("Select Source Directory"),
+                                                  "/Users/chai/Sources/case_studies",
+                                                  QFileDialog::ShowDirsOnly
+                                                  | QFileDialog::DontResolveSymlinks);
     codeViz->setSourceDir(sourceDir);
+    selectionChanged();
 
     return 0;
 }
 
-void MainWindow::iterationChanged(int val)
+void MainWindow::showSelectedOnly()
 {
-    int dim = ui->vol_tdim_box->currentIndex();
-
-    currDataObject->hideAll();
-    currDataObject->filterByDimRange(dim,val-10,val+10);
-
+    currDataObject->hideUnselected();
     visibilityChanged();
 }
 
-void MainWindow::selectLine(int line)
+void MainWindow::selectAllVisible()
 {
-    currDataObject->deselectAll();
-    currDataObject->selectByDimRange(ui->lineNum->currentIndex(),line,line+1);
+    currDataObject->selectAllVisible();
     selectionChanged();
 }
 
-void MainWindow::doFilterSelection()
-{
-    currDataObject->filterBySelection();
-    visibilityChanged();
-}
-
-void MainWindow::doResetSelection()
+void MainWindow::deselectAll()
 {
     currDataObject->deselectAll();
     selectionChanged();
 }
 
-void MainWindow::doResetFilter()
+void MainWindow::showAll()
 {
     currDataObject->showAll();
     visibilityChanged();
+}
+
+void MainWindow::hideSelected()
+{
+    currDataObject->hideSelected();
+    visibilityChanged();
+}
+
+void MainWindow::setSelectModeAND(bool on)
+{
+    if(on)
+        currDataObject->setSelectionModeAND();
+}
+
+void MainWindow::setSelectModeOR(bool on)
+{
+    if(on)
+        currDataObject->setSelectionModeOR();
+}
+
+void MainWindow::setSelectModeXOR(bool on)
+{
+    if(on)
+        currDataObject->setSelectionModeXOR();
+}
+
+void MainWindow::setCodeLabel(QFile *file)
+{
+    ui->codeLabel->setText(file->fileName());
 }

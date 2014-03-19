@@ -12,39 +12,53 @@ enum select_type
     SELECTED
 };
 
+enum selection_mode
+{
+    L_XOR = 0,
+    L_OR,
+    L_AND
+};
+
 class DataObject
 {
 public:
     DataObject();
 
+    selection_mode selectionMode;
+
 public:
     void init();
-    int parseCSVFile(QString dataFileName);
-
-    void calcTotalStatistics();
-    void calcSelectionStatistics();
+    void setSelectionModeXOR() { selectionMode = L_XOR; }
+    void setSelectionModeOR() { selectionMode = L_OR; }
+    void setSelectionModeAND() { selectionMode = L_AND; }
 
     void selectData(unsigned int index);
     void deselectData(unsigned int index);
+    void logicalSelectData(unsigned int index, bool select);
+
+    void selectAllVisible();
     void deselectAll();
 
     void showData(unsigned int index);
-    void showAll();
     void hideData(unsigned int index);
+    void showAll();
     void hideAll();
 
     bool visible(unsigned int index);
     bool selected(unsigned int index);
 
-    void filterByDimRange(int dim, qreal vmin, qreal vmax);
     void selectByDimRange(int dim, qreal vmin, qreal vmax);
+    void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
     void selectBySourceFileName(QString str);
     void selectByVarName(QString str);
 
-    void filterBySelection();
+    void hideSelected();
+    void hideUnselected();
 
     bool selectionDefined();
+    bool skip(unsigned int index);
 
+    qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
     qreal minAt(int d) const { return minimumValues[d]; }
     qreal maxAt(int d) const { return maximumValues[d]; }
@@ -64,6 +78,12 @@ public:
     qreal selectionStddevAt(int d) const { return selStandardDeviations[d]; }
     qreal selectionCovarianceBtwn(int d1,int d2) const { return selCovarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
     qreal selectionCorrelationBtwn(int d1,int d2) const { return selCorrelationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
+
+    int parseCSVFile(QString dataFileName);
+
+    void calcTotalStatistics();
+    void calcSelectionStatistics();
+
 
 public:
     QStringList meta;

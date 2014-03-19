@@ -34,17 +34,22 @@ public slots:
     int importData();
     int importMemTopo();
     int selectSourceDir();
-    void iterationChanged(int val);
-    void selectLine(int line);
-    void doFilterSelection();
-    void doResetFilter();
-    void doResetSelection();
+    void showSelectedOnly();
+    void showAll();
+    void hideSelected();
+    void selectAllVisible();
+    void deselectAll();
+    void setSelectModeAND(bool on);
+    void setSelectModeOR(bool on);
+    void setSelectModeXOR(bool on);
+    void setCodeLabel(QFile *file);
 
 private:
     Ui::MainWindow *ui;
     CodeEditor *codeEditor;
     CodeViz *codeViz;
     MemTopoViz *memViz;
+    SelectionVizWidget *selViz;
     VarViz *varViz;
     QString sourceDir;
 

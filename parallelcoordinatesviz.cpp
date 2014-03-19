@@ -64,8 +64,10 @@ void ParallelCoordinatesVizWidget::processData()
 
     for(int i=0; i<data->numDimensions; i++)
     {
-        axesOrder[i] = i;
-        axesPositions[i] = i*(1.0/(data->numDimensions-1));
+        if(!processed)
+            axesOrder[i] = i;
+
+        axesPositions[axesOrder[i]] = i*(1.0/(data->numDimensions-1));
 
         histVals[i].resize(numHistBins);
         histVals[i].fill(0);
@@ -88,7 +90,7 @@ void ParallelCoordinatesVizWidget::processData()
     // Get histogram values
     for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
     {
-        if(data->selectionDefined() && !data->selected(elem))
+        if(data->skip(elem))
             continue;
 
         for(int i=0; i<data->numDimensions; i++)
@@ -107,12 +109,8 @@ void ParallelCoordinatesVizWidget::processData()
 
     // Scale hist values to [0,1]
     for(int i=0; i<data->numDimensions; i++)
-    {
         for(int j=0; j<numHistBins; j++)
-        {
             histVals[i][j] = scale(histVals[i][j],0,histMaxVals[i],0,1);
-        }
-    }
 
     processed = true;
 
@@ -260,52 +258,29 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
 
 void ParallelCoordinatesVizWidget::processSelection()
 {
-    QVector<qreal> dataSelMins(selMins);
-    QVector<qreal> dataSelMaxes(selMaxes);
+    QVector<int> selDims;
+    QVector<qreal> dataSelMins;
+    QVector<qreal> dataSelMaxes;
 
     if(!processed)
         return;
 
-    int selAxes = 0;
-    for(int i=0; i<dataSelMins.size(); i++)
+    for(int i=0; i<selMins.size(); i++)
     {
         if(selMins[i] != -1)
         {
-            dataSelMins[i] = lerp(dataSelMins[i],dimMins[i],dimMaxes[i]);
-            dataSelMaxes[i] = lerp(dataSelMaxes[i],dimMins[i],dimMaxes[i]);
+            selDims.push_back(i);
 
-            selAxes++;
+            dataSelMins.push_back(lerp(selMins[i],dimMins[i],dimMaxes[i]));
+            dataSelMaxes.push_back(lerp(selMaxes[i],dimMins[i],dimMaxes[i]));
         }
     }
 
-    if(selAxes == 0)
-    {
+
+    if(selDims.isEmpty())
         data->deselectAll();
-    }
     else
-    {
-        int elem = 0;
-        QVector<qreal>::Iterator p;
-        int select;
-        for(p=data->begin; p!=data->end; p+=data->numDimensions)
-        {
-            select = 0;
-            for(int i=0; i<data->numDimensions; i++)
-            {
-                if(selMins[i] != -1
-                   && dataSelMins[i] <= *(p+i)
-                   && *(p+i) <= dataSelMaxes[i])
-                {
-                    select++;
-                }
-            }
-            if(select == selAxes)
-                data->selectData(elem);
-            else
-                data->deselectData(elem);
-            elem++;
-        }
-    }
+        data->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
 
     recalcLines();
 
@@ -327,9 +302,9 @@ void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
         if(!data->visible(elem))
             col = QVector4D(0,0,0,0);
         else if(data->selected(elem))
-            col = QVector4D(1,0,0,selOpacity);
+            col = QVector4D(178.0/255.0,24.0/255.0,43.0/255.0,selOpacity);
         else
-            col = QVector4D(0,0,0,unselOpacity);
+            col = QVector4D(10.0/255.0,10.0/255.0,10.0/255.0,unselOpacity);
 
         idx = elem*LINES_PER_DATAPT*POINTS_PER_LINE;
 
@@ -523,7 +498,7 @@ void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
         b = plotBBox.topLeft();
 
         painter->setPen(Qt::NoPen);
-        painter->setBrush(Qt::black);
+        painter->setBrush(QColor(31,120,180));
         painter->setOpacity(0.7);
 
         for(int i=0; i<data->numDimensions; i++)
@@ -534,9 +509,9 @@ void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
             for(int j=0; j<numHistBins; j++)
             {
                 qreal histTop = a.y()-(j+1)*(plotBBox.height()/numHistBins);
-                qreal histLeft = a.x()-30*histVals[i][j];
+                qreal histLeft = a.x();//-30*histVals[i][j];
                 qreal histBottom = a.y()-(j)*(plotBBox.height()/numHistBins);
-                qreal histRight = a.x()+30*histVals[i][j];
+                qreal histRight = a.x()+60*histVals[i][j];
                 painter->drawRect(QRectF(QPointF(histLeft,histTop),QPointF(histRight,histBottom)));
             }
 

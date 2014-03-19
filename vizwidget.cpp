@@ -88,6 +88,7 @@ void VizWidget::setData(DataObject *iData)
 {
     data = iData;
     processData();
+    update();
 }
 
 void VizWidget::processData()
