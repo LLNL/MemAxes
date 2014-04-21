@@ -38,28 +38,30 @@ void SelectionVizWidget::drawQtPainter(QPainter *painter)
 
     int m = 20;
     int rectWidth = 15;
-    float selSumData,totalSumData;
+    float selSumCycles,selSumSamples,totalSumCycles,totalSumSamples;
+    int dim = data->meta.indexOf("latency");
+
+    selSumCycles = data->selectionSumAt(dim);
+    totalSumCycles = data->sumAt(dim);
+
+    selSumSamples = data->numSelected;
+    totalSumSamples = data->numElements;
+
+    qreal selectionPercent;
 
     if(mode == WEIGHTBY_CYCLES)
-    {
-        int dim = data->meta.indexOf("latency");
-        selSumData = data->selectionSumAt(dim);
-        totalSumData = data->sumAt(dim);
-    }
+        selectionPercent = selSumCycles/totalSumCycles;
     else if(mode == WEIGHTBY_SAMPLES)
-    {
-        selSumData = data->numSelected;
-        totalSumData = data->numElements;
-    }
+        selectionPercent = selSumSamples/totalSumSamples;
     else
     {
         cerr << "COCKATOOS" << endl;
         return;
     }
 
-    QRect bbox = QRect(m,m,width()-m-m,height()-m-m);
-    qreal selectionPercent = selSumData/totalSumData;
     qreal unselectionPercent = 1.0 - selectionPercent;
+
+    QRect bbox = QRect(m,m,width()-m-m,height()-m-m);
 
     QString blueLabel = QString::number(unselectionPercent*100) + "% (" +
                         QString::number(data->numElements-data->numSelected) + " accesses)";
@@ -67,8 +69,11 @@ void SelectionVizWidget::drawQtPainter(QPainter *painter)
     QString redLabel = QString::number(selectionPercent*100) + "% (" +
                         QString::number(data->numSelected) + " accesses)";
 
+    QString avgLabel = QString::number(selSumCycles/selSumSamples) +
+                       " Cycles/Access";
+
     QPoint cursor = bbox.bottomLeft();
-    cursor -= QPoint(0,20);
+    cursor -= QPoint(0,40);
 
     painter->setBrush(QBrush(Qt::gray));
     painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
@@ -81,6 +86,13 @@ void SelectionVizWidget::drawQtPainter(QPainter *painter)
     painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
     painter->drawRect(cursor.x(), cursor.y(), rectWidth, rectWidth);
     painter->drawText(QPoint(cursor.x()+rectWidth+5,cursor.y()+rectWidth),redLabel);
+
+    cursor = QPoint(cursor.x(),cursor.y()+20+rectWidth);
+
+    painter->setBrush(QBrush(QColor(178,24,43)));
+    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
+    painter->drawText(cursor,avgLabel);
+
 
     // pie chart
     int diameter = min(bbox.width(),bbox.height())-25;

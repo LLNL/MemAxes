@@ -31,6 +31,7 @@ signals:
 public slots:
     void selectionChanged();
     void visibilityChanged();
+    int loadData();
     int importData();
     int importMemTopo();
     int selectSourceDir();

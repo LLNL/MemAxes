@@ -230,14 +230,14 @@ int encDepth(int enc)
     int src = enc & 0xF;
     switch(src)
     {
-        case(0x0): return 3; // at least L3
+        case(0x0): return -1; // at least L3
         case(0x1): return 1; // L1
-        case(0x2): return -1; // cache hit pending (don't draw)
+        case(0x2): return 1; // cache hit pending (don't draw)
         case(0x3): return 2; // L2
         case(0x4): return 3; // L3
         case(0x5): return 3; // from another core L2/L1 (clean)
         case(0x6): return 3; // from another core L2/L1 (dirty)
-        case(0x7): return 3; // no LLC now
+        case(0x7): return -1; // no LLC now
         case(0x8): return 4; // local ram?
         case(0x9): return -1; // reserved (shouldn't happen)
         case(0xA): return 4; // local RAM (clean)

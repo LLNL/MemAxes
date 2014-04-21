@@ -12,7 +12,9 @@ qreal lerp(qreal val, qreal min, qreal max)
 
 qreal scale(qreal val, qreal omin, qreal omax, qreal nmin, qreal nmax)
 {
-    return nmin + (nmax-nmin) * ((val-omin) / (omax-omin));
+    qreal range = (omax-omin);
+    range = (range == 0) ? 1 : range;
+    return nmin + (nmax-nmin) * ((val-omin) / range);
 }
 
 qreal clamp(qreal val, qreal min, qreal max)

@@ -13,11 +13,8 @@ using namespace std;
 // BIG TODO LIST
 
 // BUGS
-// Interconnect lines (minimum size 1px)
 // Check HARD CODE!
-
-// Dirty vs clean
-// STLB miss cycles
+// mem topo selection
 
 // NEW FEATURES
 // Mem topo 1d memory range
@@ -26,14 +23,12 @@ using namespace std;
 // APPLICATIONS
 // LibNUMA (move_pages(x,x,NULL,...)
 
-// UNFIXABLE BUG - "invalid drawable" on initialization of pcoords viz
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle(tr("CorrelaViz"));
+    setWindowTitle(tr("MemAxes"));
 
     /*
      * MainWindow
@@ -41,9 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     currDataObject = NULL;
 
     // File buttons
-    connect(ui->actionImport_Data, SIGNAL(triggered()),this,SLOT(importData()));
-    connect(ui->actionImport_Memory_Topology, SIGNAL(triggered()),this,SLOT(importMemTopo()));
-    connect(ui->actionImport_Source, SIGNAL(triggered()),this,SLOT(selectSourceDir()));
+    connect(ui->actionImport_Data, SIGNAL(triggered()),this,SLOT(loadData()));
 
     // Selection mode
     connect(ui->selectModeXOR, SIGNAL(toggled(bool)), this, SLOT(setSelectModeXOR(bool)));
@@ -66,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     codeViz = new CodeViz(this);
     ui->codeVizLayout->addWidget(codeViz);
 
-    connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
+    //connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
     //connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setMetricDim(int)));
     //connect(ui->lineNum, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setLineNumDim(int)));
 
@@ -95,6 +88,7 @@ MainWindow::MainWindow(QWidget *parent) :
     codeEditor->setReadOnly(true);
     ui->codeEditorLayout->addWidget(codeEditor);
 
+    connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QFile*)));
     connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), codeEditor, SLOT(setFile(QFile*)));
     connect(codeViz, SIGNAL(sourceLineSelected(int)), codeEditor, SLOT(setLine(int)));
 
@@ -125,6 +119,7 @@ MainWindow::MainWindow(QWidget *parent) :
     memViz = new MemTopoViz(this);
     ui->memoryLayout->addWidget(memViz);
 
+    connect(ui->minScale, SIGNAL(sliderMoved(int)), memViz, SLOT(setMinScale(int)));
     connect(ui->memTopoColorByCycles,SIGNAL(toggled(bool)),memViz,SLOT(setColorByCycles(bool)));
     connect(ui->memTopoColorBySamples,SIGNAL(toggled(bool)),memViz,SLOT(setColorBySamples(bool)));
 
@@ -151,7 +146,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->selOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setSelOpacity(int)));
     connect(ui->unselOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setUnselOpacity(int)));
-    connect(ui->boxplotBox, SIGNAL(clicked(bool)), parallelCoordinatesViz, SLOT(setShowBoxPlots(bool)));
+    //connect(ui->boxplotBox, SIGNAL(clicked(bool)), parallelCoordinatesViz, SLOT(setShowBoxPlots(bool)));
     connect(ui->histogramBox, SIGNAL(clicked(bool)), parallelCoordinatesViz, SLOT(setShowHistograms(bool)));
 
     vizWidgets.push_back(parallelCoordinatesViz);
@@ -185,14 +180,31 @@ void MainWindow::visibilityChanged()
     volumeVizWidget->selectionChangedSlot();
 }
 
+int MainWindow::loadData()
+{
+    int err = 0;
+
+    err = importData();
+
+    if(err != 0)
+        return err;
+
+    selectSourceDir();
+    if(err != 0)
+        return err;
+
+    importMemTopo();
+    if(err != 0)
+        return err;
+
+    return 0;
+}
+
 int MainWindow::importData()
 {
-    // Open a file using a dialog
-
-    // HARD CODE
-    QString dataFileName = QFileDialog::getOpenFileName(this, tr("Import Data"),
-                                                     "/Users/chai/Sources/case_studies/DATA",
-                                                     tr("Files (*.*)"));
+    QString dataFileName = QFileDialog::getOpenFileName(this, tr("Import Data"));
+    if(dataFileName.isNull())
+        return -1;
 
     DataObject *dobj = new DataObject();
     int err = dobj->parseCSVFile(dataFileName);
@@ -235,9 +247,12 @@ int MainWindow::importMemTopo()
     // Open a file using a dialog
     QFileDialog dirDiag(this);
 
-    // HARD CODE
+    QString initDir("/Users/chai/Documents/Data/Hardware");
     QString topoFilename = dirDiag.getOpenFileName(this, tr("Select Memory Topology File"),
-                                                   "/Users/chai/Documents/Data/Hardware");
+                                                   ""//initDir
+                                                   );
+    if(topoFilename.isNull())
+        return -1;
 
     memViz->loadHierarchyFromXML(topoFilename);
 
@@ -249,11 +264,14 @@ int MainWindow::importMemTopo()
 
 int MainWindow::selectSourceDir()
 {
-    // HARD CODE
+    QString initDir("/Users/chai/Sources/case_studies");
     sourceDir = QFileDialog::getExistingDirectory(this, tr("Select Source Directory"),
-                                                  "/Users/chai/Sources/case_studies",
+                                                  "", // initDir
                                                   QFileDialog::ShowDirsOnly
                                                   | QFileDialog::DontResolveSymlinks);
+    if(sourceDir.isNull())
+        return -1;
+
     codeViz->setSourceDir(sourceDir);
     selectionChanged();
 

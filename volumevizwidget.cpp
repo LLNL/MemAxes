@@ -13,6 +13,10 @@ VolumeVizWidget::VolumeVizWidget(QWidget *parent)
     this->setMinimumSize(400,400);
 
     // dims and data
+    width = 45;
+    height = 45;
+    depth = 45;
+
     xdim = 12;
     ydim = 13;
     zdim = 14;
@@ -48,13 +52,11 @@ void VolumeVizWidget::setData(DataObject *iData)
 
 void VolumeVizWidget::processData()
 {
+    //return;
+
     QVector<qreal>::Iterator p;
 
     // HARD CODE
-    width = 45;
-    height = 45;
-    depth = 45;
-
     qreal minx = std::numeric_limits<double>::max();
     qreal maxx = 0;
 
@@ -81,6 +83,12 @@ void VolumeVizWidget::processData()
         z = *(p+zdim);
         v = *(p+wdim);
 
+        if(x >= width || y >= height || z >= depth)
+            continue;
+
+        if(x < 0 || y < 0 || z < 0)
+            continue;
+
         minx = min((qreal)x,minx);
         maxx = max((qreal)x,maxx);
 
@@ -105,6 +113,8 @@ void VolumeVizWidget::processData()
 
 void VolumeVizWidget::selectionChangedSlot()
 {
+    //return;
+
     if(renderer)
         this->GetRenderWindow()->RemoveRenderer(renderer);
 

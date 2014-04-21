@@ -110,8 +110,6 @@ void CodeViz::processData()
     for(int j=0; j<sourceBlocks.size(); j++)
         qSort(sourceBlocks[j].lineBlocks.begin(),sourceBlocks[j].lineBlocks.end());
 
-    // ERROR: ASSERT failure in QVector<T>::operator[]: "index out of range" below
-    // hide a selection then select something else
     emit sourceFileSelected(sourceBlocks[0].file);
     emit sourceLineSelected(sourceBlocks[0].lineBlocks[0].line);
 
@@ -120,8 +118,11 @@ void CodeViz::processData()
 
 void CodeViz::selectionChangedSlot()
 {
-    processData();
-    repaint();
+    if(processed)
+    {
+        processData();
+        repaint();
+    }
 }
 
 void CodeViz::drawQtPainter(QPainter *painter)
@@ -186,7 +187,7 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                     data->deselectAll();
                     data->selectByDimRange(lineNumDim,
                                            sourceBlocks[i].lineBlocks[j].line,
-                                           sourceBlocks[i].lineBlocks[j].line+1);
+                                           sourceBlocks[i].lineBlocks[j].line);
 
                     emit sourceFileSelected(sourceBlocks[i].file);
                     emit sourceLineSelected(sourceBlocks[i].lineBlocks[j].line);

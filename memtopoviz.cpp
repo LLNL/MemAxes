@@ -21,6 +21,8 @@ MemTopoViz::MemTopoViz(QWidget *parent) :
     cpuDim = 0;
     nodeDim = 0;
 
+    minScale = 0;
+
     totalDepth = 0;
     lvlHeight = 20;
 
@@ -28,6 +30,8 @@ MemTopoViz::MemTopoViz(QWidget *parent) :
 
     this->installEventFilter(this);
     setMouseTracking(true);
+
+    //bgColor = Qt::white;
 }
 
 void MemTopoViz::processData()
@@ -128,12 +132,15 @@ void MemTopoViz::processSelection()
 
 void MemTopoViz::selectionChangedSlot()
 {
-    if(!data->selectionDefined())
-        for(int i=0; i<allLevels.size(); i++)
-            allLevels[i]->selected = 0;
+    if(processed)
+    {
+        if(!data->selectionDefined())
+            for(int i=0; i<allLevels.size(); i++)
+                allLevels[i]->selected = 0;
 
-    processSelection();
-    repaint();
+        processSelection();
+        repaint();
+    }
 }
 
 void MemTopoViz::visibilityChangedSlot()
@@ -150,9 +157,6 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
     painter->drawRect(rect());
 
     // Draw transactions
-    painter->setBrush(Qt::gray);
-    painter->setPen(Qt::NoPen);
-
     memLevel interconnect;
     interconnect.circleCenter = rect().center();
 
@@ -165,21 +169,24 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
 
         float midAngle = allLevels[i]->startAngle +
                          allLevels[i]->spanAngle/2;
+        float val = allLevels[i]->numSelectedTransactions;
+        float vmin = minTransactionsPerLevel[depth];
+        float vmax = maxTransactionsPerLevel[depth];
 
-        float thickness = scale(allLevels[i]->numSelectedTransactions,
-                                minTransactionsPerLevel[depth],maxTransactionsPerLevel[depth],
-                                0.01,1);
+        float thickness = scale(val,vmin,vmax,1,30);
 
-        float angleThickness = thickness*allLevels[i]->spanAngle;
-
-        interconnect.startAngle = midAngle-angleThickness/2;
-        interconnect.spanAngle = angleThickness;
-        interconnect.radius = allLevels[i]->radius - allLevels[i]->thickness;
-        interconnect.thickness = allLevels[i]->thickness;
+        float minRad = allLevels[i]->radius - allLevels[i]->thickness*2 - 10;
+        float maxRad = allLevels[i]->radius - allLevels[i]->thickness + 10;
 
         interconnect.constructPoly();
 
-        painter->drawPolygon(interconnect.polygon.constData(),interconnect.polygon.size());
+        QPointF startLine = rect().center() + polarToCartesian(QPointF(minRad,midAngle));
+        QPointF endLine = rect().center() + polarToCartesian(QPointF(maxRad,midAngle));
+
+        painter->setBrush(Qt::black);
+        painter->setPen(QPen(Qt::black,thickness,Qt::SolidLine,Qt::FlatCap));
+
+        painter->drawLine(startLine,endLine);
     }
 
     // Draw level segments
@@ -190,39 +197,46 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
         if(depth == 0)
             continue;
 
+        float val, vmin, vmax;
         if(depth == totalDepth-1)
         {
-            painter->setBrush(valToColor(allLevels[i]->numSelectedTransactions,
-                                         minTransactionsPerLevel[depth],maxTransactionsPerLevel[depth],
-                                         colorBarMin,colorBarMax));
+            val = allLevels[i]->numSelectedTransactions;
+            vmin = minTransactionsPerLevel[depth];
+            vmax = maxTransactionsPerLevel[depth];
+        }
+        else if (mode == COLORBY_CYCLES)
+        {
+            val = allLevels[i]->numSelectedCycles;
+            vmin = minCyclesPerLevel[depth];
+            vmax = maxCyclesPerLevel[depth];
+        }
+        else if(mode == COLORBY_SAMPLES)
+        {
+            val = allLevels[i]->numSelectedCycles;
+            vmin = minCyclesPerLevel[depth];
+            vmax = maxCyclesPerLevel[depth];
         }
         else
         {
-            if(mode == COLORBY_CYCLES)
-            {
-                if(maxCyclesPerLevel[depth] == 0)
-                    painter->setBrush(colorBarMin);
-                else
-                    painter->setBrush(valToColor(allLevels[i]->numSelectedCycles,
-                                                 minCyclesPerLevel[depth],maxCyclesPerLevel[depth],
-                                                 colorBarMin,colorBarMax));
-            }
-            else if(mode == COLORBY_SAMPLES)
-            {
-                if(maxSamplesPerLevel[depth] == 0)
-                    painter->setBrush(colorBarMin);
-                else
-                    painter->setBrush(valToColor(allLevels[i]->numSelectedSamples,
-                                                 minSamplesPerLevel[depth],maxSamplesPerLevel[depth],
-                                                 colorBarMin,colorBarMax));
-            }
-            else
-            {
-                cerr << "PARAKEETS" << endl;
-                return;
-            }
+            cerr << "PARAKEETS" << endl;
+            return;
         }
 
+        if(vmax-vmin == 0)
+            vmax++;
+
+        vmin *= minScale;
+
+        painter->setBrush(valToColor(val,vmin,vmax,colorBarMin,colorBarMax));
+
+        //if(depth == 1)
+        //    painter->setBrush(QColor(94,60,153));
+        //else if(depth == 2)
+        //    painter->setBrush(QColor(178,171,210));
+        //else if(depth == totalDepth-1)
+        //    painter->setBrush(QColor(230,97,1));
+        //else
+        //    painter->setBrush(QColor(253,184,99));
 
         if(allLevels[i]->selected)
             painter->setPen(QPen(Qt::yellow,2));
@@ -233,16 +247,28 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
     }
 
     // Draw id numbers
-    painter->setPen(QPen(Qt::black));
     for(int i=0; i<allLevels.size(); i++)
     {
         if(allLevels[i]->depth == 0)
             continue;
 
+        QString label;
+        painter->setPen(QPen(Qt::black));
+
+        if(allLevels[i]->depth == totalDepth-1)
+            label = "P" + QString::number(allLevels[i]->id);
+        else if(allLevels[i]->depth > 1)
+            label = "L" + QString::number(allLevels[i]->id);
+        else if(allLevels[i]->depth == 1)
+            label = "N" + QString::number(allLevels[i]->id);
+        else
+            label = "RAM";
+
+
         painter->save();
         painter->translate(allLevels[i]->midPoint);
         painter->rotate(90-(allLevels[i]->startAngle+allLevels[i]->spanAngle/2)/16);
-        painter->drawText(0,0,QString::number(allLevels[i]->id));
+        painter->drawText(-5,0,label);
         painter->restore();
     }
 
@@ -300,6 +326,8 @@ memLevel* MemTopoViz::memLevelFromXMLNode(QXmlStreamReader *xml)
 
 void MemTopoViz::loadHierarchyFromXML(QString filename)
 {
+    allLevels.clear();
+
     QFile* file = new QFile(filename);
 
     if (!file->open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -355,9 +383,12 @@ void MemTopoViz::mousePressEvent(QMouseEvent *e)
 
 void MemTopoViz::wheelEvent(QWheelEvent *e)
 {
-    lvlHeight += e->delta()/80;
-    processTopoViz();
-    repaint();
+    //if(processed)
+    {
+        lvlHeight += e->delta()/80;
+        processTopoViz();
+        repaint();
+    }
 }
 
 void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
@@ -399,6 +430,7 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
 void MemTopoViz::resizeEvent(QResizeEvent *e)
 {
     VizWidget::resizeEvent(e);
+    processTopoViz();
     repaint();
 }
 

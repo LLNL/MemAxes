@@ -68,8 +68,11 @@ void VarViz::processData()
 
 void VarViz::selectionChangedSlot()
 {
-    processData();
-    repaint();
+    if(processed)
+    {
+        processData();
+        repaint();
+    }
 }
 
 void VarViz::drawQtPainter(QPainter *painter)

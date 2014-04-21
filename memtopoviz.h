@@ -69,14 +69,18 @@ signals:
 public slots:
     memLevel *memLevelFromXMLNode(QXmlStreamReader *xml);
     void loadHierarchyFromXML(QString filename);
+
     void mousePressEvent(QMouseEvent *e);
     void wheelEvent(QWheelEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void resizeEvent(QResizeEvent *e);
+
     void setEncDim(int dim);
     void setLatDim(int dim);
     void setCpuDim(int dim);
     void setNodeDim(int dim);
+
+    void setMinScale(int scale) { minScale = (float)scale / 100.0f; repaint(); }
 
     void setColorByCycles(bool on) { if(on) { mode = COLORBY_CYCLES; repaint(); } }
     void setColorBySamples(bool on) { if(on) { mode = COLORBY_SAMPLES; repaint(); } }
@@ -103,6 +107,8 @@ private:
     int numNodes;
     QString hardwareName;
     memLevel *memoryHierarchy;
+
+    float minScale;
 
     QColor colorBarMin;
     QColor colorBarMax;

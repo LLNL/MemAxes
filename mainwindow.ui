@@ -291,7 +291,7 @@
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>62</height>
+              <height>66</height>
              </size>
             </property>
             <property name="title">
@@ -312,6 +312,20 @@
               <widget class="QRadioButton" name="memTopoColorBySamples">
                <property name="text">
                 <string># of samples</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Min Scale:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="minScale">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
                </property>
               </widget>
              </item>
@@ -404,7 +418,7 @@
             <item>
              <widget class="QRadioButton" name="selectModeXOR">
               <property name="text">
-               <string>Logical XOR (New)</string>
+               <string>New</string>
               </property>
               <property name="checked">
                <bool>true</bool>
@@ -414,7 +428,7 @@
             <item>
              <widget class="QRadioButton" name="selectModeOR">
               <property name="text">
-               <string>Logical OR (Append)</string>
+               <string>Append</string>
               </property>
               <property name="checked">
                <bool>false</bool>
@@ -424,7 +438,7 @@
             <item>
              <widget class="QRadioButton" name="selectModeAND">
               <property name="text">
-               <string>Logical AND (Filter)</string>
+               <string>Filter</string>
               </property>
              </widget>
             </item>
@@ -618,19 +632,6 @@
                 </layout>
                </item>
                <item>
-                <widget class="QCheckBox" name="boxplotBox">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Box Plots</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
                 <widget class="QCheckBox" name="histogramBox">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -670,8 +671,6 @@
      <string>File</string>
     </property>
     <addaction name="actionImport_Data"/>
-    <addaction name="actionImport_Memory_Topology"/>
-    <addaction name="actionImport_Source"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -686,7 +685,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionImport_Data">
    <property name="text">
-    <string>Import Data</string>
+    <string>Load Data</string>
    </property>
   </action>
   <action name="actionImport_Source">
