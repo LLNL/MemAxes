@@ -63,7 +63,7 @@ QPointF cartesianToPolar(QPointF point)
     bool ypos = xp.y()>0;
 
     if(xpos && ypos)
-        theta = theta;
+        {/* do nothing */}
     else if(!xpos && !ypos)
         theta = 180+theta;
     else if(!xpos && ypos)
@@ -77,29 +77,78 @@ QPointF cartesianToPolar(QPointF point)
 }
 
 QColor valToColor(qreal val, qreal minVal, qreal maxVal,
-                  QColor colorBarMin, QColor colorBarMax)
+                  ColorMap colorMap)
 {
-    if(val >= maxVal)
-        return colorBarMax;
-    if(val <= minVal)
-        return colorBarMin;
+    qreal sv = scale(val,minVal,maxVal,0,colorMap.size());
+    int colIdx = min(colorMap.size()-1,(int)floor(sv));
 
-    //qreal minH = colorBarMin.hueF();
-    //qreal minS = colorBarMin.saturationF();
-    //qreal minV = colorBarMin.valueF();
+    return colorMap[colIdx];
+}
 
-    //qreal maxH = colorBarMax.hueF();
-    //qreal maxS = colorBarMax.saturationF();
-    //qreal maxV = colorBarMax.valueF();
+QPointF radialTransform(QPointF point, QRectF rectSpace)
+{
+    // Get radius
+    float radius = min(rectSpace.width(),rectSpace.height()) / 2.0f;
 
-    qreal sv = normalize(val,minVal,maxVal);
+    // Transform to square [radius,radius]
+    point.setX(scale(point.x(),rectSpace.left(),rectSpace.right(),0,360*16));
+    point.setY(scale(point.y(),rectSpace.top(),rectSpace.bottom(),0,radius));
 
-    QColor result;
-    qreal newH = lerp(sv,colorBarMin.redF(),colorBarMax.redF());//minH,maxH);
-    qreal newS = lerp(sv,colorBarMin.greenF(),colorBarMax.greenF());//minS,maxS);
-    qreal newV = lerp(sv,colorBarMin.blueF(),colorBarMax.blueF());//minV,maxV);
+    // Y value = magnitude, X value = angle
+    float mag = point.y();
+    float theta = point.x();
 
-    result.setRgbF(newH,newS,newV);
+    point = polarToCartesian(mag,theta);
 
-    return result;
+    // Back into box space
+    point += QPointF(rectSpace.width()/2,rectSpace.height()/2);
+    point += QPointF(rectSpace.left(),rectSpace.top());
+
+    return point;
+}
+
+QPointF reverseRadialTransform(QPointF point, QRectF rectSpace)
+{
+    // Get radius
+    float radius = min(rectSpace.width(),rectSpace.height()) / 2.0f;
+
+    point -= QPointF(rectSpace.width()/2,rectSpace.height()/2);
+    point -= QPointF(rectSpace.left(),rectSpace.top());
+
+    point = cartesianToPolar(point);
+
+    float mag = point.x();
+    float theta = point.y();
+
+    point.setX(scale(theta,0,360*16,rectSpace.left(),rectSpace.right()));
+    point.setY(scale(mag,0,radius,rectSpace.top(),rectSpace.bottom()));
+
+    return point;
+}
+
+QVector<QPointF> rectToRadialSegment(QRectF rect, QRectF rectSpace)
+{
+    QVector<QPointF> segmentPoly;
+
+    int xres = scale(rect.width(),0,rectSpace.width(),1,40);
+
+    QPointF p = rect.topLeft();
+    QPointF q = rect.bottomRight();
+
+    float dx = (q.x() - p.x()) / (float)xres;
+    for(int i=0; i<=xres; i++)
+    {
+        QPointF rp = radialTransform(p,rectSpace);
+        segmentPoly.push_back(rp);
+        p.setX(p.x()+dx);
+    }
+
+    for(int i=0; i<=xres; i++)
+    {
+        QPointF rq = radialTransform(q,rectSpace);
+        segmentPoly.push_back(rq);
+        q.setX(q.x()-dx);
+    }
+
+    return segmentPoly;
 }

@@ -25,7 +25,6 @@ public slots:
     void visibilityChangedSlot();
     void setSelOpacity(int val);
     void setUnselOpacity(int val);
-    void setShowBoxPlots(bool checked);
     void setShowHistograms(bool checked);
 
 protected:
@@ -40,12 +39,15 @@ protected:
 
 private:
     void processSelection();
+    void calcMinMaxes();
+    void calcHistBins();
 
 private:
-    int lineDim;
+    int numDimensions;
     int numHistBins;
 
     QRectF plotBBox;
+    ColorMap colorMap;
 
     QVector<QVector<qreal> > histVals;
     QVector<qreal> histMaxVals;
@@ -64,7 +66,6 @@ private:
     int selecting;
     int movingAxis;
 
-    bool showBoxPlots;
     bool showHistograms;
 
     qreal firstSel;

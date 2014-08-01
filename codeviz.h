@@ -41,8 +41,6 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e);
 
 public slots:
-    void setMetricDim(int indim);
-    void setLineNumDim(int indim);
     void setSourceDir(QString dir);
 
 private:
@@ -52,8 +50,6 @@ private:
 
 private:
     int margin;
-    int metricDim;
-    int lineNumDim;
     QRect drawSpace;
 
     QString sourceDir;

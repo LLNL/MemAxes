@@ -19,8 +19,6 @@ CodeViz::CodeViz(QWidget *parent) :
     VizWidget(parent)
 {
     margin = 0;
-    metricDim = 0;
-    lineNumDim = 0;
 
     numVisibleSourceBlocks = 2;
     numVisibleLineBlocks = 8;
@@ -72,6 +70,11 @@ int CodeViz::getLineID(sourceBlock *src, int line)
 
 void CodeViz::processData()
 {
+    processed = false;
+
+    if(dataSet->isEmpty())
+        return;
+
     closeAll();
 
     sourceMaxVal = 0;
@@ -82,20 +85,23 @@ void CodeViz::processData()
     // Get metric values
     int elem = 0;
     QVector<qreal>::Iterator p;
-    for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
+    for(int d=0; d<dataSet->size(); d++)
     {
-        if(data->skip(elem))
-            continue;
+        for(elem=0, p=dataSet->at(d)->begin; p!=dataSet->at(d)->end; elem++, p+=dataSet->at(d)->numDimensions)
+        {
+            if(dataSet->at(d)->skip(elem))
+                continue;
 
-        int sourceIdx = this->getFileID(data->fileNames[elem]);
-        sourceBlocks[sourceIdx].val += *(p+metricDim);
-        sourceMaxVal = fmax(sourceMaxVal,sourceBlocks[sourceIdx].val);
+            int sourceIdx = this->getFileID(dataSet->at(d)->fileNames[elem]);
+            sourceBlocks[sourceIdx].val += *(p+dataSet->at(d)->sourceDim);
+            sourceMaxVal = fmax(sourceMaxVal,sourceBlocks[sourceIdx].val);
 
-        int lineIdx = this->getLineID(&sourceBlocks[sourceIdx],*(p+lineNumDim));
-        sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+metricDim);
+            int lineIdx = this->getLineID(&sourceBlocks[sourceIdx],*(p+dataSet->at(d)->lineDim));
+            sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+dataSet->at(d)->sourceDim);
 
-        sourceBlocks[sourceIdx].lineMaxVal = fmax(sourceBlocks[sourceIdx].lineMaxVal,
-                                                  sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);
+            sourceBlocks[sourceIdx].lineMaxVal = fmax(sourceBlocks[sourceIdx].lineMaxVal,
+                                                      sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);
+        }
     }
 
     if(sourceBlocks.empty())
@@ -184,10 +190,13 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                                        sourceBlocks[i].lineBlocks[j].block.height());
                 if(lineSelectionBox.contains(e->pos()))
                 {
-                    data->deselectAll();
-                    data->selectByDimRange(lineNumDim,
-                                           sourceBlocks[i].lineBlocks[j].line,
-                                           sourceBlocks[i].lineBlocks[j].line);
+                    for(int d=0; d<dataSet->size(); d++)
+                    {
+                        dataSet->at(d)->deselectAll();
+                        dataSet->at(d)->selectByDimRange(dataSet->at(d)->lineDim,
+                                               sourceBlocks[i].lineBlocks[j].line,
+                                               sourceBlocks[i].lineBlocks[j].line);
+                    }
 
                     emit sourceFileSelected(sourceBlocks[i].file);
                     emit sourceLineSelected(sourceBlocks[i].lineBlocks[j].line);
@@ -197,28 +206,6 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                 }
             }
         }
-    }
-}
-
-void CodeViz::setMetricDim(int indim)
-{
-    metricDim = indim;
-
-    if(processed)
-    {
-        processData();
-        update();
-    }
-}
-
-void CodeViz::setLineNumDim(int indim)
-{
-    lineNumDim = indim;
-
-    if(processed)
-    {
-        processData();
-        update();
     }
 }
 

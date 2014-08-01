@@ -14,14 +14,16 @@ SelectionVizWidget::SelectionVizWidget(QWidget *parent) :
 
 void SelectionVizWidget::processData()
 {
-    data->calcTotalStatistics();
-    data->calcSelectionStatistics();
+    processed = false;
+
+    if(dataSet->isEmpty())
+        return;
+
     processed = true;
 }
 
 void SelectionVizWidget::selectionChangedSlot()
 {
-    data->calcSelectionStatistics();
     repaint();
 }
 
@@ -39,13 +41,13 @@ void SelectionVizWidget::drawQtPainter(QPainter *painter)
     int m = 20;
     int rectWidth = 15;
     float selSumCycles,selSumSamples,totalSumCycles,totalSumSamples;
-    int dim = data->meta.indexOf("latency");
+    int dim = dataSet->at(0)->meta.indexOf("latency");
 
-    selSumCycles = data->selectionSumAt(dim);
-    totalSumCycles = data->sumAt(dim);
+    selSumCycles = dataSet->at(0)->selectionSumAt(dim);
+    totalSumCycles = dataSet->at(0)->sumAt(dim);
 
-    selSumSamples = data->numSelected;
-    totalSumSamples = data->numElements;
+    selSumSamples = dataSet->at(0)->numSelected;
+    totalSumSamples = dataSet->at(0)->numElements;
 
     qreal selectionPercent;
 
@@ -64,10 +66,10 @@ void SelectionVizWidget::drawQtPainter(QPainter *painter)
     QRect bbox = QRect(m,m,width()-m-m,height()-m-m);
 
     QString blueLabel = QString::number(unselectionPercent*100) + "% (" +
-                        QString::number(data->numElements-data->numSelected) + " accesses)";
+                        QString::number(dataSet->at(0)->numElements-dataSet->at(0)->numSelected) + " accesses)";
 
     QString redLabel = QString::number(selectionPercent*100) + "% (" +
-                        QString::number(data->numSelected) + " accesses)";
+                       QString::number(dataSet->at(0)->numSelected) + " accesses)";
 
     QString avgLabel = QString::number(selSumCycles/selSumSamples) +
                        " Cycles/Access";

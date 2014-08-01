@@ -9,6 +9,7 @@ using namespace std;
 DataObject::DataObject()
 {
     numSelected = 0;
+    topo = NULL;
     selectionMode = L_XOR;
 }
 
@@ -22,6 +23,58 @@ void DataObject::init()
 
     selection.resize(numElements);
     selection.fill(VISIBLE);
+}
+
+void DataObject::setHardwareTopology(hardwareTopology *hw, bool sel)
+{
+    topo = hw;
+
+    for(int i=0; i<topo->allHardwareResourceNodes.size(); i++)
+    {
+        SampleIdxVector *samples = &topo->allHardwareResourceNodes[i]->sampleSets[this].first;
+        int *numCycles = &topo->allHardwareResourceNodes[i]->sampleSets[this].second;
+
+        samples->clear();
+        *numCycles = 0;
+    }
+
+    // Go through each sample and add it to the right topo node
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        if(sel && !selected(elem))
+            continue;
+
+        int dse = *(p+dataSourceDim);
+        int cpu = *(p+cpuDim);
+        //int numa = *(p+nodeDim);
+        int cycles = *(p+latencyDim);
+
+        hardwareResourceNode *cpuNode = topo->CPUIDMap[cpu];
+        //hardwareResourceNode *numaNode = topo->NUMAIDMap[numa];
+
+        hardwareResourceNode *node = cpuNode;
+
+        SampleIdxVector *samples = &node->sampleSets[this].first;
+        int *numCycles = &node->sampleSets[this].second;
+
+        samples->push_back(elem);
+        *numCycles += cycles;
+
+        if(dse == -1)
+            continue;
+
+        // Go up to data source
+        for( ; dse>0; dse--)
+            node = node->parent;
+
+        samples = &node->sampleSets[this].first;
+        numCycles = &node->sampleSets[this].second;
+
+        samples->push_back(elem);
+        *numCycles += cycles;
+    }
 }
 
 void DataObject::selectData(unsigned int index)
@@ -181,7 +234,7 @@ void DataObject::hideSelected()
     }
 }
 
-void DataObject::hideUnselected()
+void DataObject::showSelectedOnly()
 {
     long long elem;
     for(elem=0; elem<numElements; elem++)
@@ -375,6 +428,18 @@ int DataObject::parseCSVFile(QString dataFileName)
 
     // Close and return
     dataFile.close();
+
+    sourceDim = this->meta.indexOf("source");
+    lineDim = this->meta.indexOf("line");
+    variableDim = this->meta.indexOf("variable");
+    dataSourceDim = this->meta.indexOf("dataSource");
+    indexDim = this->meta.indexOf("index");
+    latencyDim = this->meta.indexOf("latency");
+    nodeDim = this->meta.indexOf("node");
+    cpuDim = this->meta.indexOf("cpu");
+    xDim = this->meta.indexOf("xidx");
+    yDim = this->meta.indexOf("yidx");
+    zDim = this->meta.indexOf("zidx");
 
     this->init();
 
@@ -576,4 +641,92 @@ void DataObject::calcSelectionStatistics()
                     (selStandardDeviations[i]*selStandardDeviations[j]);
         }
     }
+}
+
+
+DataSetObject::DataSetObject() :
+    hw(0)
+{
+
+}
+
+int DataSetObject::addData(QString filename)
+{
+    DataObject *dobj = new DataObject();
+    int ret = dobj->parseCSVFile(filename);
+    if(ret != 0)
+    {
+        con->append("Error Loading Dataset : "+filename);
+        return ret;
+    }
+    dataObjects.push_back(dobj);
+    con->append("Added Dataset : "+filename);
+    return 0;
+}
+
+int DataSetObject::setHardwareTopology(QString filename)
+{
+    hw = new hardwareTopology();
+    int ret = hw->loadHardwareTopologyFromXML(filename);
+    if(ret != 0)
+    {
+        con->append("Error Loading Hardware Topology : "+filename);
+        return ret;
+    }
+    con->append("Loaded Hardware Topology : "+filename);
+    return 0;
+}
+
+#define FOR_EACH_DATA(func) \
+    for(int d=0; d<dataObjects.size(); d++) \
+        dataObjects[d]->func;
+
+void DataSetObject::showSelectedOnly()
+{
+    FOR_EACH_DATA(showSelectedOnly());
+}
+
+void DataSetObject::showAll()
+{
+    FOR_EACH_DATA(showAll());
+}
+
+void DataSetObject::deselectAll()
+{
+    FOR_EACH_DATA(deselectAll());
+}
+
+void DataSetObject::hideSelected()
+{
+    FOR_EACH_DATA(hideSelected());
+}
+
+void DataSetObject::setSelectionMode(selection_mode mode)
+{
+    FOR_EACH_DATA(setSelectionMode(mode));
+}
+
+void DataSetObject::selectAllVisible()
+{
+    FOR_EACH_DATA(selectAllVisible());
+}
+
+bool DataSetObject::selectionDefined()
+{
+    for(int d=0; d<dataObjects.size(); d++)
+        if(dataObjects[d]->selectionDefined())
+            return true;
+    return false;
+}
+
+void DataSetObject::selectionChanged()
+{
+    bool sel = selectionDefined();
+    FOR_EACH_DATA(setHardwareTopology(hw,sel));
+}
+
+void DataSetObject::visibilityChanged()
+{
+    bool sel = selectionDefined();
+    FOR_EACH_DATA(setHardwareTopology(hw,sel));
 }

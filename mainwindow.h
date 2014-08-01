@@ -12,6 +12,8 @@
 #include "varviz.h"
 #include "memtopoviz.h"
 #include "codeeditor.h"
+#include "hardwaretopology.h"
+#include "console.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,15 +28,17 @@ public:
     ~MainWindow();
 
 signals:
-    void requestFilterByDim(int dim, double minv, double maxv);
+    void selectionChangedSig();
+    void visibilityChangedSig();
 
 public slots:
-    void selectionChanged();
-    void visibilityChanged();
+    void selectionChangedSlot();
+    void visibilityChangedSlot();
     int loadData();
+    int addData();
     int importData();
-    int importMemTopo();
-    int selectSourceDir();
+    int importHardwareTopology();
+    int selectSourceDirectory();
     void showSelectedOnly();
     void showAll();
     void hideSelected();
@@ -50,15 +54,14 @@ private:
     CodeEditor *codeEditor;
     CodeViz *codeViz;
     MemTopoViz *memViz;
-    SelectionVizWidget *selViz;
     VarViz *varViz;
     QString sourceDir;
 
     QVector<VizWidget*> vizWidgets;
     VolumeVizWidget *volumeVizWidget;
 
-    DataObject *currDataObject;
-    QVector<DataObject*> dataObjects;
+    DataSetObject *dataSet;
+    console *con;
 };
 
 #endif // MAINWINDOW_H

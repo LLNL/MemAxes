@@ -8,7 +8,7 @@ using namespace std;
 #include <QFileDialog>
 
 #include "parallelcoordinatesviz.h"
-#include "volumevizwidget.h"
+//#include "volumevizwidget.h"
 
 // BIG TODO LIST
 
@@ -30,13 +30,26 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle(tr("MemAxes"));
 
+    dataSet = new DataSetObject();
+
+    con = new console(this);
+    ui->consoleLayout->addWidget(con);
+
+    QPlainTextEdit *console_input = new QPlainTextEdit();
+    console_input->setFont(QFont("Consolas"));
+    console_input->setMaximumHeight(28);
+    ui->consoleLayout->addWidget(console_input);
+
+    con->setConsoleInput(console_input);
+    con->setDataSet(dataSet);
+
     /*
      * MainWindow
      */
-    currDataObject = NULL;
 
     // File buttons
     connect(ui->actionImport_Data, SIGNAL(triggered()),this,SLOT(loadData()));
+    connect(ui->actionAdd_Dataset_2, SIGNAL(triggered()),this,SLOT(addData()));
 
     // Selection mode
     connect(ui->selectModeXOR, SIGNAL(toggled(bool)), this, SLOT(setSelectModeXOR(bool)));
@@ -81,10 +94,8 @@ MainWindow::MainWindow(QWidget *parent) :
      * Code Editor
      */
 
-    QFont font("Monospace");
-    font.setStyleHint(QFont::TypeWriter);
     codeEditor = new CodeEditor(this);
-    codeEditor->setFont(font);
+    codeEditor->setFont(QFont("Consolas"));
     codeEditor->setReadOnly(true);
     ui->codeEditorLayout->addWidget(codeEditor);
 
@@ -97,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
      * Volume Viz
      */
 
+    /*
     volumeVizWidget = new VolumeVizWidget(this);
     ui->volVizLayout->addWidget(volumeVizWidget);
 
@@ -111,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(volumeVizWidget, SIGNAL(minValSet(double)), ui->minVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
+    */
 
     /*
      * Memory Topology Viz
@@ -119,9 +132,10 @@ MainWindow::MainWindow(QWidget *parent) :
     memViz = new MemTopoViz(this);
     ui->memoryLayout->addWidget(memViz);
 
-    connect(ui->minScale, SIGNAL(sliderMoved(int)), memViz, SLOT(setMinScale(int)));
     connect(ui->memTopoColorByCycles,SIGNAL(toggled(bool)),memViz,SLOT(setColorByCycles(bool)));
     connect(ui->memTopoColorBySamples,SIGNAL(toggled(bool)),memViz,SLOT(setColorBySamples(bool)));
+    connect(ui->memTopoVizModeIcicle,SIGNAL(toggled(bool)),memViz,SLOT(setVizModeIcicle(bool)));
+    connect(ui->memTopoVizModeSunburst,SIGNAL(toggled(bool)),memViz,SLOT(setVizModeSunburst(bool)));
 
     vizWidgets.push_back(memViz);
 
@@ -129,6 +143,7 @@ MainWindow::MainWindow(QWidget *parent) :
      * Selection Viz
      */
 
+    /*
     selViz = new SelectionVizWidget(this);
     ui->selectionLayout->addWidget(selViz);
 
@@ -136,6 +151,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->selectionChartWeightBySamples,SIGNAL(toggled(bool)),selViz,SLOT(setWeightModeSamples(bool)));
 
     vizWidgets.push_back(selViz);
+    */
 
     /*
      * Parallel Coords Viz
@@ -146,18 +162,30 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->selOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setSelOpacity(int)));
     connect(ui->unselOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setUnselOpacity(int)));
-    //connect(ui->boxplotBox, SIGNAL(clicked(bool)), parallelCoordinatesViz, SLOT(setShowBoxPlots(bool)));
     connect(ui->histogramBox, SIGNAL(clicked(bool)), parallelCoordinatesViz, SLOT(setShowHistograms(bool)));
 
     vizWidgets.push_back(parallelCoordinatesViz);
 
     /*
-     * All VizWidget Connections
+     * All VizWidgets
      */
+
+    // Set viz widgets to use new data
+    for(int i=0; i<vizWidgets.size(); i++)
+    {
+        vizWidgets[i]->setDataSet(dataSet);
+        vizWidgets[i]->setConsole(con);
+    }
+    //volumeVizWidget->setDataSet(dataSet);
+
+    dataSet->setConsole(con);
 
     for(int i=0; i<vizWidgets.size(); i++)
     {
-        connect(vizWidgets[i], SIGNAL(selectionChangedSig()), this, SLOT(selectionChanged()));
+        connect(vizWidgets[i], SIGNAL(selectionChangedSig()), this, SLOT(selectionChangedSlot()));
+        connect(this, SIGNAL(selectionChangedSig()), vizWidgets[i], SLOT(selectionChangedSlot()));
+        connect(vizWidgets[i], SIGNAL(visibilityChangedSig()), this, SLOT(visibilityChangedSlot()));
+        connect(this, SIGNAL(visibilityChangedSig()), vizWidgets[i], SLOT(visibilityChangedSlot()));
     }
 }
 
@@ -166,164 +194,147 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::selectionChanged()
+void MainWindow::selectionChangedSlot()
 {
-    for(int i=0; i<vizWidgets.size(); i++)
-        vizWidgets[i]->selectionChangedSlot();
-    volumeVizWidget->selectionChangedSlot();
+    dataSet->selectionChanged();
+    emit selectionChangedSig();
 }
 
-void MainWindow::visibilityChanged()
+void MainWindow::visibilityChangedSlot()
 {
-    for(int i=0; i<vizWidgets.size(); i++)
-        vizWidgets[i]->visibilityChangedSlot();
-    volumeVizWidget->selectionChangedSlot();
+    dataSet->visibilityChanged();
+    emit visibilityChangedSig();
 }
 
 int MainWindow::loadData()
 {
     int err = 0;
 
-    err = importData();
+    err = importHardwareTopology();
+    if(err != 0)
+        return err;
+
+    err = selectSourceDirectory();
+    if(err != 0)
+        return err;
+
+    err = addData();
+    if(err != 0)
+        return err;
+
+    for(int i=0; i<vizWidgets.size(); i++)
+    {
+        vizWidgets[i]->processData();
+        vizWidgets[i]->update();
+    }
+
+    //volumeVizWidget->processData();
+
+    return 0;
+}
+
+int MainWindow::addData()
+{
+    int err = importData();
 
     if(err != 0)
         return err;
 
-    selectSourceDir();
-    if(err != 0)
-        return err;
-
-    importMemTopo();
-    if(err != 0)
-        return err;
+    visibilityChangedSlot();
 
     return 0;
 }
 
 int MainWindow::importData()
 {
-    QString dataFileName = QFileDialog::getOpenFileName(this, tr("Import Data"));
+    QFileDialog dirDiag(this);
+    QString dataFileName = dirDiag.getOpenFileName(this,
+                                                   tr("Select Memory Access Samples File"),
+                                                   "/Users/chai/Sources/case_studies/sample_data");
     if(dataFileName.isNull())
         return -1;
 
-    DataObject *dobj = new DataObject();
-    int err = dobj->parseCSVFile(dataFileName);
-    if(err != 0)
-        return -1;
-
-    // Make new data
-    dataObjects.push_back(dobj);
-    currDataObject = dobj;
-
-    // Set default values
-    volumeVizWidget->setMapDim(currDataObject->meta.indexOf("map3D"));
-    volumeVizWidget->setXDim(currDataObject->meta.indexOf("xidx"));
-    volumeVizWidget->setYDim(currDataObject->meta.indexOf("yidx"));
-    volumeVizWidget->setZDim(currDataObject->meta.indexOf("zidx"));
-    volumeVizWidget->setWDim(currDataObject->meta.indexOf("latency"));
-
-    memViz->setEncDim(currDataObject->meta.indexOf("dataSource"));
-    memViz->setLatDim(currDataObject->meta.indexOf("latency"));
-    memViz->setCpuDim(currDataObject->meta.indexOf("cpu"));
-    memViz->setNodeDim(currDataObject->meta.indexOf("node"));
-
-    varViz->setMetricDim(currDataObject->meta.indexOf("latency"));
-    varViz->setVarDim(currDataObject->meta.indexOf("variable"));
-
-    codeViz->setLineNumDim(currDataObject->meta.indexOf("line"));
-    codeViz->setMetricDim(currDataObject->meta.indexOf("latency"));
-
-
-    // Set viz widgets to use new data
-    for(int i=0; i<vizWidgets.size(); i++)
-        vizWidgets[i]->setData(currDataObject);
-    volumeVizWidget->setData(currDataObject);
+    dataSet->addData(dataFileName);
 
     return 0;
 }
 
-int MainWindow::importMemTopo()
+int MainWindow::importHardwareTopology()
 {
-    // Open a file using a dialog
     QFileDialog dirDiag(this);
-
-    QString initDir("/Users/chai/Documents/Data/Hardware");
-    QString topoFilename = dirDiag.getOpenFileName(this, tr("Select Memory Topology File"),
-                                                   ""//initDir
-                                                   );
+    QString topoFilename = dirDiag.getOpenFileName(this,
+                                                   tr("Select Memory Topology File"),
+                                                   "/Users/chai/Sources/case_studies/hardware");
     if(topoFilename.isNull())
         return -1;
 
-    memViz->loadHierarchyFromXML(topoFilename);
-
-    if(currDataObject)
-        memViz->setData(currDataObject);
+    dataSet->setHardwareTopology(topoFilename);
 
     return 0;
 }
 
-int MainWindow::selectSourceDir()
+int MainWindow::selectSourceDirectory()
 {
-    QString initDir("/Users/chai/Sources/case_studies");
-    sourceDir = QFileDialog::getExistingDirectory(this, tr("Select Source Directory"),
-                                                  "", // initDir
+    sourceDir = QFileDialog::getExistingDirectory(this,
+                                                  tr("Select Source Directory"),
+                                                  "/Users/chai/Sources/case_studies/code",
                                                   QFileDialog::ShowDirsOnly
                                                   | QFileDialog::DontResolveSymlinks);
     if(sourceDir.isNull())
         return -1;
 
     codeViz->setSourceDir(sourceDir);
-    selectionChanged();
+    con->append("Selected Source Directory : "+sourceDir);
 
     return 0;
 }
 
 void MainWindow::showSelectedOnly()
 {
-    currDataObject->hideUnselected();
-    visibilityChanged();
+    dataSet->showSelectedOnly();
+    visibilityChangedSlot();
 }
 
 void MainWindow::selectAllVisible()
 {
-    currDataObject->selectAllVisible();
-    selectionChanged();
+    dataSet->selectAllVisible();
+    selectionChangedSlot();
 }
 
 void MainWindow::deselectAll()
 {
-    currDataObject->deselectAll();
-    selectionChanged();
+    dataSet->deselectAll();
+    selectionChangedSlot();
 }
 
 void MainWindow::showAll()
 {
-    currDataObject->showAll();
-    visibilityChanged();
+    dataSet->showAll();
+    visibilityChangedSlot();
 }
 
 void MainWindow::hideSelected()
 {
-    currDataObject->hideSelected();
-    visibilityChanged();
+    dataSet->hideSelected();
+    visibilityChangedSlot();
 }
 
 void MainWindow::setSelectModeAND(bool on)
 {
     if(on)
-        currDataObject->setSelectionModeAND();
+        dataSet->setSelectionMode(L_AND);
 }
 
 void MainWindow::setSelectModeOR(bool on)
 {
     if(on)
-        currDataObject->setSelectionModeOR();
+        dataSet->setSelectionMode(L_OR);
 }
 
 void MainWindow::setSelectModeXOR(bool on)
 {
     if(on)
-        currDataObject->setSelectionModeXOR();
+        dataSet->setSelectionMode(L_XOR);
 }
 
 void MainWindow::setCodeLabel(QFile *file)

@@ -14,8 +14,7 @@ VizWidget::VizWidget(QWidget *parent) :
     setWindowTitle(tr("Viz"));
 
     margin = 20;
-    bgColor = Qt::blue;
-    bgColor = bgColor.light(190);
+    bgColor = QColor(248,248,255);
     processed = false;
 }
 
@@ -54,6 +53,7 @@ void VizWidget::paintEvent(QPaintEvent *event)
     frameTimer.start();
 
     // Clear
+    makeCurrent();
     qglClearColor(bgColor);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -84,16 +84,19 @@ void VizWidget::paintEvent(QPaintEvent *event)
     }
 }
 
-void VizWidget::setData(DataObject *iData)
+void VizWidget::setDataSet(DataSetObject *iDataSet)
 {
-    data = iData;
+    dataSet = iDataSet;
     processData();
-    update();
+}
+
+void VizWidget::setConsole(console *iCon)
+{
+    con = iCon;
 }
 
 void VizWidget::processData()
 {
-
 }
 
 void VizWidget::paintGL()

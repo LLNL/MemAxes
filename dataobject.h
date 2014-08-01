@@ -3,7 +3,12 @@
 
 #include <QWidget>
 
+#include "hardwaretopology.h"
 #include "util.h"
+#include "console.h"
+
+class hardwareTopology;
+class console;
 
 enum select_type
 {
@@ -28,9 +33,11 @@ public:
 
 public:
     void init();
-    void setSelectionModeXOR() { selectionMode = L_XOR; }
-    void setSelectionModeOR() { selectionMode = L_OR; }
-    void setSelectionModeAND() { selectionMode = L_AND; }
+
+    void setHardwareTopology(hardwareTopology *hw, bool sel = false);
+    void selectionChanged() { setHardwareTopology(topo); }
+
+    void setSelectionMode(selection_mode mode) { selectionMode = mode; }
 
     void selectData(unsigned int index);
     void deselectData(unsigned int index);
@@ -53,7 +60,7 @@ public:
     void selectByVarName(QString str);
 
     void hideSelected();
-    void hideUnselected();
+    void showSelectedOnly();
 
     bool selectionDefined();
     bool skip(unsigned int index);
@@ -63,8 +70,6 @@ public:
     qreal minAt(int d) const { return minimumValues[d]; }
     qreal maxAt(int d) const { return maximumValues[d]; }
     qreal meanAt(int d) const { return meanValues[d]; }
-    qreal medianAt(int d) const { return medianValues[d]; }
-    qreal modeAt(int d) const { return modeValues[d]; }
     qreal stddevAt(int d) const { return standardDeviations[d]; }
     qreal covarianceBtwn(int d1,int d2) const { return covarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
     qreal correlationBtwn(int d1,int d2) const { return correlationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
@@ -73,8 +78,6 @@ public:
     qreal selectionMinAt(int d) const { return selMinimumValues[d]; }
     qreal selectionMaxAt(int d) const { return selMaximumValues[d]; }
     qreal selectionMeanAt(int d) const { return selMeanValues[d]; }
-    qreal selectionMedianAt(int d) const { return selMedianValues[d]; }
-    qreal selectionModeAt(int d) const { return selModeValues[d]; }
     qreal selectionStddevAt(int d) const { return selStandardDeviations[d]; }
     qreal selectionCovarianceBtwn(int d1,int d2) const { return selCovarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
     qreal selectionCorrelationBtwn(int d1,int d2) const { return selCorrelationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
@@ -87,11 +90,24 @@ public:
 
 public:
     QStringList meta;
+    hardwareTopology *topo;
 
     long long numDimensions;
     long long numElements;
     long long numSelected;
     long long numVisible;
+
+    int sourceDim;
+    int lineDim;
+    int variableDim;
+    int dataSourceDim;
+    int indexDim;
+    int latencyDim;
+    int cpuDim;
+    int nodeDim;
+    int xDim;
+    int yDim;
+    int zDim;
 
     QVector<qreal> vals;
     QVector<QString> fileNames;
@@ -106,8 +122,6 @@ private:
     QVector<qreal> minimumValues;
     QVector<qreal> maximumValues;
     QVector<qreal> meanValues;
-    QVector<qreal> medianValues; // TODO
-    QVector<qreal> modeValues; // TODO
     QVector<qreal> standardDeviations;
     QVector<qreal> covarianceMatrix;
     QVector<qreal> correlationMatrix;
@@ -116,11 +130,42 @@ private:
     QVector<qreal> selMinimumValues;
     QVector<qreal> selMaximumValues;
     QVector<qreal> selMeanValues;
-    QVector<qreal> selMedianValues; // TODO
-    QVector<qreal> selModeValues; // TODO
     QVector<qreal> selStandardDeviations;
     QVector<qreal> selCovarianceMatrix;
     QVector<qreal> selCorrelationMatrix;
+};
+
+class DataSetObject
+{
+public:
+    DataSetObject();
+
+    int addData(QString filename);
+    int setHardwareTopology(QString filename);
+
+    void showSelectedOnly();
+    void showAll();
+    void deselectAll();
+    void hideSelected();
+    void setSelectionMode(selection_mode mode);
+    void selectAllVisible();
+
+    bool selectionDefined();
+
+    void selectionChanged();
+    void visibilityChanged();
+
+    DataObject* at(int i) { return dataObjects[i]; }
+    bool isEmpty() { return dataObjects.isEmpty(); }
+    int size() { return dataObjects.size(); }
+    hardwareTopology* hwTopo() { return hw; }
+
+    void setConsole(console *icon) { con = icon; }
+
+private:
+    console *con;
+    hardwareTopology *hw;
+    QVector<DataObject*> dataObjects;
 };
 
 #endif // DATAOBJECT_H

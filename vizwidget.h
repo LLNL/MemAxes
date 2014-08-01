@@ -16,19 +16,21 @@ public:
 
 signals:
     void selectionChangedSig();
+    void visibilityChangedSig();
 
 public slots:
     virtual void selectionChangedSlot();
     virtual void visibilityChangedSlot();
 
 public:
-    void setData(DataObject* iData);
+    void setDataSet(DataSetObject *iDataSet);
+    void setConsole(console *iCon);
+    virtual void processData();
 
 protected:
     void initializeGL();
     void paintEvent(QPaintEvent *event);
 
-    virtual void processData();
     virtual void paintGL();
     virtual void drawNativeGL();
     virtual void drawQtPainter(QPainter *painter);
@@ -38,8 +40,9 @@ private:
     void endNativeGL();
 
 protected:
-    DataObject *data;
     bool processed;
+    console *con;
+    DataSetObject *dataSet;
 
     int margin;
     QColor bgColor;

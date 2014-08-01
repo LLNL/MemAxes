@@ -35,7 +35,7 @@ void CorrelationMatrixViz::mouseReleaseEvent(QMouseEvent *event)
     if(sel.x() == -1)
         return;
 
-    selected = ROWMAJOR_2D(sel.y(),sel.x(),data->numDimensions);
+    selected = ROWMAJOR_2D(sel.y(),sel.x(),datasets->at(i)->numDimensions);
 
     if(selected != prevSelected)
     {
@@ -63,7 +63,7 @@ bool CorrelationMatrixViz::eventFilter(QObject *obj, QEvent *event)
         if(sel.x() == -1)
             highlighted = -1;
         else
-            highlighted = ROWMAJOR_2D(sel.y(),sel.x(),data->numDimensions);
+            highlighted = ROWMAJOR_2D(sel.y(),sel.x(),datasets->at(i)->numDimensions);
 
         if(highlighted != prevHighlighted)
         {
@@ -78,8 +78,6 @@ bool CorrelationMatrixViz::eventFilter(QObject *obj, QEvent *event)
 
 void CorrelationMatrixViz::processData()
 {
-    data->calcTotalStatistics();
-    data->calcSelectionStatistics();
     processed = true;
 }
 
@@ -88,8 +86,8 @@ QPoint CorrelationMatrixViz::matrixID(QPoint pixel)
     if(!matrixBBox.contains(pixel))
         return QPoint(-1,-1);
 
-    qreal sx = data->numDimensions*normalize(pixel.x(),matrixBBox.left(),matrixBBox.right());
-    qreal sy = data->numDimensions*normalize(pixel.y(),matrixBBox.top(),matrixBBox.bottom());
+    qreal sx = datasets->at(i)->numDimensions*normalize(pixel.x(),matrixBBox.left(),matrixBBox.right());
+    qreal sy = datasets->at(i)->numDimensions*normalize(pixel.y(),matrixBBox.top(),matrixBBox.bottom());
 
     return QPoint(floor(sx),floor(sy));
 }
@@ -113,8 +111,8 @@ void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
                        (rect().right()-m-tw) - (rect().left()+lm),
                        (rect().bottom()-m) - (rect().top()+m));
 
-    qreal deltax = matrixBBox.width() / data->numDimensions;
-    qreal deltay = matrixBBox.height() / data->numDimensions;
+    qreal deltax = matrixBBox.width() / datasets->at(i)->numDimensions;
+    qreal deltay = matrixBBox.height() / datasets->at(i)->numDimensions;
 
     QPointF o = matrixBBox.topLeft();
 
@@ -139,7 +137,7 @@ void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
 
     painter->setBrush(QBrush(QColor(0,0,0)));
 
-    for(int i=0; i<=data->numDimensions; i++)
+    for(int i=0; i<=datasets->at(i)->numDimensions; i++)
     {
         painter->drawLine(a,b);
         a += QPointF(deltax,0);
@@ -150,7 +148,7 @@ void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
     a = o;
     b = matrixBBox.topRight() + QPointF(tw,0);
 
-    for(int i=0; i<=data->numDimensions; i++)
+    for(int i=0; i<=datasets->at(i)->numDimensions; i++)
     {
         painter->drawLine(a,b);
         a += QPointF(0,deltay);
@@ -161,22 +159,22 @@ void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
     painter->setPen(QColor(0,0,0));
     a = matrixBBox.topLeft();
     b = a + QPointF(deltax,deltay);
-    for(int i=0; i<data->numDimensions; i++)
+    for(int i=0; i<datasets->at(i)->numDimensions; i++)
     {
         a = o + QPointF(0,i*deltay);
         b = a + QPointF(deltax,deltay);
-        for(int j=0; j<data->numDimensions; j++)
+        for(int j=0; j<datasets->at(i)->numDimensions; j++)
         {
             painter->setBrush(
-                        valToColor(data->selectionCorrelationBtwn(i,j),
+                        valToColor(datasets->at(i)->selectionCorrelationBtwn(i,j),
                                    minVal, maxVal, colorBarMin, colorBarMax));
 
-            if(ROWMAJOR_2D(i,j,data->numDimensions) == selected)
+            if(ROWMAJOR_2D(i,j,datasets->at(i)->numDimensions) == selected)
             {
                 painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
                 painter->drawRect(QRectF(a+QPointF(2,2),b-QPointF(2,2)));
             }
-            else if(ROWMAJOR_2D(i,j,data->numDimensions) == highlighted)
+            else if(ROWMAJOR_2D(i,j,datasets->at(i)->numDimensions) == highlighted)
             {
                 painter->setPen(QPen(Qt::yellow, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
                 painter->drawRect(QRectF(a+QPointF(2,2),b-QPointF(2,2)));
@@ -194,15 +192,15 @@ void CorrelationMatrixViz::drawQtPainter(QPainter *painter)
 
     // Draw labels
     painter->setPen(QColor(0,0,0));
-    for(int i=0; i<data->numDimensions; i++)
+    for(int i=0; i<datasets->at(i)->numDimensions; i++)
     {
-        painter->drawText(o+QPointF(i*deltax,-2),data->meta[i]);
+        painter->drawText(o+QPointF(i*deltax,-2),datasets->at(i)->meta[i]);
     }
 
     QPointF vp = matrixBBox.topRight();
-    for(int i=0; i<data->numDimensions; i++)
+    for(int i=0; i<datasets->at(i)->numDimensions; i++)
     {
-        painter->drawText(vp+QPointF(0,10),data->meta[i]);
+        painter->drawText(vp+QPointF(0,10),datasets->at(i)->meta[i]);
         vp += QPointF(0,deltay);
     }
 }
@@ -225,6 +223,6 @@ void CorrelationMatrixViz::setMax(int v)
 
 void CorrelationMatrixViz::selectionChangedSlot()
 {
-    data->calcSelectionStatistics();
+    datasets->at(i)->calcSelectionStatistics();
     repaint();
 }

@@ -8,364 +8,122 @@ using namespace std;
 MemTopoViz::MemTopoViz(QWidget *parent) :
     VizWidget(parent)
 {
-    mode = COLORBY_CYCLES;
+    dataMode = COLORBY_CYCLES;
+    vizMode = SUNBURST;
 
-    colorBarMin = QColor(254,230,206);
-    colorBarMax = QColor(230,85,13);
-
-    memoryHierarchy = NULL;
-    topoLoaded = false;
-
-    encDim = 0;
-    latDim = 0;
-    cpuDim = 0;
-    nodeDim = 0;
-
-    minScale = 0;
-
-    totalDepth = 0;
-    lvlHeight = 20;
-
-    numCPUs = 0;
+    colorMap.push_back(QColor(166,206,227));
+    colorMap.push_back(QColor(31,120,180));
+    colorMap.push_back(QColor(178,223,138));
+    colorMap.push_back(QColor(51,160,44));
+    colorMap.push_back(QColor(251,154,153));
+    colorMap.push_back(QColor(227,26,28));
+    colorMap.push_back(QColor(253,191,111));
+    colorMap.push_back(QColor(255,127,0));
+    colorMap.push_back(QColor(202,178,214));
+    colorMap.push_back(QColor(106,61,154));
+    colorMap.push_back(QColor(255,255,153));
+    colorMap.push_back(QColor(177,89,40 ));
 
     this->installEventFilter(this);
     setMouseTracking(true);
-
-    //bgColor = Qt::white;
 }
 
 void MemTopoViz::processData()
 {
-    if(!topoLoaded)
+    processed = false;
+
+    if(dataSet->isEmpty() || !dataSet->hwTopo())
         return;
 
-    data->calcTotalStatistics();
-
-    // Clear annotations
-    for(int i=0; i<allLevels.size(); i++)
+    depthRange = IntRange(0,dataSet->hwTopo()->hardwareResourceMatrix.size());
+    for(int i=depthRange.first; i<(int)depthRange.second; i++)
     {
-        allLevels[i]->samplesWithin.clear();
-        allLevels[i]->transactions.clear();
-    }
-
-    // Annotate levels with samples
-    int elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
-    {
-        // Parse sample
-        int enc = *(p+encDim);
-        int cpu = *(p+cpuDim);
-
-        // Find cpu
-        memLevel *lvl = cpuMap[cpu];
-        lvl->samplesWithin.push_back(elem);
-
-        int sampleDepth = enc;
-
-        if(sampleDepth < 0)
-            continue;
-
-        // annotate up
-        while(sampleDepth > 0)
-        {
-            lvl->transactions.push_back(elem);
-            lvl = lvl->parent;
-            sampleDepth--;
-        }
-
-        lvl->samplesWithin.push_back(elem);
+        IntRange wr(0,dataSet->hwTopo()->hardwareResourceMatrix[i].size());
+        widthRange.push_back(wr);
     }
 
     processed = true;
 
-    processSelection();
-}
-
-void MemTopoViz::processSelection()
-{
-    data->calcSelectionStatistics();
-
-    minCyclesPerLevel.fill(std::numeric_limits<qreal>::max());
-    minTransactionsPerLevel.fill(std::numeric_limits<qreal>::max());
-    minSamplesPerLevel.fill(std::numeric_limits<qreal>::max());
-
-    maxCyclesPerLevel.fill(0);
-    maxTransactionsPerLevel.fill(0);
-    maxSamplesPerLevel.fill(0);
-
-    bool selectionDefined = data->selectionDefined();
-    for(int i=0; i<allLevels.size(); i++)
-    {
-        int depth = allLevels[i]->depth;
-
-        allLevels[i]->numSelectedCycles = 0;
-        allLevels[i]->numSelectedSamples = 0;
-        allLevels[i]->numSelectedTransactions = 0;
-
-        for(int s=0; s<allLevels[i]->samplesWithin.size(); s++)
-        {
-            if(!selectionDefined || data->selected(allLevels[i]->samplesWithin[s]))
-            {
-                allLevels[i]->numSelectedCycles += data->at(allLevels[i]->samplesWithin[s],latDim);
-                allLevels[i]->numSelectedSamples += 1;
-            }
-        }
-
-        for(int s=0; s<allLevels[i]->transactions.size(); s++)
-        {
-            if(!selectionDefined || data->selected(allLevels[i]->transactions[s]))
-            {
-                allLevels[i]->numSelectedTransactions += 1;
-            }
-        }
-
-        minCyclesPerLevel[depth] = fmin(minCyclesPerLevel[depth], allLevels[i]->numSelectedCycles);
-        minTransactionsPerLevel[depth] = fmin(minTransactionsPerLevel[depth], allLevels[i]->numSelectedTransactions);
-        minSamplesPerLevel[depth] = fmin(minSamplesPerLevel[depth], allLevels[i]->numSelectedSamples);
-
-        maxCyclesPerLevel[depth] = fmax(maxCyclesPerLevel[depth], allLevels[i]->numSelectedCycles);
-        maxTransactionsPerLevel[depth] = fmax(maxTransactionsPerLevel[depth], allLevels[i]->numSelectedTransactions);
-        maxSamplesPerLevel[depth] = fmax(maxSamplesPerLevel[depth], allLevels[i]->numSelectedSamples);
-    }
+    calcMinMaxes();
+    resizeNodeBoxes();
+    repaint();
 }
 
 void MemTopoViz::selectionChangedSlot()
 {
-    if(processed)
-    {
-        if(!data->selectionDefined())
-            for(int i=0; i<allLevels.size(); i++)
-                allLevels[i]->selected = 0;
+    if(!processed)
+        return;
 
-        processSelection();
-        repaint();
-    }
+    calcMinMaxes();
+    resizeNodeBoxes();
+    repaint();
 }
 
 void MemTopoViz::visibilityChangedSlot()
 {
+    if(!processed)
+        return;
+
+    calcMinMaxes();
+    resizeNodeBoxes();
     repaint();
 }
 
 void MemTopoViz::drawQtPainter(QPainter *painter)
 {
-    if(!topoLoaded)
+    if(!processed)
         return;
 
-    painter->setBrush(bgColor);
-    painter->drawRect(rect());
+    QRectF drawBox = this->rect();
+    drawBox.adjust(margin,margin,-margin,-margin);
 
-    // Draw transactions
-    memLevel interconnect;
-    interconnect.circleCenter = rect().center();
+    QPen pen(Qt::black, 1, Qt::SolidLine);
+    //QPen::QPen ( const QBrush & brush, qreal width,
+    //             Qt::PenStyle style = Qt::SolidLine,
+    //             Qt::PenCapStyle cap = Qt::SquareCap,
+    //             Qt::PenJoinStyle join = Qt::BevelJoin )
 
-    for(int i=0; i<allLevels.size(); i++)
+    // Draw data boxes first
+    painter->setPen(Qt::NoPen);
+    for(int b=0; b<nodeDataBoxes.size(); b++)
     {
-        int depth = allLevels[i]->depth;
+        QColor col = nodeDataBoxes[b].first;
+        QRectF box = nodeDataBoxes[b].second;
 
-        if(depth < 2)
-            continue;
+        painter->setBrush(col);
 
-        float midAngle = allLevels[i]->startAngle +
-                         allLevels[i]->spanAngle/2;
-        float val = allLevels[i]->numSelectedTransactions;
-        float vmin = minTransactionsPerLevel[depth];
-        float vmax = maxTransactionsPerLevel[depth];
-
-        float thickness = scale(val,vmin,vmax,1,30);
-
-        float minRad = allLevels[i]->radius - allLevels[i]->thickness*2 - 10;
-        float maxRad = allLevels[i]->radius - allLevels[i]->thickness + 10;
-
-        interconnect.constructPoly();
-
-        QPointF startLine = rect().center() + polarToCartesian(QPointF(minRad,midAngle));
-        QPointF endLine = rect().center() + polarToCartesian(QPointF(maxRad,midAngle));
-
-        painter->setBrush(Qt::black);
-        painter->setPen(QPen(Qt::black,thickness,Qt::SolidLine,Qt::FlatCap));
-
-        painter->drawLine(startLine,endLine);
-    }
-
-    // Draw level segments
-    for(int i=0; i<allLevels.size(); i++)
-    {
-        int depth = allLevels[i]->depth;
-
-        if(depth == 0)
-            continue;
-
-        float val, vmin, vmax;
-        if(depth == totalDepth-1)
+        if(vizMode == SUNBURST)
         {
-            val = allLevels[i]->numSelectedTransactions;
-            vmin = minTransactionsPerLevel[depth];
-            vmax = maxTransactionsPerLevel[depth];
+            QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
+            painter->drawPolygon(segmentPoly.constData(),segmentPoly.size());
         }
-        else if (mode == COLORBY_CYCLES)
+        else if(vizMode == ICICLE)
         {
-            val = allLevels[i]->numSelectedCycles;
-            vmin = minCyclesPerLevel[depth];
-            vmax = maxCyclesPerLevel[depth];
+            painter->drawRect(box);
         }
-        else if(mode == COLORBY_SAMPLES)
+    }
+
+    // Draw node outlines
+    painter->setBrush(Qt::NoBrush);
+    painter->setPen(pen);
+    for(int b=0; b<nodeBoxes.size(); b++)
+    {
+        hardwareResourceNode *node = nodeBoxes[b].first;
+        QRectF box = nodeBoxes[b].second;
+        QString text = QString::number(node->id);
+
+        if(vizMode == SUNBURST)
         {
-            val = allLevels[i]->numSelectedCycles;
-            vmin = minCyclesPerLevel[depth];
-            vmax = maxCyclesPerLevel[depth];
+            QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
+            painter->drawPolygon(segmentPoly.constData(),segmentPoly.size());
         }
-        else
+        else if(vizMode == ICICLE)
         {
-            cerr << "PARAKEETS" << endl;
-            return;
+            painter->drawRect(box);
+            QPointF center = box.center() - QPointF(4,-4);
+            painter->drawText(center,text);
         }
-
-        if(vmax-vmin == 0)
-            vmax++;
-
-        vmin *= minScale;
-
-        painter->setBrush(valToColor(val,vmin,vmax,colorBarMin,colorBarMax));
-
-        //if(depth == 1)
-        //    painter->setBrush(QColor(94,60,153));
-        //else if(depth == 2)
-        //    painter->setBrush(QColor(178,171,210));
-        //else if(depth == totalDepth-1)
-        //    painter->setBrush(QColor(230,97,1));
-        //else
-        //    painter->setBrush(QColor(253,184,99));
-
-        if(allLevels[i]->selected)
-            painter->setPen(QPen(Qt::yellow,2));
-        else
-            painter->setPen(QPen(Qt::black,2));
-
-        painter->drawPolygon(allLevels[i]->polygon.constData(),allLevels[i]->polygon.size());
     }
-
-    // Draw id numbers
-    for(int i=0; i<allLevels.size(); i++)
-    {
-        if(allLevels[i]->depth == 0)
-            continue;
-
-        QString label;
-        painter->setPen(QPen(Qt::black));
-
-        if(allLevels[i]->depth == totalDepth-1)
-            label = "P" + QString::number(allLevels[i]->id);
-        else if(allLevels[i]->depth > 1)
-            label = "L" + QString::number(allLevels[i]->id);
-        else if(allLevels[i]->depth == 1)
-            label = "N" + QString::number(allLevels[i]->id);
-        else
-            label = "RAM";
-
-
-        painter->save();
-        painter->translate(allLevels[i]->midPoint);
-        painter->rotate(90-(allLevels[i]->startAngle+allLevels[i]->spanAngle/2)/16);
-        painter->drawText(-5,0,label);
-        painter->restore();
-    }
-
-    // Draw selection pie
-    //int margin = 10;
-    //int selSide = 150;
-    //QRect selBox(rect().right()-selSide-margin,rect().top()+margin,selSide-margin,selSide-margin);
-    //drawSelectionPie(painter,selBox);
-}
-
-memLevel* MemTopoViz::memLevelFromXMLNode(QXmlStreamReader *xml)
-{
-    memLevel *newLevel = new memLevel();
-
-    // Store parent
-    newLevel->name = xml->name().toString(); // Hardware, NUMA, Cache, CPU
-
-    if(xml->attributes().hasAttribute("id"))
-        newLevel->id = xml->attributes().value("id").toString().toLongLong();
-
-    if(xml->attributes().hasAttribute("size"))
-        newLevel->size = xml->attributes().value("size").toString().toLongLong();
-
-    // Read and add children if existent
-    xml->readNext();
-
-    while(!(xml->isEndElement() && xml->name() == newLevel->name))
-    {
-        if(xml->isStartElement())
-        {
-            memLevel *child = memLevelFromXMLNode(xml);
-            child->parent = newLevel;
-
-            if(child)
-                newLevel->children.push_back(child);
-        }
-
-        xml->readNext();
-    }
-
-    allLevels.push_back(newLevel);
-
-    if(newLevel->children.isEmpty())
-    {
-        cpuMap[newLevel->id] = newLevel;
-        numCPUs++;
-    }
-    else
-    {
-        //newLevel->transactions.resize(newLevel->children.size());
-    }
-
-    return newLevel;
-}
-
-void MemTopoViz::loadHierarchyFromXML(QString filename)
-{
-    allLevels.clear();
-
-    QFile* file = new QFile(filename);
-
-    if (!file->open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::critical(this,
-                              "MemTopoViz::loadHierarchyFromXML",
-                              "Couldn't open example.xml",
-                              QMessageBox::Ok);
-        return;
-    }
-
-    QXmlStreamReader xml(file);
-    while(!xml.atEnd() && !xml.hasError())
-    {
-        xml.readNext();
-
-        if(xml.isStartDocument())
-            continue;
-
-        if(xml.isStartElement())
-            if(xml.name() == "Hardware")
-                memoryHierarchy = memLevelFromXMLNode(&xml);
-    }
-
-    if(xml.hasError()) {
-        QMessageBox::critical(this,
-                              "MemTopoViz::loadHierarchyFromXML",
-                              xml.errorString(),
-                              QMessageBox::Ok);
-    }
-
-    xml.clear();
-
-    numNodes = memoryHierarchy->children.size();
-
-    topoLoaded = true;
-    processTopoViz();
-
-    repaint();
 }
 
 void MemTopoViz::mousePressEvent(QMouseEvent *e)
@@ -373,51 +131,120 @@ void MemTopoViz::mousePressEvent(QMouseEvent *e)
     if(!processed)
         return;
 
-    memLevel *lvl = levelAtPosition(e->pos());
+    hardwareResourceNode *node = nodeAtPosition(e->pos());
 
-    if(lvl)
-        selectLevel(lvl);
+    if(node)
+    {
+        selectSamplesWithinNode(node);
+    }
 
-    repaint();
+}
+
+void MemTopoViz::zoomVertical(hardwareResourceNode *node, int dir)
+{
+    hardwareTopology *topo = dataSet->hwTopo();
+    int d = node->depth;
+    int range = depthRange.second - depthRange.first;
+
+    if(range == 1 && dir > 0)
+        return;
+    if(range < 1)
+        return;
+
+    dir = (dir > 0) ? 1 : -1;
+
+    // Which way to zoom
+    float midpoint = (float)(range+1) / 2.0f;
+    if(d <= midpoint)
+        depthRange.second -= dir;
+    else
+        depthRange.first += dir;
+
+    // Constraints
+    depthRange.first = max(depthRange.first,0);
+    depthRange.second = min(depthRange.second,topo->hardwareResourceMatrix.size());
+
+    // Set width ranges
+    widthRange.clear();
+    for(int i=depthRange.first; i<depthRange.second; i++)
+    {
+        IntRange wr(0,topo->hardwareResourceMatrix[i].size());
+        widthRange.push_back(wr);
+    }
+}
+
+void MemTopoViz::zoomHorizontal(hardwareResourceNode *node, int dir)
+{
+    /*
+    int d = node->depth;
+    int range = widthRange[d].second - widthRange[d].first;
+    if(range <= 1)
+        return;
+
+    dir = (dir > 0) ? 1 : -1;
+
+    // Shrink from largest visible node
+    for(int i=0; i<widthRange.size(); i++)
+    {
+        IntRange wr(0,topo->hardwareResourceMatrix[i].size());
+        widthRange.first += dir;
+        widthRange.second -= dir;
+    }
+    */
 }
 
 void MemTopoViz::wheelEvent(QWheelEvent *e)
 {
-    //if(processed)
-    {
-        lvlHeight += e->delta()/80;
-        processTopoViz();
-        repaint();
-    }
+    if(!processed)
+        return;
+
+    hardwareResourceNode *node = nodeAtPosition(e->pos());
+
+    if(!node)
+        return;
+
+    if(e->delta() > 0)
+        zoomVertical(node,1);
+    else
+        zoomVertical(node,-1);
+
+    visibilityChangedSlot();
 }
 
 void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
 {
-    memLevel *lvl = levelAtPosition(e->pos());
+    if(!processed)
+        return;
 
-    if(lvl)
+    hardwareResourceNode *node = nodeAtPosition(e->pos());
+
+    if(node)
     {
         QString label;
 
-        if(lvl->depth == totalDepth-1)
-            label = "CPU " + QString::number(lvl->id) + "\n";
-        else if(lvl->depth > 1)
-            label = "L" + QString::number(lvl->id) + " Cache\n";
-        else if(lvl->depth == 1)
-            label = "NUMA Node " + QString::number(lvl->id) + "\n";
+        if(node->depth == dataSet->hwTopo()->totalDepth)
+            label = "CPU " + QString::number(node->id) + "\n";
+        else if(node->depth > 1)
+            label = "L" + QString::number(node->id) + " Cache\n";
+        else if(node->depth == 1)
+            label = "NUMA Node " + QString::number(node->id) + "\n";
         else
             label = "RAM\n";
 
         label += "\n";
-        label += "Size: " + QString::number(lvl->size) + " bytes\n";
+        label += "Size: " + QString::number(node->size) + " bytes\n";
+
+        /*
+        label += "\n";
+
+        int numCycles = node->sampleSets[dataSet->at(0)].second;
+        int numSamples = ((SampleIdxVector*)(&node->sampleSets[dataSet->at(0)].first))->size();
+        label += "Samples: " + QString::number(numSamples) + "\n";
+        label += "Cycles: " + QString::number(numCycles) + "\n";
 
         label += "\n";
-        label += "Cycles: " + QString::number(lvl->numSelectedCycles) + "\n";
-        label += "Accesses: " + QString::number(lvl->numSelectedSamples) + "\n";
-        label += "Transactions: " + QString::number(lvl->numSelectedTransactions) + "\n";
-
-        label += "\n";
-        label += "Cycles/Access: " + QString::number(lvl->numSelectedCycles/lvl->numSelectedSamples) + "\n";
+        label += "Cycles/Access: " + QString::number((float)numCycles / (float)numSamples) + "\n";
+        */
 
         QToolTip::showText(e->globalPos(),label,this, rect() );
     }
@@ -430,171 +257,163 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
 void MemTopoViz::resizeEvent(QResizeEvent *e)
 {
     VizWidget::resizeEvent(e);
-    processTopoViz();
+
+    if(!processed)
+        return;
+
+    resizeNodeBoxes();
     repaint();
 }
 
-void MemTopoViz::setEncDim(int dim)
+void MemTopoViz::calcMinMaxes()
 {
-    encDim = dim;
-}
+    QPair<int,int> limits;
+    limits.first = 99999999;
+    limits.second = 0;
 
-void MemTopoViz::setLatDim(int dim)
-{
-    latDim = dim;
-}
+    depthValRanges.resize(depthRange.second - depthRange.first);
+    depthValRanges.fill(limits);
 
-void MemTopoViz::setCpuDim(int dim)
-{
-    cpuDim = dim;
-}
-
-void MemTopoViz::setNodeDim(int dim)
-{
-    nodeDim = dim;
-}
-
-void MemTopoViz::processTopoViz()
-{
-    if(!topoLoaded)
-        return;
-
-    QRect bbox = rect();
-    processViz(&bbox,memoryHierarchy,lvlHeight,0,16*360,0);
-
-    minCyclesPerLevel.resize(totalDepth);
-    maxCyclesPerLevel.resize(totalDepth);
-
-    minTransactionsPerLevel.resize(totalDepth);
-    maxTransactionsPerLevel.resize(totalDepth);
-
-    minSamplesPerLevel.resize(totalDepth);
-    maxSamplesPerLevel.resize(totalDepth);
-}
-
-void MemTopoViz::processViz(QRect *bbox, memLevel *lvl, int radius, float startAngle, float spanAngle, int depth)
-{
-    int thickness = lvlHeight;
-    int separation = lvlHeight;
-
-    if(!topoLoaded)
-        return;
-
-    float deltaAngle = spanAngle;
-    if(!lvl->children.isEmpty())
-        deltaAngle /= lvl->children.size();
-
-    for(int i=0; i<lvl->children.size(); i++)
-        processViz(bbox, lvl->children[i], radius+thickness+separation, startAngle+i*deltaAngle, deltaAngle, depth+1);
-
-    lvl->circleCenter = bbox->center();
-    lvl->radius = radius;
-    lvl->startAngle = startAngle+20;
-    lvl->spanAngle = spanAngle-40;
-    lvl->thickness = thickness;
-    lvl->depth = depth;
-
-    lvl->midPoint = lvl->circleCenter +
-                    polarToCartesian(lvl->radius - lvl->thickness/2 - 4,
-                                     lvl->startAngle + lvl->spanAngle/2 + 12);
-    lvl->color = Qt::gray;
-
-    if(totalDepth < depth+1)
-        totalDepth = depth+1;
-
-    lvl->constructPoly();
-}
-
-void MemTopoViz::printMemoryHierarchy(memLevel *lvl, int depth)
-{
-    for(int i=0; i<depth; i++)
+    for(int r=0, i=depthRange.first; i<depthRange.second; r++, i++)
     {
-        std::cout << "\t";
-    }
+        // Get min/max for this row
+        for(int j=widthRange[r].first; j<widthRange[r].second; j++)
+        {
+            for(int d=0; d<dataSet->size(); d++)
+            {
+                hardwareResourceNode *node = dataSet->at(d)->topo->hardwareResourceMatrix[i][j];
 
-    std::cout << lvl->name.toStdString() << ", "
-              << lvl->id << ", "
-              << lvl->size  << ", samples: "
-              << lvl->numSelectedCycles << std::endl;
+                if(!node->sampleSets.contains(dataSet->at(d)))
+                    continue;
 
-    for(int i=0; i<lvl->children.size(); i++)
-    {
-        printMemoryHierarchy(lvl->children[i],depth+1);
+                SampleIdxVector *samples = &node->sampleSets[dataSet->at(d)].first;
+                int *numCycles = &node->sampleSets[dataSet->at(d)].second;
+
+                int val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples->size();
+
+                depthValRanges[i].first=min(depthValRanges[i].first,val);
+                depthValRanges[i].second=max(depthValRanges[i].second,val);
+            }
+        }
     }
 }
 
-memLevel *MemTopoViz::levelAtPosition(QPoint p)
+int compareColoredRect(const void* a, const void* b)
 {
-    QPointF polarMouse = cartesianToPolar(p - rect().center());
-    float mag = polarMouse.x();
-    float theta = polarMouse.y();
+    const QRectF *ra = &((ColoredRect*)a)->second;
+    const QRectF *rb = &((ColoredRect*)b)->second;
 
-    for(int i=0; i<allLevels.size(); i++)
+    if(ra->width() > rb->width())
+        return -1;
+    if(ra->width() == rb->width())
+        return 0;
+    //if(ra->width() < rb->width())
+        return 1;
+}
+
+void MemTopoViz::resizeNodeBoxes()
+{
+    QRectF drawBox = this->rect();
+    drawBox.adjust(margin,margin,-margin,-margin);
+
+    nodeBoxes.clear();
+    nodeDataBoxes.clear();
+
+    float depth = depthRange.second - depthRange.first;
+    float deltaY = drawBox.height() / depth;
+
+    // Adjust boxes to fill the drawBox space
+    for(int dy=0, i=depthRange.first; i<depthRange.second; dy++, i++)
     {
-        bool inAngle = within(theta,
-                              allLevels[i]->startAngle,
-                              allLevels[i]->startAngle+allLevels[i]->spanAngle);
+        int width = widthRange[dy].second - widthRange[dy].first;
+        float maxBoxWidth = drawBox.width() / (float) width;
+        int minVal = depthValRanges[i].first;
+        int maxVal = depthValRanges[i].second;
+        float deltaX = drawBox.width() / (float) width;
+        for(int dx=0, j=widthRange[dy].first; j<widthRange[dy].second; dx++, j++)
+        {
+            // Create node box (no data)
+            hardwareResourceNode *node = dataSet->hwTopo()->hardwareResourceMatrix[i][j];
+            QRectF box = drawBox;
+            box.adjust(deltaX*dx,
+                       deltaY*dy,
+                       -deltaX*(width-dx-1),
+                       -deltaY*(depth-dy-1));
+            NodeBox nodeBox(node,box);
+            nodeBoxes.push_back(nodeBox);
 
-        bool inMag = within(mag,
-                            allLevels[i]->radius-allLevels[i]->thickness,
-                            allLevels[i]->radius);
+            // Create sized node boxes for each dataset
+            int firstData = nodeDataBoxes.size();
+            float boxHeight = box.height() / (float)dataSet->size();
+            for(int d=0; d<dataSet->size(); d++)
+            {
+                QRectF nodeDataBox = box;
+                node = dataSet->at(d)->topo->hardwareResourceMatrix[i][j];
 
-        if(inAngle && inMag)
-            return allLevels[i];
+                bool cont = node->sampleSets.contains(dataSet->at(d));
+                if(!cont)
+                    continue;
+
+                SampleIdxVector *samples = &node->sampleSets[dataSet->at(d)].first;
+                int *numCycles = &node->sampleSets[dataSet->at(d)].second;
+
+                int val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples->size();
+                qreal scaledVal = scale(val,minVal,maxVal,0,1);
+
+                nodeDataBox.setTop(box.top()+d*boxHeight);
+                nodeDataBox.setWidth(maxBoxWidth*scaledVal);
+                nodeDataBox.setHeight(boxHeight);
+
+                QColor color = valToColor(d,0,dataSet->size(),colorMap);
+                ColoredRect nodeDataColoredBox(color,nodeDataBox);
+                nodeDataBoxes.push_back(nodeDataColoredBox);
+            }
+
+            // Sort smallest rect to largest
+            qsort((void*)&nodeDataBoxes[firstData],
+                  nodeDataBoxes.size()-firstData,
+                  sizeof(ColoredRect),compareColoredRect);
+        }
+    }
+}
+
+hardwareResourceNode *MemTopoViz::nodeAtPosition(QPoint p)
+{
+    QRectF drawBox = this->rect();
+    drawBox.adjust(margin,margin,-margin,-margin);
+
+    for(int b=0; b<nodeBoxes.size(); b++)
+    {
+        hardwareResourceNode *node = nodeBoxes[b].first;
+        QRectF box = nodeBoxes[b].second;
+
+        bool containsP = false;
+        if(vizMode == SUNBURST)
+        {
+            QPointF radp = reverseRadialTransform(p,drawBox);
+            containsP = box.contains(radp);
+        }
+        else if(vizMode == ICICLE)
+        {
+            containsP = box.contains(p);
+        }
+
+        if(containsP)
+            return node;
     }
 
     return NULL;
 }
 
-void MemTopoViz::selectLevel(memLevel *lvl)
+void MemTopoViz::selectSamplesWithinNode(hardwareResourceNode *node)
 {
-    if(!lvl->selected)
+    for(int d=0; d<dataSet->size(); d++)
     {
-        lvl->selected = 1;
-        for(int i=0; i<lvl->samplesWithin.size(); i++)
-            data->selectData(lvl->samplesWithin[i]);
-    }
-    else
-    {
-        lvl->selected = 0;
-        for(int i=0; i<lvl->samplesWithin.size(); i++)
-            data->deselectData(lvl->samplesWithin[i]);
+        SampleIdxVector *samples = &node->sampleSets[dataSet->at(d)].first;
+        for(int i=0; i<samples->size(); i++)
+        {
+            dataSet->at(d)->selectData(samples->at(i));
+        }
     }
     emit selectionChangedSig();
-}
-
-memLevel::memLevel()
-    :
-      name("unnamed"),
-      id(0),
-      size(0),
-      parent(NULL),
-      selected(0),
-      numSelectedCycles(0),
-      numSelectedSamples(0),
-      numSelectedTransactions(0)
-{
-
-}
-
-void memLevel::constructPoly()
-{
-    polygon.clear();
-
-    int degreesPerPoint = 5;
-    int arcPoints = (spanAngle / 16) / degreesPerPoint;
-    float angle = startAngle;
-    float deltaAngle = spanAngle / (float)arcPoints;
-    for(int i=0; i<=arcPoints; i++)
-    {
-        polygon.push_back(circleCenter+polarToCartesian(radius,angle));
-        angle += deltaAngle;
-    }
-    angle -= deltaAngle;
-
-    for(int i=0; i<=arcPoints; i++)
-    {
-        polygon.push_back(circleCenter+polarToCartesian(radius-thickness,angle));
-        angle -= deltaAngle;
-    }
 }

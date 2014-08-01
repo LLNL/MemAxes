@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1412</width>
-    <height>717</height>
+    <width>1466</width>
+    <height>788</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -287,50 +287,72 @@
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
-           <widget class="QGroupBox" name="groupBox">
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>66</height>
-             </size>
-            </property>
-            <property name="title">
-             <string>Color by:</string>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="QRadioButton" name="memTopoColorByCycles">
-               <property name="text">
-                <string># of cycles</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="memTopoColorBySamples">
-               <property name="text">
-                <string># of samples</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Min Scale:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSlider" name="minScale">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <widget class="QGroupBox" name="groupBox_2">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>65</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>Visualization Layout</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <item>
+                <widget class="QRadioButton" name="memTopoVizModeIcicle">
+                 <property name="text">
+                  <string>Icicle</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="memTopoVizModeSunburst">
+                 <property name="text">
+                  <string>Sunburst</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>65</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>Color by:</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <item>
+                <widget class="QRadioButton" name="memTopoColorByCycles">
+                 <property name="text">
+                  <string># of cycles</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="memTopoColorBySamples">
+                 <property name="text">
+                  <string># of samples</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="memoryLayout"/>
@@ -347,61 +369,13 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QGroupBox" name="selectionChart">
+          <widget class="QGroupBox" name="console">
            <property name="title">
-            <string>Weight by:</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_10">
-            <item>
-             <layout class="QHBoxLayout" name="selectionRadioLayout">
-              <item>
-               <widget class="QRadioButton" name="selectionChartWeightByCycles">
-                <property name="text">
-                 <string># of cycles</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QRadioButton" name="selectionChartWeightBySamples">
-                <property name="text">
-                 <string># of samples</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="selectionLayout">
-              <property name="sizeConstraint">
-               <enum>QLayout::SetDefaultConstraint</enum>
-              </property>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="selectButtons">
-           <property name="title">
-            <string>Select</string>
+            <string>Console</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_8">
             <item>
-             <widget class="QPushButton" name="deselectAll">
-              <property name="text">
-               <string>Deselect All</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="selectAllVisible">
-              <property name="text">
-               <string>Select All Visible</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="consoleLayout"/>
             </item>
            </layout>
           </widget>
@@ -409,68 +383,85 @@
          <item>
           <widget class="QGroupBox" name="selectionMode">
            <property name="title">
-            <string>Global Selection Mode</string>
+            <string>Selection / Visibility</string>
            </property>
            <property name="checkable">
             <bool>false</bool>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_7">
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
             <item>
-             <widget class="QRadioButton" name="selectModeXOR">
-              <property name="text">
-               <string>New</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout">
+              <item>
+               <widget class="QPushButton" name="deselectAll">
+                <property name="text">
+                 <string>Deselect All</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="selectAllVisible">
+                <property name="text">
+                 <string>Select Visible</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
-             <widget class="QRadioButton" name="selectModeOR">
-              <property name="text">
-               <string>Append</string>
-              </property>
-              <property name="checked">
-               <bool>false</bool>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_3">
+              <item>
+               <widget class="QRadioButton" name="selectModeAND">
+                <property name="text">
+                 <string>Filter</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="selectModeOR">
+                <property name="text">
+                 <string>Append</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="selectModeXOR">
+                <property name="text">
+                 <string>New</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
-             <widget class="QRadioButton" name="selectModeAND">
-              <property name="text">
-               <string>Filter</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="visibility">
-           <property name="title">
-            <string>Visibility</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_9">
-            <item>
-             <widget class="QPushButton" name="showAll">
-              <property name="text">
-               <string>Show All</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="showSelectedOnly">
-              <property name="text">
-               <string>Show Selected Only</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="hideSelected">
-              <property name="text">
-               <string>Hide Selected</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <widget class="QPushButton" name="hideSelected">
+                <property name="text">
+                 <string>Hide Selected</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="showSelectedOnly">
+                <property name="text">
+                 <string>Show Selected</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="showAll">
+                <property name="text">
+                 <string>Show All</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -662,7 +653,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1412</width>
+     <width>1466</width>
      <height>22</height>
     </rect>
    </property>
@@ -671,6 +662,7 @@
      <string>File</string>
     </property>
     <addaction name="actionImport_Data"/>
+    <addaction name="actionAdd_Dataset_2"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -696,6 +688,16 @@
   <action name="actionImport_Memory_Topology">
    <property name="text">
     <string>Import Memory Topology</string>
+   </property>
+  </action>
+  <action name="actionAdd_Dataset">
+   <property name="text">
+    <string>Add Dataset</string>
+   </property>
+  </action>
+  <action name="actionAdd_Dataset_2">
+   <property name="text">
+    <string>Add Dataset</string>
    </property>
   </action>
  </widget>

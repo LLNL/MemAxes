@@ -13,7 +13,6 @@ TEMPLATE = app
 
 SOURCES  += main.cpp\
             mainwindow.cpp \
-            correlationmatrixviz.cpp \
             dataobject.cpp \
             util.cpp \
             vizwidget.cpp \
@@ -23,10 +22,12 @@ SOURCES  += main.cpp\
     codeeditor.cpp \
     codeviz.cpp \
     varviz.cpp \
-    memtopoviz.cpp
+    memtopoviz.cpp \
+    hardwaretopology.cpp \
+    console.cpp
+    #correlationmatrixviz.cpp
 
 HEADERS  += mainwindow.h \
-            correlationmatrixviz.h \
             dataobject.h \
             util.h \
             vizwidget.h \
@@ -36,7 +37,10 @@ HEADERS  += mainwindow.h \
     codeeditor.h \
     codeviz.h \
     varviz.h \
-    memtopoviz.h
+    memtopoviz.h \
+    hardwaretopology.h \
+    console.h
+    #correlationmatrixviz.h
 
 FORMS    += mainwindow.ui
 

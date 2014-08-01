@@ -14,9 +14,6 @@ VarViz::VarViz(QWidget *parent) :
     VizWidget(parent)
 {
     margin = 0;
-    metricDim = 0;
-    varDim = 0;
-
     numVariableBlocks = 8;
 
     this->setMinimumHeight(20);
@@ -44,20 +41,28 @@ int VarViz::getVariableID(QString name)
 
 void VarViz::processData()
 {
+    processed = false;
+
+    if(dataSet->isEmpty())
+        return;
+
     varMaxVal = 0;
     varBlocks.clear();
 
     // Get metric values
     int elem = 0;
     QVector<qreal>::Iterator p;
-    for(elem=0, p=data->begin; p!=data->end; elem++, p+=data->numDimensions)
+    for(int d=0; d<dataSet->size(); d++)
     {
-        if(data->skip(elem))
-            continue;
+        for(elem=0, p=dataSet->at(d)->begin; p!=dataSet->at(d)->end; elem++, p+=dataSet->at(d)->numDimensions)
+        {
+            if(dataSet->at(d)->skip(elem))
+                continue;
 
-        int varIdx = this->getVariableID(data->varNames[elem]);
-        varBlocks[varIdx].val += *(p+metricDim);
-        varMaxVal = fmax(varMaxVal,varBlocks[varIdx].val);
+            int varIdx = this->getVariableID(dataSet->at(d)->varNames[elem]);
+            varBlocks[varIdx].val += *(p+dataSet->at(d)->latencyDim);
+            varMaxVal = fmax(varMaxVal,varBlocks[varIdx].val);
+        }
     }
 
     // Sort based on value
@@ -112,35 +117,16 @@ void VarViz::mouseReleaseEvent(QMouseEvent *e)
                               varBlocks[i].block.height());
         if(varSelectionBox.contains(e->pos()))
         {
-            data->deselectAll();
-            data->selectByVarName(varBlocks[i].name);
+            for(int d=0; d<dataSet->size(); d++)
+            {
+                dataSet->at(d)->deselectAll();
+                dataSet->at(d)->selectByVarName(varBlocks[i].name);
+            }
 
             emit variableSelected(i);
             emit selectionChangedSig();
 
             return;
         }
-    }
-}
-
-void VarViz::setMetricDim(int indim)
-{
-    metricDim = indim;
-
-    if(processed)
-    {
-        processData();
-        update();
-    }
-}
-
-void VarViz::setVarDim(int indim)
-{
-    varDim = indim;
-
-    if(processed)
-    {
-        processData();
-        update();
     }
 }
