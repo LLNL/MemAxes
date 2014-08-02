@@ -12,6 +12,8 @@
 #define DBGVAR(x) std::cout << #x << " : " << (x) << std::endl;
 
 typedef QVector<QColor> ColorMap;
+typedef QPair<int,int> IntRange;
+typedef QPair<qreal,qreal> RealRange;
 
 qreal normalize(qreal val, qreal min, qreal max);
 qreal scale(qreal val, qreal omin, qreal omax, qreal nmin, qreal nmax);

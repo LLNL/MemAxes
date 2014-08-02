@@ -644,10 +644,9 @@ void DataObject::calcSelectionStatistics()
 }
 
 
-DataSetObject::DataSetObject() :
-    hw(0)
+DataSetObject::DataSetObject()
 {
-
+    hw = NULL;
 }
 
 int DataSetObject::addData(QString filename)
@@ -659,7 +658,9 @@ int DataSetObject::addData(QString filename)
         con->append("Error Loading Dataset : "+filename);
         return ret;
     }
+    dobj->calcTotalStatistics();
     dataObjects.push_back(dobj);
+    meta = dobj->meta;
     con->append("Added Dataset : "+filename);
     return 0;
 }
@@ -729,4 +730,46 @@ void DataSetObject::visibilityChanged()
 {
     bool sel = selectionDefined();
     FOR_EACH_DATA(setHardwareTopology(hw,sel));
+}
+
+void DataSetObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
+{
+    FOR_EACH_DATA(selectByMultiDimRange(dims,mins,maxes));
+}
+
+QVector<qreal> DataSetObject::means()
+{
+    QVector<qreal> ret;
+    ret.resize(dataObjects[0]->numDimensions);
+    for(int dim=0; dim<ret.size(); dim++)
+    {
+        for(int d=0; d<dataObjects.size(); d++)
+            ret[dim] += dataObjects[d]->sumAt(dim);
+        ret[dim] /= (double)numTotal();
+    }
+    return ret;
+}
+
+int DataSetObject::numSelected()
+{
+    int ns = 0;
+    for(int d=0; d<dataObjects.size(); d++)
+        ns += dataObjects[d]->numSelected;
+    return ns;
+}
+
+int DataSetObject::numUnselected()
+{
+    int nus = 0;
+    for(int d=0; d<dataObjects.size(); d++)
+        nus += dataObjects[d]->numElements - dataObjects[d]->numSelected;
+    return nus;
+}
+
+int DataSetObject::numTotal()
+{
+    int ne = 0;
+    for(int d=0; d<dataObjects.size(); d++)
+        ne += dataObjects[d]->numElements;
+    return ne;
 }

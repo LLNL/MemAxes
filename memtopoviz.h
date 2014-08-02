@@ -20,7 +20,6 @@ enum DataMode
     COLORBY_CYCLES
 };
 
-typedef QPair<int,int> IntRange;
 typedef QPair<hardwareResourceNode*,QRectF> NodeBox;
 typedef QPair<QColor,QRectF> ColoredRect;
 

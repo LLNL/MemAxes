@@ -155,12 +155,22 @@ public:
     void selectionChanged();
     void visibilityChanged();
 
+    void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
+
+    QVector<qreal> means();
+    int numSelected();
+    int numUnselected();
+    int numTotal();
+
     DataObject* at(int i) { return dataObjects[i]; }
     bool isEmpty() { return dataObjects.isEmpty(); }
     int size() { return dataObjects.size(); }
     hardwareTopology* hwTopo() { return hw; }
 
     void setConsole(console *icon) { con = icon; }
+
+public:
+    QStringList meta;
 
 private:
     console *con;

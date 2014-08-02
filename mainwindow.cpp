@@ -180,6 +180,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     dataSet->setConsole(con);
 
+    connect(con, SIGNAL(selectionChangedSig()), this, SLOT(selectionChangedSlot()));
+
     for(int i=0; i<vizWidgets.size(); i++)
     {
         connect(vizWidgets[i], SIGNAL(selectionChangedSig()), this, SLOT(selectionChangedSlot()));
