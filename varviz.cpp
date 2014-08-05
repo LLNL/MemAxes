@@ -56,7 +56,7 @@ void VarViz::processData()
     {
         for(elem=0, p=dataSet->at(d)->begin; p!=dataSet->at(d)->end; elem++, p+=dataSet->at(d)->numDimensions)
         {
-            if(dataSet->at(d)->skip(elem))
+            if(dataSet->selectionDefined() && !dataSet->at(d)->selected(elem))
                 continue;
 
             int varIdx = this->getVariableID(dataSet->at(d)->varNames[elem]);

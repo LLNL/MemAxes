@@ -17,16 +17,19 @@ VolumeVizWidget::VolumeVizWidget(QWidget *parent)
     height = 45;
     depth = 45;
 
-    xdim = 12;
-    ydim = 13;
-    zdim = 14;
-    wdim = 7;
-
-    minAlpha = 0.05;
+    minAlpha = 0.01;
     midAlpha = 0.5;
     maxAlpha = 1.00;
 
-    imageImport = vtkSmartPointer<vtkImageImport>::New();
+    volumeData.resize(width*height*depth);
+    volumeData.fill(0);
+
+    this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+
+    processed = false;
+
+    // Create everything anew
+    imageImport = NULL;
     volRendMapper = vtkSmartPointer<vtkVolumeTextureMapper3D>::New();
     opacityFunction = vtkSmartPointer<vtkPiecewiseFunction>::New();
     colorTransferFunction = vtkSmartPointer<vtkColorTransferFunction>::New();
@@ -34,17 +37,20 @@ VolumeVizWidget::VolumeVizWidget(QWidget *parent)
     volume = vtkSmartPointer<vtkVolume>::New();
     renderer = vtkSmartPointer<vtkRenderer>::New();
 
-    this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    this->GetRenderWindow()->AddRenderer(renderer);
+    //this->GetRenderWindow()->AddRenderer(renderer);
+
+    selectionChangedSlot();
 }
+
 
 VolumeVizWidget::~VolumeVizWidget()
 {
+    this->GetRenderWindow()->RemoveRenderer(renderer);
 }
 
-void VolumeVizWidget::setData(DataObject *iData)
+void VolumeVizWidget::setDataSet(DataSetObject *iData)
 {
-    data = iData;
+    dataset = iData;
     processData();
 }
 
@@ -52,145 +58,84 @@ void VolumeVizWidget::setData(DataObject *iData)
 
 void VolumeVizWidget::processData()
 {
-    //return;
+    selectionChangedSlot();
+    processed = true;
+}
 
-    QVector<qreal>::Iterator p;
+void VolumeVizWidget::selectionChangedSlot()
+{
+    if(!processed)
+        return;
 
-    // HARD CODE
-    qreal minx = std::numeric_limits<double>::max();
-    qreal maxx = 0;
+    volumeData.fill(0);
 
-    qreal miny = std::numeric_limits<double>::max();
-    qreal maxy = 0;
+    int mapdim = dataset->meta.indexOf("map3D");
+    int xdim = dataset->meta.indexOf("xidx");
+    int ydim = dataset->meta.indexOf("yidx");
+    int zdim = dataset->meta.indexOf("zidx");
+    int wdim = dataset->meta.indexOf("latency");
 
-    qreal minz = std::numeric_limits<double>::max();
-    qreal maxz = 0;
+    qreal v;
+    int x,y,z,map3D;
+    for(int d=0; d<dataset->size(); d++)
+    {
+        int elem = 0;
+        for(QVector<qreal>::Iterator val=dataset->at(d)->begin;
+            val!=dataset->at(d)->end;
+            val+=dataset->at(d)->numDimensions, elem++)
+        {
+            if(dataset->selectionDefined() && !dataset->at(d)->selected(elem))
+                continue;
+
+            map3D = *(val+mapdim);
+
+            if(!map3D)
+                continue;
+
+            x = *(val+xdim);
+            y = *(val+ydim);
+            z = *(val+zdim);
+            v = *(val+wdim);
+
+            if(x >= width || y >= height || z >= depth)
+                continue;
+
+            if(x < 0 || y < 0 || z < 0)
+                continue;
+
+            qreal newv = volumeData[ROWMAJOR(x,y,z,width,height)] + v;
+
+            volumeData[ROWMAJOR(x,y,z,width,height)] = newv;
+        }
+    }
 
     minVal = std::numeric_limits<double>::max();
     maxVal = 0;
-
-    int x,y,z,map3D;
-    qreal v;
-    for(p=data->begin; p!=data->end; p+=data->numDimensions)
+    qreal numVals = width*height*depth;
+    qreal sumVals = 0;
+    for(int i=0; i<numVals; i++)
     {
-        map3D = *(p+mapdim);
-
-        if(!map3D)
-            continue;
-
-        x = *(p+xdim);
-        y = *(p+ydim);
-        z = *(p+zdim);
-        v = *(p+wdim);
-
-        if(x >= width || y >= height || z >= depth)
-            continue;
-
-        if(x < 0 || y < 0 || z < 0)
-            continue;
-
-        minx = min((qreal)x,minx);
-        maxx = max((qreal)x,maxx);
-
-        miny = min((qreal)y,miny);
-        maxy = max((qreal)y,maxy);
-
-        minz = min((qreal)z,minz);
-        maxz = max((qreal)z,maxz);
-
-        minVal = min(v,minVal);
-        maxVal = max(v,maxVal);
+        minVal = min(minVal,(qreal)volumeData[i]);
+        maxVal = max(maxVal,(qreal)volumeData[i]);
+        sumVals += volumeData[i];
     }
 
-    midVal = (maxVal - minVal) / 2.0;
+    midVal = sumVals / numVals;
 
     emit minValSet(minVal);
     emit midValSet(midVal);
     emit maxValSet(maxVal);
 
-    selectionChangedSlot();
-}
-
-void VolumeVizWidget::selectionChangedSlot()
-{
-    //return;
-
-    if(renderer)
-        this->GetRenderWindow()->RemoveRenderer(renderer);
-
-    imageImport = vtkSmartPointer<vtkImageImport>::New();
-    volRendMapper = vtkSmartPointer<vtkVolumeTextureMapper3D>::New();
-    volume = vtkSmartPointer<vtkVolume>::New();
-    renderer = vtkSmartPointer<vtkRenderer>::New();
-
-    this->GetRenderWindow()->AddRenderer(renderer);
-
-    volumeData.clear();
-    volumeData.resize(width*height*depth);
-    volumeData.fill(0);
-
-    int elem;
-    QVector<qreal>::Iterator p;
-    int x,y,z,map3D;
-    qreal v;
-    for(p=data->begin, elem=0; p!=data->end; p+=data->numDimensions, elem++)
-    {
-        if(data->skip(elem))
-            continue;
-
-        map3D = *(p+mapdim);
-
-        if(!map3D)
-            continue;
-
-        x = *(p+xdim);
-        y = *(p+ydim);
-        z = *(p+zdim);
-        v = *(p+wdim);
-
-        if(x >= width || y >= height || z >= depth)
-            continue;
-
-        if(x < 0 || y < 0 || z < 0)
-            continue;
-
-        volumeData[ROWMAJOR(x,y,z,width,height)] += v;
-    }
-
-    updateTransferFunction();
-
-    // QVector<float> to vtkImageData
-    imageImport->SetDataSpacing(1, 1, 1);
-    imageImport->SetDataOrigin(0, 0, 0);
-    imageImport->SetWholeExtent(0, width-1, 0, height-1, 0, depth-1);
-    imageImport->SetDataExtentToWholeExtent();
-    imageImport->SetDataScalarTypeToFloat();
-    imageImport->SetNumberOfScalarComponents(1);
-
-    volRendMapper->SetSampleDistance(0.2);
-
-    imageImport->SetImportVoidPointer((void*)volumeData.constData());
-    imageImport->Update();
-    volRendMapper->SetInput(imageImport->GetOutput());
-
-    // Set properties for volume rendering
-    volumeProps->SetColor(colorTransferFunction);
-    volumeProps->SetScalarOpacity(opacityFunction);
-    volumeProps->SetInterpolationTypeToNearest();
-    volumeProps->ShadeOff();
-
-    volume->SetProperty(volumeProps);
-    volume->SetMapper(volRendMapper);
-
-    renderer->RemoveVolume(volume);
-    renderer->AddVolume(volume);
-    renderer->ResetCamera();
+    confVtk();
 
     this->update();
 }
 
 void VolumeVizWidget::updateTransferFunction()
 {
+    if(!processed)
+        return;
+
     // Color Transfer functions
     colorTransferFunction->RemoveAllPoints();
     colorTransferFunction->AddRGBPoint(minVal,0,0,1);
@@ -204,6 +149,44 @@ void VolumeVizWidget::updateTransferFunction()
     opacityFunction->AddPoint(maxVal,maxAlpha);
 
     this->update();
+}
+
+void VolumeVizWidget::confVtk()
+{
+    if(renderer)
+        this->GetRenderWindow()->RemoveRenderer(renderer);
+    this->GetRenderWindow()->AddRenderer(renderer);
+
+    imageImport = vtkSmartPointer<vtkImageImport>::New();
+
+    // QVector<float> to vtkImageData
+    imageImport->SetDataSpacing(1, 1, 1);
+    imageImport->SetDataOrigin(0, 0, 0);
+    imageImport->SetWholeExtent(0, width-1, 0, height-1, 0, depth-1);
+    imageImport->SetDataExtentToWholeExtent();
+    imageImport->SetDataScalarTypeToFloat();
+    imageImport->SetNumberOfScalarComponents(1);
+
+    volRendMapper->SetSampleDistance(0.2);
+
+    imageImport->SetImportVoidPointer((void*)volumeData.constData());
+    volRendMapper->SetInput(imageImport->GetOutput());
+
+    // Set properties for volume rendering
+    volumeProps->SetColor(colorTransferFunction);
+    volumeProps->SetScalarOpacity(opacityFunction);
+    volumeProps->SetInterpolationTypeToNearest();
+    volumeProps->ShadeOff();
+
+    volume->SetProperty(volumeProps);
+    volume->SetMapper(volRendMapper);
+
+    renderer->RemoveVolume(volume);
+    renderer->AddVolume(volume);
+
+    imageImport->Update();
+    volRendMapper->Update();
+    volume->Update();
 }
 
 void VolumeVizWidget::setMinVal(double val)
@@ -240,44 +223,4 @@ void VolumeVizWidget::setMaxOpacity(int val)
 {
     maxAlpha = (qreal)val / (qreal)100.0;
     updateTransferFunction();
-}
-
-void VolumeVizWidget::setMapDim(int val)
-{
-    mapdim = val;
-
-    if(processed)
-        selectionChangedSlot();
-}
-
-void VolumeVizWidget::setXDim(int val)
-{
-    xdim = val;
-
-    if(processed)
-        selectionChangedSlot();
-}
-
-void VolumeVizWidget::setYDim(int val)
-{
-    ydim = val;
-
-    if(processed)
-        selectionChangedSlot();
-}
-
-void VolumeVizWidget::setZDim(int val)
-{
-    zdim = val;
-
-    if(processed)
-        selectionChangedSlot();
-}
-
-void VolumeVizWidget::setWDim(int val)
-{
-    wdim = val;
-
-    if(processed)
-        selectionChangedSlot();
 }

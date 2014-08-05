@@ -261,8 +261,8 @@ bool DataObject::selectionDefined()
 
 bool DataObject::skip(unsigned int index)
 {
-    bool sel = !selectionDefined() || (selectionDefined() && selected(index));
-    return !(sel && visible(index));
+    bool sel = !selectionDefined() || selected(index);
+    return sel && visible(index);
 }
 
 // Things get messy here

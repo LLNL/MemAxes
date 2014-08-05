@@ -116,7 +116,7 @@
        </widget>
        <widget class="QTabWidget" name="centerTabWidget">
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="applicationTab">
          <attribute name="title">
@@ -195,7 +195,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="midVal"/>
+             <widget class="QDoubleSpinBox" name="midVal">
+              <property name="minimum">
+               <double>-999999999.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>999999999.000000000000000</double>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer name="horizontalSpacer_2">
@@ -252,30 +259,6 @@
                </size>
               </property>
              </spacer>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
-             <widget class="QLabel" name="label_8">
-              <property name="text">
-               <string>Time:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSlider" name="timeSlider">
-              <property name="minimum">
-               <number>67</number>
-              </property>
-              <property name="maximum">
-               <number>763</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
             </item>
            </layout>
           </item>

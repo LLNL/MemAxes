@@ -24,12 +24,10 @@ public:
     ~VolumeVizWidget();
 
 public:
-    void setData(DataObject* iData);
-
-protected:
-    virtual void processData();
+    void setDataSet(DataSetObject* iData);
 
 public slots:
+    void processData();
     void selectionChangedSlot();
 
     void setMinVal(double val);
@@ -40,12 +38,6 @@ public slots:
     void setMidOpacity(int val);
     void setMaxOpacity(int val);
 
-    void setMapDim(int val);
-    void setXDim(int val);
-    void setYDim(int val);
-    void setZDim(int val);
-    void setWDim(int val);
-
 signals:
     void minValSet(double val);
     void midValSet(double val);
@@ -53,12 +45,13 @@ signals:
 
 private:
     void updateTransferFunction();
+    void confVtk();
 
 private:
     QVector<float> volumeData;
 
 protected:
-    DataObject *data;
+    DataSetObject *dataset;
     bool processed;
 
     int margin;
@@ -73,12 +66,6 @@ private:
     vtkSmartPointer<vtkVolumeProperty> volumeProps;
     vtkSmartPointer<vtkVolume> volume;
     vtkSmartPointer<vtkRenderer> renderer;
-
-    int mapdim;
-    int xdim;
-    int ydim;
-    int zdim;
-    int wdim;
 
     qreal minVal;
     qreal midVal;

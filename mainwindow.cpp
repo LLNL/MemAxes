@@ -8,7 +8,6 @@ using namespace std;
 #include <QFileDialog>
 
 #include "parallelcoordinatesviz.h"
-//#include "volumevizwidget.h"
 
 // BIG TODO LIST
 
@@ -73,8 +72,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->codeVizLayout->addWidget(codeViz);
 
     //connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
-    //connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setMetricDim(int)));
-    //connect(ui->lineNum, SIGNAL(currentIndexChanged(int)), codeViz, SLOT(setLineNumDim(int)));
 
     vizWidgets.push_back(codeViz);
 
@@ -84,9 +81,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     varViz = new VarViz(this);
     ui->varVizLayout->addWidget(varViz);
-
-    //connect(ui->codeMetric, SIGNAL(currentIndexChanged(int)), varViz, SLOT(setMetricDim(int)));
-    //connect(ui->varSel, SIGNAL(currentIndexChanged(int)), varViz, SLOT(setVarDim(int)));
 
     vizWidgets.push_back(varViz);
 
@@ -108,7 +102,6 @@ MainWindow::MainWindow(QWidget *parent) :
      * Volume Viz
      */
 
-    /*
     volumeVizWidget = new VolumeVizWidget(this);
     ui->volVizLayout->addWidget(volumeVizWidget);
 
@@ -123,7 +116,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(volumeVizWidget, SIGNAL(minValSet(double)), ui->minVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
-    */
 
     /*
      * Memory Topology Viz
@@ -176,7 +168,7 @@ MainWindow::MainWindow(QWidget *parent) :
         vizWidgets[i]->setDataSet(dataSet);
         vizWidgets[i]->setConsole(con);
     }
-    //volumeVizWidget->setDataSet(dataSet);
+    volumeVizWidget->setDataSet(dataSet);
 
     dataSet->setConsole(con);
 
@@ -199,6 +191,7 @@ MainWindow::~MainWindow()
 void MainWindow::selectionChangedSlot()
 {
     dataSet->selectionChanged();
+    volumeVizWidget->selectionChangedSlot();
     emit selectionChangedSig();
 }
 
@@ -230,7 +223,7 @@ int MainWindow::loadData()
         vizWidgets[i]->update();
     }
 
-    //volumeVizWidget->processData();
+    volumeVizWidget->processData();
 
     return 0;
 }

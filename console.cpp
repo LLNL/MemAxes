@@ -6,7 +6,7 @@ static QString titleText(
 
 static QString helpText(
     "Commands : \n"
-    "    "
+    "    \n"
     "    select [--mode={new,append,filter}] <query>\n"
     "    hide <query>\n"
     "    show <query>\n"
@@ -18,8 +18,7 @@ static QString helpText(
     "    inspect\n"
     "    \n"
     "Examples : \n"
-    "    select DIMRANGE latency=30:40 cpu=4:5\n"
-    "    select DIMRANGE dim6=20:200 dim8=40:45\n"
+    "    select DIMRANGE 4=30:40 5=4:5\n"
     "    \n"
     "    select RESOURCE socket=1\n"
     "    select RESOURCE cpu=4 cache=L3\n"

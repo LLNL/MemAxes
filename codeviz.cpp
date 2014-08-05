@@ -89,7 +89,7 @@ void CodeViz::processData()
     {
         for(elem=0, p=dataSet->at(d)->begin; p!=dataSet->at(d)->end; elem++, p+=dataSet->at(d)->numDimensions)
         {
-            if(dataSet->at(d)->skip(elem))
+            if(dataSet->selectionDefined() && !dataSet->at(d)->selected(elem))
                 continue;
 
             int sourceIdx = this->getFileID(dataSet->at(d)->fileNames[elem]);
