@@ -19,9 +19,9 @@ enum select_type
 
 enum selection_mode
 {
-    L_XOR = 0,
-    L_OR,
-    L_AND
+    MODE_NEW = 0,
+    MODE_APPEND,
+    MODE_FILTER
 };
 
 class DataObject
@@ -43,6 +43,7 @@ public:
     void deselectData(unsigned int index);
     void logicalSelectData(unsigned int index, bool select);
 
+    void selectAll();
     void selectAllVisible();
     void deselectAll();
 
@@ -60,7 +61,7 @@ public:
     void selectByVarName(QString str);
 
     void hideSelected();
-    void showSelectedOnly();
+    void hideUnselected();
 
     bool selectionDefined();
     bool skip(unsigned int index);
@@ -143,11 +144,12 @@ public:
     int addData(QString filename);
     int setHardwareTopology(QString filename);
 
-    void showSelectedOnly();
+    void hideUnselected();
     void showAll();
     void deselectAll();
     void hideSelected();
     void setSelectionMode(selection_mode mode);
+    void selectAll();
     void selectAllVisible();
 
     bool selectionDefined();

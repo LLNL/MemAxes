@@ -43,6 +43,7 @@ public slots:
     void showAll();
     void hideSelected();
     void selectAllVisible();
+    void selectAll();
     void deselectAll();
     void setSelectModeAND(bool on);
     void setSelectModeOR(bool on);

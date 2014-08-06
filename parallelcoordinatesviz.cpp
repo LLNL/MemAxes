@@ -257,13 +257,10 @@ void ParallelCoordinatesVizWidget::processSelection()
         }
     }
 
-    for(int d=0; d<dataSet->size(); d++)
-    {
-        if(selDims.isEmpty())
-            dataSet->at(d)->deselectAll();
-        else
-            dataSet->at(d)->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
-    }
+    if(selDims.isEmpty())
+        dataSet->deselectAll();
+    else
+        dataSet->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
 
     recalcLines();
 

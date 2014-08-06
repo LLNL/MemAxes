@@ -9,12 +9,6 @@ using namespace std;
 
 #include "parallelcoordinatesviz.h"
 
-// BIG TODO LIST
-
-// BUGS
-// Check HARD CODE!
-// mem topo selection
-
 // NEW FEATURES
 // Mem topo 1d memory range
 // Multiple selections, selection groups (classification)
@@ -56,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->selectModeAND, SIGNAL(toggled(bool)), this, SLOT(setSelectModeAND(bool)));
 
     // Selection buttons
+    connect(ui->selectAll, SIGNAL(clicked()), this, SLOT(selectAll()));
     connect(ui->deselectAll, SIGNAL(clicked()), this, SLOT(deselectAll()));
     connect(ui->selectAllVisible, SIGNAL(clicked()), this, SLOT(selectAllVisible()));
 
@@ -71,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
     codeViz = new CodeViz(this);
     ui->codeVizLayout->addWidget(codeViz);
 
-    //connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
+    connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
 
     vizWidgets.push_back(codeViz);
 
@@ -130,20 +125,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->memTopoVizModeSunburst,SIGNAL(toggled(bool)),memViz,SLOT(setVizModeSunburst(bool)));
 
     vizWidgets.push_back(memViz);
-
-    /*
-     * Selection Viz
-     */
-
-    /*
-    selViz = new SelectionVizWidget(this);
-    ui->selectionLayout->addWidget(selViz);
-
-    connect(ui->selectionChartWeightByCycles,SIGNAL(toggled(bool)),selViz,SLOT(setWeightModeLatency(bool)));
-    connect(ui->selectionChartWeightBySamples,SIGNAL(toggled(bool)),selViz,SLOT(setWeightModeSamples(bool)));
-
-    vizWidgets.push_back(selViz);
-    */
 
     /*
      * Parallel Coords Viz
@@ -286,13 +267,19 @@ int MainWindow::selectSourceDirectory()
 
 void MainWindow::showSelectedOnly()
 {
-    dataSet->showSelectedOnly();
+    dataSet->hideUnselected();
     visibilityChangedSlot();
 }
 
 void MainWindow::selectAllVisible()
 {
     dataSet->selectAllVisible();
+    selectionChangedSlot();
+}
+
+void MainWindow::selectAll()
+{
+    dataSet->selectAll();
     selectionChangedSlot();
 }
 
@@ -317,19 +304,19 @@ void MainWindow::hideSelected()
 void MainWindow::setSelectModeAND(bool on)
 {
     if(on)
-        dataSet->setSelectionMode(L_AND);
+        dataSet->setSelectionMode(MODE_FILTER);
 }
 
 void MainWindow::setSelectModeOR(bool on)
 {
     if(on)
-        dataSet->setSelectionMode(L_OR);
+        dataSet->setSelectionMode(MODE_APPEND);
 }
 
 void MainWindow::setSelectModeXOR(bool on)
 {
     if(on)
-        dataSet->setSelectionMode(L_XOR);
+        dataSet->setSelectionMode(MODE_NEW);
 }
 
 void MainWindow::setCodeLabel(QFile *file)

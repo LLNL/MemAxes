@@ -190,13 +190,13 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                                        sourceBlocks[i].lineBlocks[j].block.height());
                 if(lineSelectionBox.contains(e->pos()))
                 {
-                    for(int d=0; d<dataSet->size(); d++)
-                    {
-                        dataSet->at(d)->deselectAll();
-                        dataSet->at(d)->selectByDimRange(dataSet->at(d)->lineDim,
-                                               sourceBlocks[i].lineBlocks[j].line,
-                                               sourceBlocks[i].lineBlocks[j].line);
-                    }
+                    QVector<int> dims;
+                    QVector<qreal> val;
+
+                    dims.push_back(dataSet->meta.indexOf("line"));
+                    val.push_back(sourceBlocks[i].lineBlocks[j].line);
+
+                    dataSet->selectByMultiDimRange(dims,val,val);
 
                     emit sourceFileSelected(sourceBlocks[i].file);
                     emit sourceLineSelected(sourceBlocks[i].lineBlocks[j].line);

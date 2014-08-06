@@ -116,7 +116,7 @@
        </widget>
        <widget class="QTabWidget" name="centerTabWidget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="applicationTab">
          <attribute name="title">
@@ -375,6 +375,13 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout">
               <item>
+               <widget class="QPushButton" name="selectAll">
+                <property name="text">
+                 <string>Select All</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="deselectAll">
                 <property name="text">
                  <string>Deselect All</string>
@@ -393,9 +400,25 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_3">
               <item>
-               <widget class="QRadioButton" name="selectModeAND">
+               <widget class="QLabel" name="label">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>16</height>
+                 </size>
+                </property>
                 <property name="text">
-                 <string>Filter</string>
+                 <string>Select Mode:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="selectModeXOR">
+                <property name="text">
+                 <string>New</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -410,12 +433,9 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="selectModeXOR">
+               <widget class="QRadioButton" name="selectModeAND">
                 <property name="text">
-                 <string>New</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
+                 <string>Filter</string>
                 </property>
                </widget>
               </item>
@@ -424,9 +444,9 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_4">
               <item>
-               <widget class="QPushButton" name="hideSelected">
+               <widget class="QPushButton" name="showAll">
                 <property name="text">
-                 <string>Hide Selected</string>
+                 <string>Show All</string>
                 </property>
                </widget>
               </item>
@@ -438,9 +458,9 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="showAll">
+               <widget class="QPushButton" name="hideSelected">
                 <property name="text">
-                 <string>Show All</string>
+                 <string>Hide Selected</string>
                 </property>
                </widget>
               </item>

@@ -10,7 +10,7 @@ DataObject::DataObject()
 {
     numSelected = 0;
     topo = NULL;
-    selectionMode = L_XOR;
+    selectionMode = MODE_NEW;
 }
 
 void DataObject::init()
@@ -97,10 +97,16 @@ void DataObject::deselectData(unsigned int index)
 
 void DataObject::logicalSelectData(unsigned int index, bool select)
 {
-    if(select && (selectionMode == L_OR || selectionMode == L_XOR))
+    if(select && (selectionMode == MODE_APPEND || selectionMode == MODE_NEW))
         this->selectData(index);
-    else if(!select && selectionMode == L_AND)
+    else if(!select && selectionMode == MODE_FILTER)
         this->deselectData(index);
+}
+
+void DataObject::selectAll()
+{
+    showAll();
+    selectAllVisible();
 }
 
 void DataObject::selectAllVisible()
@@ -156,7 +162,7 @@ void DataObject::hideAll()
 
 void DataObject::selectBySourceFileName(QString str)
 {
-    if(selectionMode == L_XOR)
+    if(selectionMode == MODE_NEW)
         deselectAll();
 
     bool select;
@@ -171,7 +177,7 @@ void DataObject::selectBySourceFileName(QString str)
 
 void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
 {
-    if(selectionMode == L_XOR)
+    if(selectionMode == MODE_NEW)
         deselectAll();
 
     bool select;
@@ -186,7 +192,7 @@ void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
 
 void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
 {
-    if(selectionMode == L_XOR)
+    if(selectionMode == MODE_NEW)
         deselectAll();
 
     bool select;
@@ -211,7 +217,7 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
 
 void DataObject::selectByVarName(QString str)
 {
-    if(selectionMode == L_XOR)
+    if(selectionMode == MODE_NEW)
         deselectAll();
 
     bool select;
@@ -234,7 +240,7 @@ void DataObject::hideSelected()
     }
 }
 
-void DataObject::showSelectedOnly()
+void DataObject::hideUnselected()
 {
     long long elem;
     for(elem=0; elem<numElements; elem++)
@@ -682,33 +688,71 @@ int DataSetObject::setHardwareTopology(QString filename)
     for(int d=0; d<dataObjects.size(); d++) \
         dataObjects[d]->func;
 
-void DataSetObject::showSelectedOnly()
+void DataSetObject::hideUnselected()
 {
-    FOR_EACH_DATA(showSelectedOnly());
+    QString selcmd("hide UNSELECTED");
+    con->append(selcmd);
+
+    FOR_EACH_DATA(hideUnselected());
 }
 
 void DataSetObject::showAll()
 {
+    QString selcmd("show ALL");
+    con->append(selcmd);
+
     FOR_EACH_DATA(showAll());
 }
 
 void DataSetObject::deselectAll()
 {
+    QString selcmd("deselect ALL");
+    con->append(selcmd);
+
     FOR_EACH_DATA(deselectAll());
 }
 
 void DataSetObject::hideSelected()
 {
+    QString selcmd("hide SELECTED");
+    con->append(selcmd);
+
     FOR_EACH_DATA(hideSelected());
 }
 
 void DataSetObject::setSelectionMode(selection_mode mode)
 {
+    QString selcmd("select MODE=");
+    switch(mode)
+    {
+        case(MODE_NEW):
+            selcmd += "filter";
+            break;
+        case(MODE_APPEND):
+            selcmd += "append";
+            break;
+        case(MODE_FILTER):
+            selcmd += "filter";
+            break;
+    }
+    con->append(selcmd);
+
     FOR_EACH_DATA(setSelectionMode(mode));
+}
+
+void DataSetObject::selectAll()
+{
+    QString selcmd("select ALL");
+    con->append(selcmd);
+
+    FOR_EACH_DATA(selectAll());
 }
 
 void DataSetObject::selectAllVisible()
 {
+    QString selcmd("select VISIBLE");
+    con->append(selcmd);
+
     FOR_EACH_DATA(selectAllVisible());
 }
 
@@ -734,6 +778,15 @@ void DataSetObject::visibilityChanged()
 
 void DataSetObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
 {
+    QString selcmd("select DIMRANGE ");
+    for(int i=0; i<dims.size(); i++)
+    {
+        selcmd += QString::number(dims[i]) + "=" ;
+        selcmd += QString::number(mins[i]) + ":" ;
+        selcmd += QString::number(maxes[i]) + " ";
+    }
+    con->append(selcmd);
+
     FOR_EACH_DATA(selectByMultiDimRange(dims,mins,maxes));
 }
 
