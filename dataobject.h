@@ -158,6 +158,7 @@ public:
     void visibilityChanged();
 
     void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
+    void selectByVarName(QString str);
 
     QVector<qreal> means();
     int numSelected();

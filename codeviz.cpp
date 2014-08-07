@@ -26,6 +26,7 @@ CodeViz::CodeViz(QWidget *parent) :
     this->setMinimumHeight(20);
     this->installEventFilter(this);
 
+    processed = false;
     sourceDir = "NOT SELECTED";
 }
 
@@ -80,8 +81,6 @@ void CodeViz::processData()
     sourceMaxVal = 0;
     sourceBlocks.clear();
 
-    processed = false;
-
     // Get metric values
     int elem = 0;
     QVector<qreal>::Iterator p;
@@ -93,11 +92,11 @@ void CodeViz::processData()
                 continue;
 
             int sourceIdx = this->getFileID(dataSet->at(d)->fileNames[elem]);
-            sourceBlocks[sourceIdx].val += *(p+dataSet->at(d)->sourceDim);
+            sourceBlocks[sourceIdx].val += *(p+dataSet->at(d)->latencyDim);
             sourceMaxVal = fmax(sourceMaxVal,sourceBlocks[sourceIdx].val);
 
             int lineIdx = this->getLineID(&sourceBlocks[sourceIdx],*(p+dataSet->at(d)->lineDim));
-            sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+dataSet->at(d)->sourceDim);
+            sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+dataSet->at(d)->latencyDim);
 
             sourceBlocks[sourceIdx].lineMaxVal = fmax(sourceBlocks[sourceIdx].lineMaxVal,
                                                       sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);

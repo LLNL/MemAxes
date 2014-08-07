@@ -661,13 +661,13 @@ int DataSetObject::addData(QString filename)
     int ret = dobj->parseCSVFile(filename);
     if(ret != 0)
     {
-        con->append("Error Loading Dataset : "+filename);
+        con->log("Error Loading Dataset : "+filename);
         return ret;
     }
     dobj->calcTotalStatistics();
     dataObjects.push_back(dobj);
     meta = dobj->meta;
-    con->append("Added Dataset : "+filename);
+    con->log("Added Dataset : "+filename);
     return 0;
 }
 
@@ -677,10 +677,10 @@ int DataSetObject::setHardwareTopology(QString filename)
     int ret = hw->loadHardwareTopologyFromXML(filename);
     if(ret != 0)
     {
-        con->append("Error Loading Hardware Topology : "+filename);
+        con->log("Error Loading Hardware Topology : "+filename);
         return ret;
     }
-    con->append("Loaded Hardware Topology : "+filename);
+    con->log("Loaded Hardware Topology : "+filename);
     return 0;
 }
 
@@ -691,7 +691,7 @@ int DataSetObject::setHardwareTopology(QString filename)
 void DataSetObject::hideUnselected()
 {
     QString selcmd("hide UNSELECTED");
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(hideUnselected());
 }
@@ -699,7 +699,7 @@ void DataSetObject::hideUnselected()
 void DataSetObject::showAll()
 {
     QString selcmd("show ALL");
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(showAll());
 }
@@ -707,7 +707,7 @@ void DataSetObject::showAll()
 void DataSetObject::deselectAll()
 {
     QString selcmd("deselect ALL");
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(deselectAll());
 }
@@ -715,7 +715,7 @@ void DataSetObject::deselectAll()
 void DataSetObject::hideSelected()
 {
     QString selcmd("hide SELECTED");
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(hideSelected());
 }
@@ -735,7 +735,7 @@ void DataSetObject::setSelectionMode(selection_mode mode)
             selcmd += "filter";
             break;
     }
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(setSelectionMode(mode));
 }
@@ -743,7 +743,7 @@ void DataSetObject::setSelectionMode(selection_mode mode)
 void DataSetObject::selectAll()
 {
     QString selcmd("select ALL");
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(selectAll());
 }
@@ -751,7 +751,7 @@ void DataSetObject::selectAll()
 void DataSetObject::selectAllVisible()
 {
     QString selcmd("select VISIBLE");
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(selectAllVisible());
 }
@@ -785,9 +785,17 @@ void DataSetObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins
         selcmd += QString::number(mins[i]) + ":" ;
         selcmd += QString::number(maxes[i]) + " ";
     }
-    con->append(selcmd);
+    con->log(selcmd);
 
     FOR_EACH_DATA(selectByMultiDimRange(dims,mins,maxes));
+}
+
+void DataSetObject::selectByVarName(QString str)
+{
+    QString selcmd("select VARIABLE "+str);
+    con->log(selcmd);
+
+    FOR_EACH_DATA(selectByVarName(str));
 }
 
 QVector<qreal> DataSetObject::means()

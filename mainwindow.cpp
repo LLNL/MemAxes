@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
     codeViz = new CodeViz(this);
     ui->codeVizLayout->addWidget(codeViz);
 
-    connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
+    //connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
 
     vizWidgets.push_back(codeViz);
 
