@@ -407,13 +407,6 @@ hardwareResourceNode *MemTopoViz::nodeAtPosition(QPoint p)
 
 void MemTopoViz::selectSamplesWithinNode(hardwareResourceNode *node)
 {
-    for(int d=0; d<dataSet->size(); d++)
-    {
-        SampleIdxVector *samples = &node->sampleSets[dataSet->at(d)].first;
-        for(int i=0; i<samples->size(); i++)
-        {
-            dataSet->at(d)->selectData(samples->at(i));
-        }
-    }
+    dataSet->selectByResource(node);
     emit selectionChangedSig();
 }

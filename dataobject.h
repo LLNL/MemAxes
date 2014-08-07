@@ -8,6 +8,7 @@
 #include "console.h"
 
 class hardwareTopology;
+class hardwareResourceNode;
 class console;
 
 enum select_type
@@ -159,6 +160,7 @@ public:
 
     void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
     void selectByVarName(QString str);
+    void selectByResource(hardwareResourceNode *node);
 
     QVector<qreal> means();
     int numSelected();

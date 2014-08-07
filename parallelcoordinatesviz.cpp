@@ -304,7 +304,7 @@ void ParallelCoordinatesVizWidget::calcHistBins()
     {
         for(elem=0, p=dataSet->at(d)->begin; p!=dataSet->at(d)->end; elem++, p+=numDimensions)
         {
-            if(dataSet->at(d)->skip(elem))
+            if(dataSet->selectionDefined() && !dataSet->at(d)->selected(elem))
                 continue;
 
             for(int i=0; i<numDimensions; i++)

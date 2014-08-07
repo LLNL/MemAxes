@@ -20,9 +20,7 @@ static QString helpText(
     "Examples : \n"
     "    select DIMRANGE 4=30:40 5=4:5\n"
     "    \n"
-    "    select RESOURCE socket=1\n"
-    "    select RESOURCE cpu=4 cache=L3\n"
-    "    select RESOURCE NUMA=2\n"
+//    "    select RESOURCE cpu=4 cache=L3\n"
 );
 
 console::console(QWidget *parent) :

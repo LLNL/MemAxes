@@ -798,6 +798,21 @@ void DataSetObject::selectByVarName(QString str)
     FOR_EACH_DATA(selectByVarName(str));
 }
 
+void DataSetObject::selectByResource(hardwareResourceNode *node)
+{
+    QString selcmd("select RESOURCE "+node->name+"="+QString::number(node->id));
+    con->log(selcmd);
+
+    for(int d=0; d<this->size(); d++)
+    {
+        SampleIdxVector *samples = &node->sampleSets[this->at(d)].first;
+        for(int i=0; i<samples->size(); i++)
+        {
+            this->at(d)->selectData(samples->at(i));
+        }
+    }
+}
+
 QVector<qreal> DataSetObject::means()
 {
     QVector<qreal> ret;
