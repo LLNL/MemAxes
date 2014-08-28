@@ -25,7 +25,7 @@ void DataObject::init()
     selection.fill(VISIBLE);
 }
 
-void DataObject::setHardwareTopology(hardwareTopology *hw, bool sel)
+void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
 {
     topo = hw;
 
@@ -67,7 +67,9 @@ void DataObject::setHardwareTopology(hardwareTopology *hw, bool sel)
 
         // Go up to data source
         for( ; dse>0; dse--)
+        {
             node = node->parent;
+        }
 
         samples = &node->sampleSets[this].first;
         numCycles = &node->sampleSets[this].second;
@@ -284,7 +286,7 @@ int createUniqueID(QVector<QString> existing, QString name)
     return existing.size()-1;
 }
 
-int encDepth(int enc)
+int dseDepth(int enc)
 {
     int src = enc & 0xF;
     switch(src)
@@ -310,7 +312,7 @@ int encDepth(int enc)
     return -1;
 }
 
-int encDirty(int enc)
+int dseDirty(int enc)
 {
     int src = enc & 0xF;
     switch(src)
@@ -356,15 +358,17 @@ std::string encToString(int enc)
 }
 
 
-int encStlb(int enc)
+int dseSTLB(int enc)
 {
     return enc & 0x10;
 }
 
-int encLocked(int enc)
+int dseLocked(int enc)
 {
     return enc & 0x20;
 }
+
+using namespace std;
 
 int DataObject::parseCSVFile(QString dataFileName)
 {
@@ -380,60 +384,10 @@ int DataObject::parseCSVFile(QString dataFileName)
     QStringList lineValues;
     qint64 elemid = 0;
 
-    // HARD CODE
-
     // Get metadata from first line
     line = dataStream.readLine();
     this->meta = line.split(',');
-    this->meta.insert(7,"STLB Miss");
-    this->meta.insert(7,"Locked");
-    this->meta.insert(7,"Dirtiness");
     this->numDimensions = this->meta.size();
-
-    // Get data
-    while(!dataStream.atEnd())
-    {
-        line = dataStream.readLine();
-        lineValues = line.split(',');
-
-        if(lineValues.size() != this->numDimensions-3)
-        {
-            cerr << "ERROR: element dimensions do not match metadata!" << endl;
-            cerr << "At element " << elemid << endl;
-            return -1;
-        }
-
-        // hack for different kinds of values
-        for(int i=0; i<lineValues.size(); i++)
-        {
-            if(i==0) // data object
-            {
-                this->vals.push_back((double)-1);
-                varNames.push_back(lineValues[i]);
-            }
-            else if(i==1) // file name
-            {
-                this->vals.push_back((double)-1);
-                fileNames.push_back(lineValues[i]);
-            }
-            else if(i==3)
-                this->vals.push_back((double)lineValues[i].toLongLong(NULL,16));
-            else if(i==6) // DSE
-            {
-                this->vals.push_back(encDepth(lineValues[i].toInt()));
-                this->vals.push_back(encDirty(lineValues[i].toInt()));
-                this->vals.push_back(encLocked(lineValues[i].toInt()));
-                this->vals.push_back(encStlb(lineValues[i].toInt()));
-            }
-            else
-                this->vals.push_back(lineValues[i].toDouble());
-        }
-
-        elemid++;
-    }
-
-    // Close and return
-    dataFile.close();
 
     sourceDim = this->meta.indexOf("source");
     lineDim = this->meta.indexOf("line");
@@ -446,6 +400,49 @@ int DataObject::parseCSVFile(QString dataFileName)
     xDim = this->meta.indexOf("xidx");
     yDim = this->meta.indexOf("yidx");
     zDim = this->meta.indexOf("zidx");
+
+    // Get data
+    while(!dataStream.atEnd())
+    {
+        line = dataStream.readLine();
+        lineValues = line.split(',');
+
+        if(lineValues.size() != this->numDimensions)
+        {
+            cerr << "ERROR: element dimensions do not match metadata!" << endl;
+            cerr << "At element " << elemid << endl;
+            return -1;
+        }
+
+        // Process individual dimensions differently
+        for(int i=0; i<lineValues.size(); i++)
+        {
+            if(i==variableDim)
+            {
+                this->vals.push_back(-1);
+                varNames.push_back(lineValues[i]);
+            }
+            else if(i==sourceDim)
+            {
+                this->vals.push_back(-1);
+                fileNames.push_back(lineValues[i]);
+            }
+            else if(i==dataSourceDim)
+            {
+                int dseVal = lineValues[i].toInt(NULL,16);
+                this->vals.push_back(dseDepth(dseVal));
+            }
+            else
+            {
+                this->vals.push_back(lineValues[i].toLongLong());
+            }
+        }
+
+        elemid++;
+    }
+
+    // Close and return
+    dataFile.close();
 
     this->init();
 
@@ -767,13 +764,13 @@ bool DataSetObject::selectionDefined()
 void DataSetObject::selectionChanged()
 {
     bool sel = selectionDefined();
-    FOR_EACH_DATA(setHardwareTopology(hw,sel));
+    FOR_EACH_DATA(collectTopoSamples(hw,sel));
 }
 
 void DataSetObject::visibilityChanged()
 {
     bool sel = selectionDefined();
-    FOR_EACH_DATA(setHardwareTopology(hw,sel));
+    FOR_EACH_DATA(collectTopoSamples(hw,sel));
 }
 
 void DataSetObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)

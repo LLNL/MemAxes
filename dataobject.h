@@ -35,8 +35,8 @@ public:
 public:
     void init();
 
-    void setHardwareTopology(hardwareTopology *hw, bool sel = false);
-    void selectionChanged() { setHardwareTopology(topo); }
+    void collectTopoSamples(hardwareTopology *hw, bool sel = false);
+    void selectionChanged() { collectTopoSamples(topo); }
 
     void setSelectionMode(selection_mode mode) { selectionMode = mode; }
 
