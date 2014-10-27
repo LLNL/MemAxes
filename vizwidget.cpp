@@ -116,6 +116,11 @@ void VizWidget::beginNativeGL()
 {
     makeCurrent();
 
+    // Qt 5.X BUG
+    //int width2x = width()*2;
+    //int height2x = height()*2;
+    //glViewport(0, 0, width2x, height2x);
+
     glViewport(0, 0, width(), height());
 
     glMatrixMode(GL_MODELVIEW);
