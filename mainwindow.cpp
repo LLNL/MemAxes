@@ -98,6 +98,7 @@ MainWindow::MainWindow(QWidget *parent) :
      * Volume Viz
      */
 
+    /*
     volumeVizWidget = new VolumeVizWidget(this);
     ui->volVizLayout->addWidget(volumeVizWidget);
 
@@ -112,6 +113,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(volumeVizWidget, SIGNAL(minValSet(double)), ui->minVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
     connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
+    */
 
     /*
      * Memory Topology Viz
@@ -150,7 +152,7 @@ MainWindow::MainWindow(QWidget *parent) :
         vizWidgets[i]->setDataSet(dataSet);
         vizWidgets[i]->setConsole(con);
     }
-    volumeVizWidget->setDataSet(dataSet);
+    //volumeVizWidget->setDataSet(dataSet);
 
     dataSet->setConsole(con);
 
@@ -172,7 +174,7 @@ MainWindow::~MainWindow()
 void MainWindow::selectionChangedSlot()
 {
     dataSet->selectionChanged();
-    volumeVizWidget->selectionChangedSlot();
+    //volumeVizWidget->selectionChangedSlot();
     emit selectionChangedSig();
 }
 
@@ -204,7 +206,7 @@ int MainWindow::loadData()
         vizWidgets[i]->update();
     }
 
-    volumeVizWidget->processData();
+    //volumeVizWidget->processData();
 
     return 0;
 }
