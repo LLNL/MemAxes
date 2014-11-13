@@ -1,0 +1,138 @@
+<Hardware id="0" name="msn">
+    <NUMA id="0" size="33475052">
+        <Cache id="3" size="20971520">
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="0">
+                    </CPU>
+                    <CPU id="16">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="2">
+                    </CPU>
+                    <CPU id="18">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="4">
+                    </CPU>
+                    <CPU id="20">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="6">
+                    </CPU>
+                    <CPU id="22">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="8">
+                    </CPU>
+                    <CPU id="24">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="10">
+                    </CPU>
+                    <CPU id="26">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="12">
+                    </CPU>
+                    <CPU id="28">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="14">
+                    </CPU>
+                    <CPU id="30">
+                    </CPU>
+                </Cache>
+            </Cache>
+        </Cache>
+    </NUMA>
+    <NUMA id="1" size="33554432">
+        <Cache id="3" size="20971520">
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="1">
+                    </CPU>
+                    <CPU id="17">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="3">
+                    </CPU>
+                    <CPU id="19">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="5">
+                    </CPU>
+                    <CPU id="21">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="7">
+                    </CPU>
+                    <CPU id="23">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="9">
+                    </CPU>
+                    <CPU id="25">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="11">
+                    </CPU>
+                    <CPU id="27">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="13">
+                    </CPU>
+                    <CPU id="29">
+                    </CPU>
+                </Cache>
+            </Cache>
+            <Cache id="2" size="262144">
+                <Cache id="1" size="32768">
+                    <CPU id="15">
+                    </CPU>
+                    <CPU id="31">
+                    </CPU>
+                </Cache>
+            </Cache>
+        </Cache>    
+    </NUMA>
+</Hardware>

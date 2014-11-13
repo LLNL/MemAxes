@@ -3,9 +3,9 @@ MemAxes is a tool for visualizing memory access samples acquired by load/store s
 
 # Quick Start
 1. **File → Load Data**
-2. Select a hardware topology file, e.g. **msn.xml** (Multi-Socket Numa)
-3. Select a source code directory, e.g. **lulesh1.0**
-4. Select a dataset, e.g. **inorder.out**
+2. Select a hardware topology file, e.g. **example_data/lulesh/hardware/msn.xml**
+3. Select a source code directory, e.g. **example_data/lulesh/source_dir**
+4. Select a dataset, e.g. **example_data/lulesh/data/lulesh_inorder.out**
 5. Optionally, add another dataset using **File → Add Dataset**
 
 ----
