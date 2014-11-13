@@ -1,7 +1,15 @@
 # MemAxes
 MemAxes is a tool for visualizing memory access samples acquired by load/store sampling mechanisms like Intel PEBS or AMD IBS. It allows a user to view the data projected into various domains; specifically, the layout of the hardware resources, the code/variables, the dataset domain, and parallel coordinates. 
 
+----
 # Quick Start
+## Building
+1. Set the correct `QT_DIR` and `VTK_DIR` in the **src/CMakeLists** (or comment out these lines for cmake to find them in their default locations)2. 
+2. Make a build directory `mkdir build && cd build`
+3. Run cmake `cmake ../src`
+4. `make`
+
+## Running
 1. **File → Load Data**
 2. Select a hardware topology file, e.g. **example_data/lulesh/hardware/msn.xml**
 3. Select a source code directory, e.g. **example_data/lulesh/source_dir**
