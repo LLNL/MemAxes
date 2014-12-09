@@ -58,6 +58,7 @@ public:
     int id;
     int depth;
     long long size;
+    long long transactions;
 
     hardwareResourceNode *parent;
     QVector<hardwareResourceNode*> children;

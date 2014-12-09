@@ -71,6 +71,7 @@ signals:
 public slots:
     void selectionChangedSlot();
     void visibilityChangedSlot();
+    void example();
     int loadData();
     int addData();
     int importData();

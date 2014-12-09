@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "memtopoviz.h"
 
 #include <iostream>
@@ -48,18 +49,9 @@ MemTopoViz::MemTopoViz(QWidget *parent) :
     dataMode = COLORBY_CYCLES;
     vizMode = SUNBURST;
 
-    colorMap.push_back(QColor(166,206,227));
-    colorMap.push_back(QColor(31,120,180));
-    colorMap.push_back(QColor(178,223,138));
-    colorMap.push_back(QColor(51,160,44));
-    colorMap.push_back(QColor(251,154,153));
-    colorMap.push_back(QColor(227,26,28));
-    colorMap.push_back(QColor(253,191,111));
-    colorMap.push_back(QColor(255,127,0));
-    colorMap.push_back(QColor(202,178,214));
-    colorMap.push_back(QColor(106,61,154));
-    colorMap.push_back(QColor(255,255,153));
-    colorMap.push_back(QColor(177,89,40 ));
+    colorMap = gradientColorMap(QColor(255,237,160),
+                                QColor(240,59 ,32 ),
+                                128);
 
     this->installEventFilter(this);
     setMouseTracking(true);
@@ -114,41 +106,36 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
     QRectF drawBox = this->rect();
     drawBox.adjust(margin,margin,-margin,-margin);
 
-    QPen pen(Qt::black, 1, Qt::SolidLine);
-    //QPen::QPen ( const QBrush & brush, qreal width,
-    //             Qt::PenStyle style = Qt::SolidLine,
-    //             Qt::PenCapStyle cap = Qt::SquareCap,
-    //             Qt::PenJoinStyle join = Qt::BevelJoin )
-
-    // Draw data boxes first
-    painter->setPen(Qt::NoPen);
-    for(int b=0; b<nodeDataBoxes.size(); b++)
-    {
-        QColor col = nodeDataBoxes[b].first;
-        QRectF box = nodeDataBoxes[b].second;
-
-        painter->setBrush(col);
-
-        if(vizMode == SUNBURST)
-        {
-            QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
-            painter->drawPolygon(segmentPoly.constData(),segmentPoly.size());
-        }
-        else if(vizMode == ICICLE)
-        {
-            painter->drawRect(box);
-        }
-    }
-
     // Draw node outlines
-    painter->setBrush(Qt::NoBrush);
-    painter->setPen(pen);
+    painter->setPen(QPen(Qt::black));
     for(int b=0; b<nodeBoxes.size(); b++)
     {
-        hardwareResourceNode *node = nodeBoxes[b].first;
-        QRectF box = nodeBoxes[b].second;
+        hardwareResourceNode *node = nodeBoxes[b].node;
+        QRectF box = nodeBoxes[b].box;
         QString text = QString::number(node->id);
 
+        // Get value by cycles or samples
+        int numCycles = 0;
+        int numSamples = 0;
+        for(int d=0; d<dataSet->size(); d++)
+        {
+            numSamples += node->sampleSets[dataSet->at(d)].first.size();
+            numCycles += node->sampleSets[dataSet->at(d)].second;
+        }
+
+        qreal val = (dataMode == COLORBY_CYCLES) ? numCycles : numSamples;
+
+        // Scale by depth
+        int depth = node->depth;
+        QColor vcolor = valToColor(val,
+                                   depthValRanges[depth].first,
+                                   depthValRanges[depth].second,
+                                   colorMap);
+
+        // Color by value
+        painter->setBrush(vcolor);
+
+        // Draw rect (radial or regular)
         if(vizMode == SUNBURST)
         {
             QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
@@ -159,6 +146,24 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
             painter->drawRect(box);
             QPointF center = box.center() - QPointF(4,-4);
             painter->drawText(center,text);
+        }
+    }
+
+    // Draw links
+    painter->setBrush(Qt::black);
+    painter->setPen(Qt::NoPen);
+    for(int b=0; b<linkBoxes.size(); b++)
+    {
+        QRectF box = linkBoxes[b].box;
+
+        if(vizMode == SUNBURST)
+        {
+            QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
+            painter->drawPolygon(segmentPoly.constData(),segmentPoly.size());
+        }
+        else if(vizMode == ICICLE)
+        {
+            painter->drawRect(box);
         }
     }
 }
@@ -175,79 +180,6 @@ void MemTopoViz::mousePressEvent(QMouseEvent *e)
         selectSamplesWithinNode(node);
     }
 
-}
-
-void MemTopoViz::zoomVertical(hardwareResourceNode *node, int dir)
-{
-    hardwareTopology *topo = dataSet->hwTopo();
-    int d = node->depth;
-    int range = depthRange.second - depthRange.first;
-
-    if(range == 1 && dir > 0)
-        return;
-    if(range < 1)
-        return;
-
-    dir = (dir > 0) ? 1 : -1;
-
-    // Which way to zoom
-    float midpoint = (float)(range+1) / 2.0f;
-    if(d <= midpoint)
-        depthRange.second -= dir;
-    else
-        depthRange.first += dir;
-
-    // Constraints
-    depthRange.first = max(depthRange.first,0);
-    depthRange.second = min(depthRange.second,topo->hardwareResourceMatrix.size());
-
-    // Set width ranges
-    widthRange.clear();
-    for(int i=depthRange.first; i<depthRange.second; i++)
-    {
-        IntRange wr(0,topo->hardwareResourceMatrix[i].size());
-        widthRange.push_back(wr);
-    }
-}
-
-void MemTopoViz::zoomHorizontal(hardwareResourceNode *node, int dir)
-{
-    /*
-    int d = node->depth;
-    int range = widthRange[d].second - widthRange[d].first;
-    if(range <= 1)
-        return;
-
-    dir = (dir > 0) ? 1 : -1;
-
-    // Shrink from largest visible node
-    for(int i=0; i<widthRange.size(); i++)
-    {
-        IntRange wr(0,topo->hardwareResourceMatrix[i].size());
-        widthRange.first += dir;
-        widthRange.second -= dir;
-    }
-    */
-}
-
-void MemTopoViz::wheelEvent(QWheelEvent *e)
-{
-    if(!processed)
-        return;
-
-    /*
-    hardwareResourceNode *node = nodeAtPosition(e->pos());
-
-    if(!node)
-        return;
-
-    if(e->delta() > 0)
-        zoomVertical(node,1);
-    else
-        zoomVertical(node,-1);
-
-    visibilityChangedSlot();
-    */
 }
 
 void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
@@ -273,17 +205,21 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
         label += "\n";
         label += "Size: " + QString::number(node->size) + " bytes\n";
 
-        /*
         label += "\n";
 
-        int numCycles = node->sampleSets[dataSet->at(0)].second;
-        int numSamples = ((SampleIdxVector*)(&node->sampleSets[dataSet->at(0)].first))->size();
+        int numCycles = 0;
+        int numSamples = 0;
+        for(int d=0; d<dataSet->size(); d++)
+        {
+            numSamples += node->sampleSets[dataSet->at(d)].first.size();
+            numCycles += node->sampleSets[dataSet->at(d)].second;
+        }
+
         label += "Samples: " + QString::number(numSamples) + "\n";
         label += "Cycles: " + QString::number(numCycles) + "\n";
 
         label += "\n";
         label += "Cycles/Access: " + QString::number((float)numCycles / (float)numSamples) + "\n";
-        */
 
         QToolTip::showText(e->globalPos(),label,this, rect() );
     }
@@ -313,6 +249,9 @@ void MemTopoViz::calcMinMaxes()
     depthValRanges.resize(depthRange.second - depthRange.first);
     depthValRanges.fill(limits);
 
+    depthTransRanges.resize(depthRange.second - depthRange.first);
+    depthTransRanges.fill(limits);
+
     for(int r=0, i=depthRange.first; i<depthRange.second; r++, i++)
     {
         // Get min/max for this row
@@ -333,22 +272,14 @@ void MemTopoViz::calcMinMaxes()
 
                 depthValRanges[i].first=min(depthValRanges[i].first,val);
                 depthValRanges[i].second=max(depthValRanges[i].second,val);
+
+                qreal trans = node->transactions;
+                depthTransRanges[i].first=min(depthTransRanges[i].first,trans);
+                depthTransRanges[i].second=max(depthTransRanges[i].second,trans);
+                
             }
         }
     }
-}
-
-int compareColoredRect(const void* a, const void* b)
-{
-    const QRectF *ra = &((ColoredRect*)a)->second;
-    const QRectF *rb = &((ColoredRect*)b)->second;
-
-    if(ra->width() > rb->width())
-        return -1;
-    if(ra->width() == rb->width())
-        return 0;
-    //if(ra->width() < rb->width())
-        return 1;
 }
 
 void MemTopoViz::resizeNodeBoxes()
@@ -357,63 +288,61 @@ void MemTopoViz::resizeNodeBoxes()
     drawBox.adjust(margin,margin,-margin,-margin);
 
     nodeBoxes.clear();
+    linkBoxes.clear();
     nodeDataBoxes.clear();
 
-    float depth = depthRange.second - depthRange.first;
-    float deltaY = drawBox.height() / depth;
+    float nodeMarginX = 2.0f;
+    float nodeMarginY = 10.0f;
+
+    float deltaX = 0;
+    float deltaY = drawBox.height() / dataSet->hwTopo()->hardwareResourceMatrix.size();
 
     // Adjust boxes to fill the drawBox space
-    for(int dy=0, i=depthRange.first; i<depthRange.second; dy++, i++)
+    for(int i=0; i<dataSet->hwTopo()->hardwareResourceMatrix.size(); i++)
     {
-        int width = widthRange[dy].second - widthRange[dy].first;
-        float maxBoxWidth = drawBox.width() / (float) width;
-        int minVal = depthValRanges[i].first;
-        int maxVal = depthValRanges[i].second;
-        float deltaX = drawBox.width() / (float) width;
-        for(int dx=0, j=widthRange[dy].first; j<widthRange[dy].second; dx++, j++)
+        deltaX = drawBox.width() / (float)dataSet->hwTopo()->hardwareResourceMatrix[i].size();
+        for(int j=0; j<dataSet->hwTopo()->hardwareResourceMatrix[i].size(); j++)
         {
-            // Create node box (no data)
             hardwareResourceNode *node = dataSet->hwTopo()->hardwareResourceMatrix[i][j];
-            QRectF box = drawBox;
-            box.adjust(deltaX*dx,
-                       deltaY*dy,
-                       -deltaX*(width-dx-1),
-                       -deltaY*(depth-dy-1));
-            NodeBox nodeBox(node,box);
-            nodeBoxes.push_back(nodeBox);
+            int depth = node->depth;
 
-            // Create sized node boxes for each dataset
-            int firstData = nodeDataBoxes.size();
-            float boxHeight = box.height() / (float)dataSet->size();
-            for(int d=0; d<dataSet->size(); d++)
+            // Create Node Box
+            QRectF nodeBox;
+            nodeBox.setRect(drawBox.left()+j*deltaX,
+                            drawBox.top()+i*deltaY,
+                            deltaX,
+                            deltaY);
+
+            if(i==0)
+                nodeBox.adjust(0,0,0,-nodeMarginY);
+            else
+                nodeBox.adjust(nodeMarginX,nodeMarginY,-nodeMarginX,-nodeMarginY);
+
+            nodeBoxes.push_back(NodeBox(node,nodeBox));
+
+            // Create Link Box
+            if(i-1 >= 0)
             {
-                QRectF nodeDataBox = box;
-                node = dataSet->at(d)->topo->hardwareResourceMatrix[i][j];
+                QRectF linkBox;
+                linkBox.setRect(drawBox.left()+j*deltaX,
+                                drawBox.top()+i*deltaY,
+                                deltaX,
+                                nodeMarginY);
 
-                bool cont = node->sampleSets.contains(dataSet->at(d));
-                if(!cont)
-                    continue;
+                linkBox.adjust(nodeMarginX,-nodeMarginY,-nodeMarginX,0);
+                
+                // scale width by transactions
+                float linkWidth = scale(node->transactions,
+                                        depthTransRanges[depth].first,
+                                        depthTransRanges[depth].second,
+                                        1.0f,
+                                        linkBox.width());
+                float deltaWidth = (linkBox.width()-linkWidth)/2.0f;
 
-                SampleIdxVector *samples = &node->sampleSets[dataSet->at(d)].first;
-                int *numCycles = &node->sampleSets[dataSet->at(d)].second;
+                linkBox.adjust(deltaWidth,0,-deltaWidth,0);
 
-                qreal val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples->size();
-                //val = (qreal)(*numCycles) / (qreal)samples->size();
-                qreal scaledVal = scale(val,minVal,maxVal,0,1);
-
-                nodeDataBox.setTop(box.top()+d*boxHeight);
-                nodeDataBox.setWidth(maxBoxWidth*scaledVal);
-                nodeDataBox.setHeight(boxHeight);
-
-                QColor color = valToColor(d,0,dataSet->size(),colorMap);
-                ColoredRect nodeDataColoredBox(color,nodeDataBox);
-                nodeDataBoxes.push_back(nodeDataColoredBox);
+                linkBoxes.push_back(LinkBox(node->parent,node,linkBox));
             }
-
-            // Sort smallest rect to largest
-            qsort((void*)&nodeDataBoxes[firstData],
-                  nodeDataBoxes.size()-firstData,
-                  sizeof(ColoredRect),compareColoredRect);
         }
     }
 }
@@ -425,8 +354,8 @@ hardwareResourceNode *MemTopoViz::nodeAtPosition(QPoint p)
 
     for(int b=0; b<nodeBoxes.size(); b++)
     {
-        hardwareResourceNode *node = nodeBoxes[b].first;
-        QRectF box = nodeBoxes[b].second;
+        hardwareResourceNode *node = nodeBoxes[b].node;
+        QRectF box = nodeBoxes[b].box;
 
         bool containsP = false;
         if(vizMode == SUNBURST)

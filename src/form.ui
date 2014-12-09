@@ -605,7 +605,7 @@
                       <number>999</number>
                      </property>
                      <property name="value">
-                      <number>10</number>
+                      <number>50</number>
                      </property>
                      <property name="sliderPosition">
                       <number>10</number>
@@ -665,7 +665,6 @@
      <string>File</string>
     </property>
     <addaction name="actionImport_Data"/>
-    <addaction name="actionAdd_Dataset_2"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -701,6 +700,11 @@
   <action name="actionAdd_Dataset_2">
    <property name="text">
     <string>Add Dataset</string>
+   </property>
+  </action>
+  <action name="actionLoad_Example">
+   <property name="text">
+    <string>Load Example</string>
    </property>
   </action>
  </widget>

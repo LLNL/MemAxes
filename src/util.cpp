@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "util.h"
 
 qreal normalize(qreal val, qreal min, qreal max)
@@ -111,6 +112,23 @@ QPointF cartesianToPolar(QPointF point)
     theta *= 16;
 
     return QPointF(mag,theta);
+}
+
+ColorMap gradientColorMap(QColor col0, QColor col1, int steps)
+{
+    ColorMap result;
+
+    float deltaR = (float)(col1.red() - col0.red()) / (float)steps;
+    float deltaG = (float)(col1.green() - col0.green()) / (float)steps;
+    float deltaB = (float)(col1.blue() - col0.blue()) / (float)steps;
+    for(float i=0; i<steps; i++)
+    {
+        QColor c(col0.red()+deltaR*i,
+                 col0.green()+deltaG*i,
+                 col0.blue()+deltaB*i);
+        result.push_back(c);
+    }
+    return result;
 }
 
 QColor valToColor(qreal val, qreal minVal, qreal maxVal,

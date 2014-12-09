@@ -70,6 +70,7 @@ void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
     {
         SampleIdxVector *samples = &topo->allHardwareResourceNodes[i]->sampleSets[this].first;
         int *numCycles = &topo->allHardwareResourceNodes[i]->sampleSets[this].second;
+        topo->allHardwareResourceNodes[i]->transactions = 0;
 
         samples->clear();
         *numCycles = 0;
@@ -105,6 +106,7 @@ void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
         // Go up to data source
         for( ; dse>0; dse--)
         {
+            node->transactions++;
             node = node->parent;
         }
 

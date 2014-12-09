@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #ifndef MEMTOPOVIZ_H
 #define MEMTOPOVIZ_H
 
@@ -57,8 +58,40 @@ enum DataMode
     COLORBY_CYCLES
 };
 
-typedef QPair<hardwareResourceNode*,QRectF> NodeBox;
-typedef QPair<QColor,QRectF> ColoredRect;
+struct NodeBox
+{
+    NodeBox() {memset(this,0,sizeof(*this));}
+    NodeBox(hardwareResourceNode* n, 
+            QRectF b)
+            : node(n),box(b) {}
+
+    hardwareResourceNode* node;
+    QRectF box;
+};
+
+struct LinkBox
+{
+    LinkBox() {memset(this,0,sizeof(*this));}
+    LinkBox(hardwareResourceNode* p, 
+            hardwareResourceNode* c, 
+            QRectF b) 
+            : parent(p),child(c),box(b) {}
+
+    hardwareResourceNode* parent;
+    hardwareResourceNode* child;
+    QRectF box;
+};
+
+struct ColoredRect
+{
+    ColoredRect() {memset(this,0,sizeof(*this));}
+    ColoredRect(QColor c, 
+            QRectF b)
+            : color(c),box(b) {}
+
+    QColor color;
+    QRectF box;
+};
 
 class MemTopoViz : public VizWidget
 {
@@ -76,7 +109,6 @@ signals:
 
 public slots:
     void mousePressEvent(QMouseEvent *e);
-    void wheelEvent(QWheelEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void resizeEvent(QResizeEvent *e);
 
@@ -88,29 +120,20 @@ public slots:
 private:
     void calcMinMaxes();
     void resizeNodeBoxes();
-    void zoomVertical(hardwareResourceNode *node, int dir);
-    void zoomHorizontal(hardwareResourceNode *node, int dir);
     hardwareResourceNode* nodeAtPosition(QPoint p);
     void selectSamplesWithinNode(hardwareResourceNode *lvl);
 
 private:
 
     QVector<NodeBox> nodeBoxes;
+    QVector<LinkBox> linkBoxes;
     QVector<ColoredRect> nodeDataBoxes;
     QVector<RealRange> depthValRanges;
+    QVector<RealRange> depthTransRanges;
 
     DataMode dataMode;
     VizMode vizMode;
     ColorMap colorMap;
-
-    QVector<qreal> minCyclesPerLevel;
-    QVector<qreal> maxCyclesPerLevel;
-
-    QVector<qreal> minTransactionsPerLevel;
-    QVector<qreal> maxTransactionsPerLevel;
-
-    QVector<qreal> minSamplesPerLevel;
-    QVector<qreal> maxSamplesPerLevel;
 
     IntRange depthRange;
     QVector<IntRange> widthRange;

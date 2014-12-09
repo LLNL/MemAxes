@@ -62,7 +62,7 @@ ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
     colorMap.push_back(QColor(177,89,40 ));
 
     selOpacity = 0.1;
-    unselOpacity = 0.01;
+    unselOpacity = 0.05;
 
     numHistBins = 100;
     showHistograms = false;

@@ -66,6 +66,7 @@ QPointF radialTransform(QPointF point, QRectF rectSpace);
 QPointF reverseRadialTransform(QPointF point, QRectF rectSpace);
 QVector<QPointF> rectToRadialSegment(QRectF rect, QRectF rectSpace);
 
+ColorMap gradientColorMap(QColor col0, QColor col1, int steps);
 QColor valToColor(qreal val, qreal minVal, qreal maxVal,
                   ColorMap colorMap);
 

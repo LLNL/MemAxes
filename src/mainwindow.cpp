@@ -80,7 +80,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // File buttons
     connect(ui->actionImport_Data, SIGNAL(triggered()),this,SLOT(loadData()));
-    connect(ui->actionAdd_Dataset_2, SIGNAL(triggered()),this,SLOT(addData()));
 
     // Selection mode
     connect(ui->selectModeXOR, SIGNAL(toggled(bool)), this, SLOT(setSelectModeXOR(bool)));
@@ -221,6 +220,26 @@ void MainWindow::visibilityChangedSlot()
     emit visibilityChangedSig();
 }
 
+void MainWindow::example()
+{
+    QString topoFilename("/Users/chai/Sources/MemAxes/example_data/lulesh/hardware/msn.xml");
+    QString sourceDir   ("/Users/chai/Sources/MemAxes/example_data/lulesh/source_dir");
+    QString dataFilename("/Users/chai/Sources/MemAxes/example_data/lulesh/data/lulesh_inorder.out");
+
+    dataSet->setHardwareTopology(topoFilename);
+
+    codeViz->setSourceDir(sourceDir);
+    con->append("Selected Source Directory : "+sourceDir);
+
+    dataSet->addData(dataFilename);
+
+    for(int i=0; i<vizWidgets.size(); i++)
+    {
+        vizWidgets[i]->processData();
+        vizWidgets[i]->update();
+    }
+}
+
 int MainWindow::loadData()
 {
     int err = 0;
@@ -265,7 +284,7 @@ int MainWindow::importData()
     QFileDialog dirDiag(this);
     QString dataFileName = dirDiag.getOpenFileName(this,
                                                    tr("Select Memory Access Samples File"),
-                                                   "/Users/chai/Sources/case_studies/sample_data");
+                                                   "/Users/chai/Sources/MemAxes/example_data/lulesh/data");
     if(dataFileName.isNull())
         return -1;
 
@@ -279,7 +298,7 @@ int MainWindow::importHardwareTopology()
     QFileDialog dirDiag(this);
     QString topoFilename = dirDiag.getOpenFileName(this,
                                                    tr("Select Memory Topology File"),
-                                                   "/Users/chai/Sources/case_studies/hardware");
+                                                   "/Users/chai/Sources/MemAxes/example_data/lulesh/hardware");
     if(topoFilename.isNull())
         return -1;
 
@@ -292,7 +311,7 @@ int MainWindow::selectSourceDirectory()
 {
     sourceDir = QFileDialog::getExistingDirectory(this,
                                                   tr("Select Source Directory"),
-                                                  "/Users/chai/Sources/case_studies/code",
+                                                  "/Users/chai/Sources/MemAxes/example_data/lulesh",
                                                   QFileDialog::ShowDirsOnly
                                                   | QFileDialog::DontResolveSymlinks);
     if(sourceDir.isNull())
