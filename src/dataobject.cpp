@@ -717,6 +717,7 @@ int DataSetObject::setHardwareTopology(QString filename)
         return ret;
     }
     con->log("Loaded Hardware Topology : "+filename);
+    std::cout << "loaded hardware topology :" << filename.toStdString() << std::endl;
     return 0;
 }
 

@@ -239,6 +239,7 @@ void console::command(int i)
 
 void console::log(const char *msg)
 {
+    DBGVAR(msg);
     log(QString(msg));
 }
 

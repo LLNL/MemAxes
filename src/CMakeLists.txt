@@ -57,6 +57,7 @@ set(MemAxes_UIC
 
 # Build Target
 add_executable(MemAxes MACOSX_BUNDLE ${MemAxes_SOURCES} ${MemAxes_UIC})
+# add_executable(MemAxes ${MemAxes_SOURCES} ${MemAxes_UIC})
 qt5_use_modules(MemAxes Widgets OpenGL)
 
 target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL ${OPENGL_LIBRARIES} ${VTK_LIBRARIES})

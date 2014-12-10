@@ -39,6 +39,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QErrorMessage>
 
 #include <QVector>
 
@@ -71,12 +72,8 @@ signals:
 public slots:
     void selectionChangedSlot();
     void visibilityChangedSlot();
-    void example();
     int loadData();
-    int addData();
-    int importData();
-    int importHardwareTopology();
-    int selectSourceDirectory();
+    int selectDataDirectory();
     void showSelectedOnly();
     void showAll();
     void hideSelected();
@@ -94,7 +91,8 @@ private:
     CodeViz *codeViz;
     MemTopoViz *memViz;
     VarViz *varViz;
-    QString sourceDir;
+    //QString sourceDir;
+    QString dataDir;
 
     QVector<VizWidget*> vizWidgets;
     VolumeVizWidget *volumeVizWidget;

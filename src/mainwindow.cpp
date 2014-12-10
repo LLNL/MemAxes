@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "ui_form.h"
 #include "mainwindow.h"
 
@@ -220,41 +221,45 @@ void MainWindow::visibilityChangedSlot()
     emit visibilityChangedSig();
 }
 
-void MainWindow::example()
+void errdiag(QString str)
 {
-    QString topoFilename("/Users/chai/Sources/MemAxes/example_data/lulesh/hardware/msn.xml");
-    QString sourceDir   ("/Users/chai/Sources/MemAxes/example_data/lulesh/source_dir");
-    QString dataFilename("/Users/chai/Sources/MemAxes/example_data/lulesh/data/lulesh_inorder.out");
-
-    dataSet->setHardwareTopology(topoFilename);
-
-    codeViz->setSourceDir(sourceDir);
-    con->append("Selected Source Directory : "+sourceDir);
-
-    dataSet->addData(dataFilename);
-
-    for(int i=0; i<vizWidgets.size(); i++)
-    {
-        vizWidgets[i]->processData();
-        vizWidgets[i]->update();
-    }
+        QErrorMessage errmsg;
+        errmsg.showMessage(str);
+        errmsg.exec();
 }
 
 int MainWindow::loadData()
 {
     int err = 0;
 
-    err = importHardwareTopology();
+    err = selectDataDirectory();
     if(err != 0)
         return err;
 
-    err = selectSourceDirectory();
-    if(err != 0)
-        return err;
+    //err = selectSourceDirectory();
+    QString sourceDir(dataDir+QString("/src/"));
+    std::cout << "sourceDir : " << sourceDir.toStdString() << endl;
+    DBGLN(codeViz->setSourceDir(sourceDir));
 
-    err = addData();
+    //err = importHardwareTopology();
+    QString topoDir(dataDir+QString("/hardware.xml"));
+    std::cout << "topoDir : " << topoDir.toStdString() << endl;
+    DBGLN(err = dataSet->setHardwareTopology(topoDir));
     if(err != 0)
+    {
+        errdiag("Error loading hardware: "+topoDir);
         return err;
+    }
+
+    //err = addData();
+    QString dataSetDir(dataDir+QString("/data/samples.out"));
+    std::cout << "dataSetDir : " << dataSetDir.toStdString() << endl;
+    DBGLN(err = dataSet->addData(dataSetDir)); 
+    if(err != 0)
+    {
+        errdiag("Error loading dataset: "+dataSetDir);
+        return err;
+    }
 
     for(int i=0; i<vizWidgets.size(); i++)
     {
@@ -262,63 +267,24 @@ int MainWindow::loadData()
         vizWidgets[i]->update();
     }
 
+    visibilityChangedSlot();
+
     //volumeVizWidget->processData();
 
     return 0;
 }
 
-int MainWindow::addData()
+int MainWindow::selectDataDirectory()
 {
-    int err = importData();
-
-    if(err != 0)
-        return err;
-
-    visibilityChangedSlot();
-
-    return 0;
-}
-
-int MainWindow::importData()
-{
-    QFileDialog dirDiag(this);
-    QString dataFileName = dirDiag.getOpenFileName(this,
-                                                   tr("Select Memory Access Samples File"),
-                                                   "/Users/chai/Sources/MemAxes/example_data/lulesh/data");
-    if(dataFileName.isNull())
-        return -1;
-
-    dataSet->addData(dataFileName);
-
-    return 0;
-}
-
-int MainWindow::importHardwareTopology()
-{
-    QFileDialog dirDiag(this);
-    QString topoFilename = dirDiag.getOpenFileName(this,
-                                                   tr("Select Memory Topology File"),
-                                                   "/Users/chai/Sources/MemAxes/example_data/lulesh/hardware");
-    if(topoFilename.isNull())
-        return -1;
-
-    dataSet->setHardwareTopology(topoFilename);
-
-    return 0;
-}
-
-int MainWindow::selectSourceDirectory()
-{
-    sourceDir = QFileDialog::getExistingDirectory(this,
-                                                  tr("Select Source Directory"),
-                                                  "/Users/chai/Sources/MemAxes/example_data/lulesh",
+    dataDir = QFileDialog::getExistingDirectory(this,
+                                                  tr("Select Data Directory"),
+                                                  "/Users/chai/Sources/MemAxes/example_data/",
                                                   QFileDialog::ShowDirsOnly
                                                   | QFileDialog::DontResolveSymlinks);
-    if(sourceDir.isNull())
+    if(dataDir.isNull())
         return -1;
 
-    codeViz->setSourceDir(sourceDir);
-    con->append("Selected Source Directory : "+sourceDir);
+    con->append("Selected Data Directory : "+dataDir);
 
     return 0;
 }

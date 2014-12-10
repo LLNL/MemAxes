@@ -45,8 +45,8 @@
 
 #define COLMAJOR_2D(x,y,d) x*d+y
 #define ROWMAJOR_2D(x,y,d) y*d+x
-#define DBGLN(x) std::cerr << #x << std::endl; x
-#define DBGVAR(x) std::cerr << #x << " : " << (x) << std::endl;
+#define DBGLN(x) std::cerr << #x << std::endl; x;
+#define DBGVAR(x) std::cerr << #x << " : " << x << std::endl;
 
 typedef QVector<QColor> ColorMap;
 typedef QPair<int,int> IntRange;
