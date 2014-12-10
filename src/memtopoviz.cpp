@@ -126,8 +126,8 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
         int numSamples = 0;
         for(int d=0; d<dataSet->size(); d++)
         {
-            numSamples += node->sampleSets[dataSet->at(d)].first.size();
-            numCycles += node->sampleSets[dataSet->at(d)].second;
+            numSamples += node->sampleSets[dataSet->at(d)].selSamples.size();
+            numCycles += node->sampleSets[dataSet->at(d)].selCycles;
         }
 
         qreal val = (dataMode == COLORBY_CYCLES) ? numCycles : numSamples;
@@ -218,8 +218,8 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
         int numSamples = 0;
         for(int d=0; d<dataSet->size(); d++)
         {
-            numSamples += node->sampleSets[dataSet->at(d)].first.size();
-            numCycles += node->sampleSets[dataSet->at(d)].second;
+            numSamples += node->sampleSets[dataSet->at(d)].selSamples.size();
+            numCycles += node->sampleSets[dataSet->at(d)].selCycles;
         }
 
         label += "Samples: " + QString::number(numSamples) + "\n";
@@ -271,8 +271,8 @@ void MemTopoViz::calcMinMaxes()
                 if(!node->sampleSets.contains(dataSet->at(d)))
                     continue;
 
-                SampleIdxVector *samples = &node->sampleSets[dataSet->at(d)].first;
-                int *numCycles = &node->sampleSets[dataSet->at(d)].second;
+                QVector<int> *samples = &node->sampleSets[dataSet->at(d)].selSamples;
+                int *numCycles = &node->sampleSets[dataSet->at(d)].selCycles;
 
                 qreal val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples->size();
                 //val = (qreal)(*numCycles) / (qreal)samples->size();

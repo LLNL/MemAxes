@@ -97,6 +97,7 @@ public:
     void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
     void selectBySourceFileName(QString str);
     void selectByVarName(QString str);
+    void selectByResource(hardwareResourceNode *node);
 
     void hideSelected();
     void hideUnselected();

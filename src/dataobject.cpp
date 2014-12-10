@@ -66,14 +66,14 @@ void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
 {
     topo = hw;
 
+    // Reset info
     for(int i=0; i<topo->allHardwareResourceNodes.size(); i++)
     {
-        SampleIdxVector *samples = &topo->allHardwareResourceNodes[i]->sampleSets[this].first;
-        int *numCycles = &topo->allHardwareResourceNodes[i]->sampleSets[this].second;
+        topo->allHardwareResourceNodes[i]->sampleSets[this].totCycles = 0;
+        topo->allHardwareResourceNodes[i]->sampleSets[this].selCycles = 0;
+        topo->allHardwareResourceNodes[i]->sampleSets[this].totSamples.clear();
+        topo->allHardwareResourceNodes[i]->sampleSets[this].selSamples.clear();
         topo->allHardwareResourceNodes[i]->transactions = 0;
-
-        samples->clear();
-        *numCycles = 0;
     }
 
     // Go through each sample and add it to the right topo node
@@ -81,40 +81,46 @@ void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
     QVector<qreal>::Iterator p;
     for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
     {
-        if(sel && !selected(elem))
-            continue;
-
+        // Get vars
         int dse = *(p+dataSourceDim);
         int cpu = *(p+cpuDim);
-        //int numa = *(p+nodeDim);
         int cycles = *(p+latencyDim);
 
+        // Search for nodes
         hardwareResourceNode *cpuNode = topo->CPUIDMap[cpu];
-        //hardwareResourceNode *numaNode = topo->NUMAIDMap[numa];
-
         hardwareResourceNode *node = cpuNode;
 
-        SampleIdxVector *samples = &node->sampleSets[this].first;
-        int *numCycles = &node->sampleSets[this].second;
+        // Update data for serving resource
+        node->sampleSets[this].totSamples.push_back(elem);
+        node->sampleSets[this].totCycles += cycles;
 
-        samples->push_back(elem);
-        *numCycles += cycles;
+        if(!(sel && !selected(elem)))
+        {
+            node->sampleSets[this].selSamples.push_back(elem);
+            node->sampleSets[this].selCycles += cycles;
+        }
 
         if(dse == -1)
             continue;
 
         // Go up to data source
-        for( ; dse>0; dse--)
+        for( /*init*/; dse>0 && node->parent; dse--, node=node->parent)
         {
-            node->transactions++;
-            node = node->parent;
+            if(!(sel && !selected(elem)))
+            {
+                node->transactions++;
+            }
         }
 
-        samples = &node->sampleSets[this].first;
-        numCycles = &node->sampleSets[this].second;
+        // Update data for core
+        node->sampleSets[this].totSamples.push_back(elem);
+        node->sampleSets[this].totCycles += cycles;
 
-        samples->push_back(elem);
-        *numCycles += cycles;
+        if(!(sel && !selected(elem)))
+        {
+            node->sampleSets[this].selSamples.push_back(elem);
+            node->sampleSets[this].selCycles += cycles;
+        }
     }
 }
 
@@ -268,6 +274,32 @@ void DataObject::selectByVarName(QString str)
     {
         select = (varNames[elem] == str);
         logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByResource(hardwareResourceNode *node)
+{
+    if(selectionMode == MODE_NEW)
+        deselectAll();
+
+    QVector<int> selelems;
+    QVector<int> *samples = &node->sampleSets[this].totSamples;
+    for(int i=0; i<samples->size(); i++)
+    {
+        int elem = samples->at(i);
+        if(selectionMode == MODE_NEW || selectionMode == MODE_APPEND)
+            this->selectData(elem);
+        else if(selectionMode == MODE_FILTER && selected(elem))
+            selelems.push_back(elem);
+    }
+
+    if(selectionMode == MODE_FILTER)
+    {
+        deselectAll();
+        for(int i=0; i<selelems.size(); i++)
+        {
+            this->selectData(selelems[i]);
+        }
     }
 }
 
@@ -840,14 +872,7 @@ void DataSetObject::selectByResource(hardwareResourceNode *node)
     QString selcmd("select RESOURCE "+node->name+"="+QString::number(node->id));
     con->log(selcmd);
 
-    for(int d=0; d<this->size(); d++)
-    {
-        SampleIdxVector *samples = &node->sampleSets[this->at(d)].first;
-        for(int i=0; i<samples->size(); i++)
-        {
-            this->at(d)->selectData(samples->at(i));
-        }
-    }
+    FOR_EACH_DATA(selectByResource(node));
 }
 
 QVector<qreal> DataSetObject::means()

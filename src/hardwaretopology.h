@@ -45,8 +45,14 @@
 #include "dataobject.h"
 
 class DataObject;
-typedef QVector<int> SampleIdxVector;
-typedef QPair<SampleIdxVector,int> SampleSet;
+
+struct SampleSet
+{
+    int totCycles;
+    int selCycles;
+    QVector<int> totSamples;
+    QVector<int> selSamples;
+};
 
 class hardwareResourceNode
 {
