@@ -35,40 +35,13 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
-#ifndef SELECTIONVIZ_H
-#define SELECTIONVIZ_H
 
-#include "vizwidget.h"
+#include <QVector>
+#include <QString>
 
-#include <QSpinBox>
-
-enum weightMode
-{
-    WEIGHTBY_SAMPLES = 0,
-    WEIGHTBY_CYCLES
-};
-
-class SelectionVizWidget : public VizWidget
-{
-    Q_OBJECT
-public:
-    SelectionVizWidget(QWidget *parent = 0);
-
-signals:
-
-protected:
-    void processData();
-    void selectionChangedSlot();
-    void visibilityChangedSlot();
-    void drawQtPainter(QPainter *painter);
-
-public slots:
-    void setWeightModeSamples(bool on) { if(on) { mode = WEIGHTBY_SAMPLES; repaint();} }
-    void setWeightModeLatency(bool on) { if(on) { mode = WEIGHTBY_CYCLES; repaint();} }
-
-private:
-    weightMode mode;
-
-};
-
-#endif // SELECTIONVIZ_H
+int createUniqueID(QVector<QString> existing, QString name);
+int dseDepth(int enc);
+int dseDirty(int enc);
+std::string encToString(int enc);
+int dseSTLB(int enc);
+int dseLocked(int enc);

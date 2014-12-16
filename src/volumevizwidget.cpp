@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "volumevizwidget.h"
 
 #include <QMouseEvent>
@@ -79,7 +80,6 @@ VolumeVizWidget::VolumeVizWidget(QWidget *parent)
     selectionChangedSlot();
 }
 
-
 VolumeVizWidget::~VolumeVizWidget()
 {
     this->GetRenderWindow()->RemoveRenderer(renderer);
@@ -106,17 +106,18 @@ void VolumeVizWidget::selectionChangedSlot()
 
     volumeData.fill(0);
 
-    int mapdim = dataset->meta.indexOf("map3D");
-    int xdim = dataset->meta.indexOf("xidx");
-    int ydim = dataset->meta.indexOf("yidx");
-    int zdim = dataset->meta.indexOf("zidx");
-    int wdim = dataset->meta.indexOf("latency");
-
     qreal v;
     int x,y,z,map3D;
     for(int d=0; d<dataset->size(); d++)
     {
         int elem = 0;
+
+        int mapdim = dataset->at(d)->meta.indexOf("map3D");
+        int xdim = dataset->at(d)->meta.indexOf("xidx");
+        int ydim = dataset->at(d)->meta.indexOf("yidx");
+        int zdim = dataset->at(d)->meta.indexOf("zidx");
+        int wdim = dataset->at(d)->meta.indexOf("latency");
+
         for(QVector<qreal>::Iterator val=dataset->at(d)->begin;
             val!=dataset->at(d)->end;
             val+=dataset->at(d)->numDimensions, elem++)

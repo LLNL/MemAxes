@@ -35,25 +35,24 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #ifndef DATAOBJECT_H
 #define DATAOBJECT_H
 
 #include <QWidget>
+#include <QBitArray>
 
 #include "hardwaretopology.h"
 #include "util.h"
 #include "console.h"
 
+#define INVISIBLE false
+#define VISIBLE true
+
+class DataSetObject;
 class hardwareTopology;
 class hardwareResourceNode;
 class console;
-
-enum select_type
-{
-    INVISIBLE = 0,
-    VISIBLE,
-    SELECTED
-};
 
 enum selection_mode
 {
@@ -64,46 +63,50 @@ enum selection_mode
 
 class DataObject
 {
+    friend class DataSetObject;
+
 public:
     DataObject();
 
-    selection_mode selectionMode;
-
 public:
-    void init();
-
+    // Initialization
+    void allocate();
     void collectTopoSamples(hardwareTopology *hw, bool sel = false);
+    int parseCSVFile(QString dataFileName);
     void selectionChanged() { collectTopoSamples(topo); }
 
-    void setSelectionMode(selection_mode mode) { selectionMode = mode; }
+    // Selection
+    int selected(unsigned int index);
+    bool visible(unsigned int index);
 
-    void selectData(unsigned int index);
+    bool selectionDefined();
+    bool skip(unsigned int index);
+
+    void selectData(unsigned int index, int group = -1);
     void deselectData(unsigned int index);
-    void logicalSelectData(unsigned int index, bool select);
+    void logicalSelectData(unsigned int index, bool select, int group = -1);
 
     void selectAll();
-    void selectAllVisible();
     void deselectAll();
+    void selectAllVisible();
 
+    // Visibility
     void showData(unsigned int index);
     void hideData(unsigned int index);
     void showAll();
     void hideAll();
+    void hideSelected();
+    void hideUnselected();
 
-    bool visible(unsigned int index);
-    bool selected(unsigned int index);
-
+    // Selection Queries
     void selectByDimRange(int dim, qreal vmin, qreal vmax);
     void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
     void selectBySourceFileName(QString str);
     void selectByVarName(QString str);
     void selectByResource(hardwareResourceNode *node);
 
-    void hideSelected();
-    void hideUnselected();
-
-    bool selectionDefined();
-    bool skip(unsigned int index);
+    // Calculated statistics
+    void calcStatistics(int group = 0);
 
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
@@ -111,32 +114,25 @@ public:
     qreal maxAt(int d) const { return maximumValues[d]; }
     qreal meanAt(int d) const { return meanValues[d]; }
     qreal stddevAt(int d) const { return standardDeviations[d]; }
-    qreal covarianceBtwn(int d1,int d2) const { return covarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
-    qreal correlationBtwn(int d1,int d2) const { return correlationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
+    qreal covarianceBtwn(int d1,int d2) const 
+        { return covarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
+    qreal correlationBtwn(int d1,int d2) const 
+        { return correlationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
 
-    qreal selectionSumAt(int d) const { return selDimSums[d]; }
-    qreal selectionMinAt(int d) const { return selMinimumValues[d]; }
-    qreal selectionMaxAt(int d) const { return selMaximumValues[d]; }
-    qreal selectionMeanAt(int d) const { return selMeanValues[d]; }
-    qreal selectionStddevAt(int d) const { return selStandardDeviations[d]; }
-    qreal selectionCovarianceBtwn(int d1,int d2) const { return selCovarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
-    qreal selectionCorrelationBtwn(int d1,int d2) const { return selCorrelationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
-
-    int parseCSVFile(QString dataFileName);
-
-    void calcTotalStatistics();
-    void calcSelectionStatistics();
-
+    // Distance Functions (for clustering)
+    qreal distanceHardware(DataObject *dso);
 
 public:
     QStringList meta;
     hardwareTopology *topo;
 
+    // Counts
     long long numDimensions;
     long long numElements;
     long long numSelected;
     long long numVisible;
 
+    // Hard-coded dimensions
     int sourceDim;
     int lineDim;
     int variableDim;
@@ -156,7 +152,10 @@ public:
     QVector<qreal>::Iterator end;
 
 private:
-    QVector<qint8> selection;
+    DataSetObject *parent;
+
+    QBitArray visibility;
+    QVector<int> selectionGroup;
 
     QVector<qreal> dimSums;
     QVector<qreal> minimumValues;
@@ -165,24 +164,31 @@ private:
     QVector<qreal> standardDeviations;
     QVector<qreal> covarianceMatrix;
     QVector<qreal> correlationMatrix;
-
-    QVector<qreal> selDimSums;
-    QVector<qreal> selMinimumValues;
-    QVector<qreal> selMaximumValues;
-    QVector<qreal> selMeanValues;
-    QVector<qreal> selStandardDeviations;
-    QVector<qreal> selCovarianceMatrix;
-    QVector<qreal> selCorrelationMatrix;
 };
 
 class DataSetObject
 {
+    friend class DataObject;
+
 public:
     DataSetObject();
 
+    DataObject* at(int i) { return dataObjects[i]; }
+    bool isEmpty() { return dataObjects.isEmpty(); }
+    int size() { return dataObjects.size(); }
+    hardwareTopology* hwTopo() { return hw; }
+    void setConsole(console *icon) { con = icon; }
+
+    // Set data and hardware
     int addData(QString filename);
     int setHardwareTopology(QString filename);
 
+    // Triggers
+    bool selectionDefined();
+    void selectionChanged();
+    void visibilityChanged();
+
+    // Selection/Visibility
     void hideUnselected();
     void showAll();
     void deselectAll();
@@ -191,34 +197,28 @@ public:
     void selectAll();
     void selectAllVisible();
 
-    bool selectionDefined();
-
-    void selectionChanged();
-    void visibilityChanged();
-
+    // Selection Queries
     void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
+    void selectByMultiDimRange(QVector<QString> dims, QVector<qreal> mins, QVector<qreal> maxes);
     void selectByVarName(QString str);
     void selectByResource(hardwareResourceNode *node);
 
-    QVector<qreal> means();
+    // Calculated values
     int numSelected();
     int numUnselected();
     int numTotal();
 
-    DataObject* at(int i) { return dataObjects[i]; }
-    bool isEmpty() { return dataObjects.isEmpty(); }
-    int size() { return dataObjects.size(); }
-    hardwareTopology* hwTopo() { return hw; }
-
-    void setConsole(console *icon) { con = icon; }
-
-public:
-    QStringList meta;
+    // Clustering
+    void worstPair(QVector<QVector<qreal> > *dm, int *i0, int *i1);
+    int clusterHardware();
 
 private:
     console *con;
     hardwareTopology *hw;
     QVector<DataObject*> dataObjects;
+
+    int selGroup;
+    int selMode;
 };
 
 #endif // DATAOBJECT_H

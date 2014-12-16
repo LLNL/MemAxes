@@ -61,13 +61,13 @@ enum QUERY_TYPE {
 };
 
 struct dimRangeQuery {
-    QVector<int> dims;
+    QVector<QString> dims;
     QVector<qreal> mins;
     QVector<qreal> maxes;
 };
 
 struct dimRange {
-    int dim;
+    QString dim;
     qreal min;
     qreal max;
 };
@@ -88,8 +88,6 @@ signals:
 public slots:
     CMD_TYPE getCommandType(QString cmd);
     QUERY_TYPE getQueryType(QString qtype);
-
-    int dimFromString(QString dstr);
 
     struct dimRange createDimRange(QString str);
     struct dimRangeQuery createDimRangeQuery(QStringList *args);

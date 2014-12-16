@@ -45,7 +45,6 @@
 
 #include "vizwidget.h"
 #include "volumevizwidget.h"
-#include "selectionviz.h"
 #include "codeviz.h"
 #include "varviz.h"
 #include "memtopoviz.h"

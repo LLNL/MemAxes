@@ -35,7 +35,9 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "dataobject.h"
+#include "parseUtil.h"
 
 #include <iostream>
 using namespace std;
@@ -47,10 +49,9 @@ DataObject::DataObject()
 {
     numSelected = 0;
     topo = NULL;
-    selectionMode = MODE_NEW;
 }
 
-void DataObject::init()
+void DataObject::allocate()
 {
     numDimensions = meta.size();
     numElements = vals.size() / numDimensions;
@@ -58,8 +59,231 @@ void DataObject::init()
     begin = vals.begin();
     end = vals.end();
 
-    selection.resize(numElements);
-    selection.fill(VISIBLE);
+    visibility.resize(numElements);
+    visibility.fill(VISIBLE);
+
+    selectionGroup.resize(numElements);
+    selectionGroup.fill(0); // all belong to 0 (unselected)
+}
+
+int DataObject::selected(unsigned int index)
+{
+    return selectionGroup[index];
+}
+
+bool DataObject::visible(unsigned int index)
+{
+    return visibility[index];
+}
+
+bool DataObject::selectionDefined()
+{
+    return numSelected > 0;
+}
+
+bool DataObject::skip(unsigned int index)
+{
+    return visible(index) && (!selectionDefined() || selected(index));
+}
+
+void DataObject::selectData(unsigned int index, int group)
+{
+    if(group == -1)
+        group = parent->selGroup;
+
+    if(visible(index))
+    {
+        selectionGroup[index] = group;
+        numSelected++;
+    }
+}
+
+void DataObject::deselectData(unsigned int index)
+{
+    if(visible(index))
+    {
+        selectionGroup[index] = 0;
+        numSelected--;
+    }
+}
+
+void DataObject::logicalSelectData(unsigned int index, bool select, int group)
+{
+    if(group == -1)
+        group = parent->selGroup;
+
+    if(select && (parent->selMode == MODE_APPEND || parent->selMode == MODE_NEW))
+        this->selectData(index,group);
+    else if(!select && parent->selMode == MODE_FILTER)
+        this->deselectData(index);
+}
+
+void DataObject::selectAll()
+{
+    selectionGroup.fill(parent->selGroup);
+    numSelected = numElements;
+}
+
+void DataObject::deselectAll()
+{
+    selectionGroup.fill(0);
+    numSelected = 0;
+}
+
+void DataObject::selectAllVisible()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(visible(elem))
+            selectData(elem);
+    }
+}
+
+void DataObject::showData(unsigned int index)
+{
+    if(!visible(index))
+    {
+        visibility[index] = VISIBLE;
+        numVisible++;
+    }
+}
+
+void DataObject::hideData(unsigned int index)
+{
+    if(visible(index))
+    {
+        visibility[index] = INVISIBLE;
+        numVisible--;
+    }
+}
+
+void DataObject::showAll()
+{
+    visibility.fill(VISIBLE);
+    numVisible = numElements;
+}
+
+void DataObject::hideAll()
+{
+    visibility.fill(INVISIBLE);
+    numVisible = 0;
+}
+
+void DataObject::selectBySourceFileName(QString str)
+{
+    if(parent->selMode == MODE_NEW)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = (fileNames[elem] == str);
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
+{
+    if(parent->selMode == MODE_NEW)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = within(*(p+dim),vmin,vmax);
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
+{
+    if(parent->selMode == MODE_NEW)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = true;
+
+        for(int i=0; i<dims.size(); i++)
+        {
+            if(!within(*(p+dims[i]),mins[i],maxes[i]))
+            {
+                select = false;
+                break;
+            }
+        }
+
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByVarName(QString str)
+{
+    if(parent->selMode == MODE_NEW)
+        deselectAll();
+
+    bool select;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        select = (varNames[elem] == str);
+        logicalSelectData(elem,select);
+    }
+}
+
+void DataObject::selectByResource(hardwareResourceNode *node)
+{
+    if(parent->selMode == MODE_NEW)
+        deselectAll();
+
+    QVector<int> selelems;
+    QVector<int> *samples = &node->sampleSets[this].totSamples;
+    for(int i=0; i<samples->size(); i++)
+    {
+        int elem = samples->at(i);
+        if(parent->selMode == MODE_NEW || parent->selMode == MODE_APPEND)
+            this->selectData(elem);
+        else if(parent->selMode == MODE_FILTER && selected(elem))
+            selelems.push_back(elem);
+    }
+
+    if(parent->selMode == MODE_FILTER)
+    {
+        deselectAll();
+        for(int i=0; i<selelems.size(); i++)
+        {
+            this->selectData(selelems[i]);
+        }
+    }
+}
+
+void DataObject::hideSelected()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(selected(elem))
+            hideData(elem);
+    }
+}
+
+void DataObject::hideUnselected()
+{
+    long long elem;
+    for(elem=0; elem<numElements; elem++)
+    {
+        if(!selected(elem) && visible(elem))
+            hideData(elem);
+    }
 }
 
 void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
@@ -123,323 +347,6 @@ void DataObject::collectTopoSamples(hardwareTopology *hw, bool sel)
         }
     }
 }
-
-void DataObject::selectData(unsigned int index)
-{
-    if(selection[index] == VISIBLE)
-    {
-        selection[index] = SELECTED;
-        numSelected++;
-    }
-}
-
-void DataObject::deselectData(unsigned int index)
-{
-    if(selection[index] == SELECTED)
-    {
-        selection[index] = VISIBLE;
-        numSelected--;
-    }
-}
-
-void DataObject::logicalSelectData(unsigned int index, bool select)
-{
-    if(select && (selectionMode == MODE_APPEND || selectionMode == MODE_NEW))
-        this->selectData(index);
-    else if(!select && selectionMode == MODE_FILTER)
-        this->deselectData(index);
-}
-
-void DataObject::selectAll()
-{
-    showAll();
-    selectAllVisible();
-}
-
-void DataObject::selectAllVisible()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(visible(elem))
-            selectData(elem);
-    }
-}
-
-void DataObject::deselectAll()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-        deselectData(elem);
-}
-
-void DataObject::showData(unsigned int index)
-{
-    if(!visible(index))
-    {
-        selection[index] = VISIBLE;
-        numVisible++;
-    }
-}
-
-void DataObject::showAll()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(!visible(elem))
-            showData(elem);
-    }
-}
-
-void DataObject::hideData(unsigned int index)
-{
-    if(visible(index))
-    {
-        selection[index] = INVISIBLE;
-        numVisible--;
-    }
-}
-
-void DataObject::hideAll()
-{
-    selection.fill(INVISIBLE);
-    numVisible = 0;
-}
-
-void DataObject::selectBySourceFileName(QString str)
-{
-    if(selectionMode == MODE_NEW)
-        deselectAll();
-
-    bool select;
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        select = (fileNames[elem] == str);
-        logicalSelectData(elem,select);
-    }
-}
-
-void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
-{
-    if(selectionMode == MODE_NEW)
-        deselectAll();
-
-    bool select;
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        select = within(*(p+dim),vmin,vmax);
-        logicalSelectData(elem,select);
-    }
-}
-
-void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
-{
-    if(selectionMode == MODE_NEW)
-        deselectAll();
-
-    bool select;
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        select = true;
-
-        for(int i=0; i<dims.size(); i++)
-        {
-            if(!within(*(p+dims[i]),mins[i],maxes[i]))
-            {
-                select = false;
-                break;
-            }
-        }
-
-        logicalSelectData(elem,select);
-    }
-}
-
-void DataObject::selectByVarName(QString str)
-{
-    if(selectionMode == MODE_NEW)
-        deselectAll();
-
-    bool select;
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        select = (varNames[elem] == str);
-        logicalSelectData(elem,select);
-    }
-}
-
-void DataObject::selectByResource(hardwareResourceNode *node)
-{
-    if(selectionMode == MODE_NEW)
-        deselectAll();
-
-    QVector<int> selelems;
-    QVector<int> *samples = &node->sampleSets[this].totSamples;
-    for(int i=0; i<samples->size(); i++)
-    {
-        int elem = samples->at(i);
-        if(selectionMode == MODE_NEW || selectionMode == MODE_APPEND)
-            this->selectData(elem);
-        else if(selectionMode == MODE_FILTER && selected(elem))
-            selelems.push_back(elem);
-    }
-
-    if(selectionMode == MODE_FILTER)
-    {
-        deselectAll();
-        for(int i=0; i<selelems.size(); i++)
-        {
-            this->selectData(selelems[i]);
-        }
-    }
-}
-
-void DataObject::hideSelected()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(selected(elem))
-            hideData(elem);
-    }
-}
-
-void DataObject::hideUnselected()
-{
-    long long elem;
-    for(elem=0; elem<numElements; elem++)
-    {
-        if(!selected(elem) && visible(elem))
-            hideData(elem);
-    }
-}
-
-bool DataObject::selected(unsigned int index)
-{
-    return selection[index] == SELECTED;
-}
-
-bool DataObject::visible(unsigned int index)
-{
-    return selection[index] != INVISIBLE;
-}
-
-bool DataObject::selectionDefined()
-{
-    return numSelected > 0;
-}
-
-bool DataObject::skip(unsigned int index)
-{
-    bool sel = !selectionDefined() || selected(index);
-    return sel && visible(index);
-}
-
-// Things get messy here
-
-int createUniqueID(QVector<QString> existing, QString name)
-{
-    for(int i=0; i<existing.size(); i++)
-    {
-        if(existing[i] == name)
-            return i;
-    }
-    existing.push_back(name);
-    return existing.size()-1;
-}
-
-int dseDepth(int enc)
-{
-    int src = enc & 0xF;
-    switch(src)
-    {
-        case(0x0): return -1; // at least L3
-        case(0x1): return 1; // L1
-        case(0x2): return 1; // cache hit pending (don't draw)
-        case(0x3): return 2; // L2
-        case(0x4): return 3; // L3
-        case(0x5): return 3; // from another core L2/L1 (clean)
-        case(0x6): return 3; // from another core L2/L1 (dirty)
-        case(0x7): return -1; // no LLC now
-        case(0x8): return 4; // local ram?
-        case(0x9): return -1; // reserved (shouldn't happen)
-        case(0xA): return 4; // local RAM (clean)
-        case(0xB): return 4; // remote RAM (clean)
-        case(0xC): return 4; // local RAM (dirty)
-        case(0xD): return 4; // remote RAM (dirty)
-        case(0xE): return -1; // I/O
-        case(0xF): return -1; // Uncacheable
-    }
-
-    return -1;
-}
-
-int dseDirty(int enc)
-{
-    int src = enc & 0xF;
-    switch(src)
-    {
-        case(0x5): return 0; // from another core L2/L1 (clean)
-        case(0x6): return 1; // from another core L2/L1 (dirty)
-        case(0xA): return 0; // local RAM (clean)
-        case(0xB): return 0; // remote RAM (clean)
-        case(0xC): return 1; // local RAM (dirty)
-        case(0xD): return 1; // remote RAM (dirty)
-    }
-
-    // N/A
-    return -1;
-}
-
-
-std::string encToString(int enc)
-{
-    int src = enc & 0xF;
-
-    switch(src)
-    {
-        case(0x0): return "Unknown L3 Miss";
-        case(0x1): return "L1";
-        case(0x2): return "TLB";
-        case(0x3): return "L2";
-        case(0x4): return "L3";
-        case(0x5): return "L3 Snoop (clean)"; // from another core L2/L1
-        case(0x6): return "L3 Snoop (dirty)"; // from another core L2/L1
-        case(0x7): return "LLC Snoop (dirty)";
-        case(0x8): return "L3 Miss (dirty)"; // local ram?
-        case(0x9): return "MONKEYS"; // reserved (shouldn't happen)
-        case(0xA): return "Local RAM";
-        case(0xB): return "Remote RAM";
-        case(0xC): return "Local RAM";
-        case(0xD): return "Remote RAM";
-        case(0xE): return "I/O";
-        case(0xF): return "Uncacheable";
-    }
-
-    return "???"; // really weird
-}
-
-
-int dseSTLB(int enc)
-{
-    return enc & 0x10;
-}
-
-int dseLocked(int enc)
-{
-    return enc & 0x20;
-}
-
-using namespace std;
 
 int DataObject::parseCSVFile(QString dataFileName)
 {
@@ -515,12 +422,12 @@ int DataObject::parseCSVFile(QString dataFileName)
     // Close and return
     dataFile.close();
 
-    this->init();
+    this->allocate();
 
     return 0;
 }
 
-void DataObject::calcTotalStatistics()
+void DataObject::calcStatistics(int group)
 {
     dimSums.resize(this->numDimensions);
     minimumValues.resize(this->numDimensions);
@@ -548,9 +455,6 @@ void DataObject::calcTotalStatistics()
     meanXY.fill(0);
     for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
     {
-        if(!visible(elem))
-            continue;
-
         for(int i=0; i<this->numDimensions; i++)
         {
             x = *(p+i);
@@ -566,18 +470,17 @@ void DataObject::calcTotalStatistics()
         }
     }
 
-    // Divide by this->numVisible to get mean
+    // Divide by this->numElements to get mean
     for(int i=0; i<this->numDimensions; i++)
     {
-        meanValues[i] = dimSums[i] / (qreal)this->numVisible;
+        meanValues[i] = dimSums[i] / (qreal)this->numElements;
         for(int j=0; j<this->numDimensions; j++)
         {
-            meanXY[ROWMAJOR_2D(i,j,this->numDimensions)] /= (qreal)this->numVisible;
+            meanXY[ROWMAJOR_2D(i,j,this->numDimensions)] /= (qreal)this->numElements;
         }
     }
 
     // Covariance = E(XY) - E(X)*E(Y)
-    // TODO: Possibly switch to E((x-E(x))*(y-E(y)) to avoid floating-point error
     for(int i=0; i<this->numDimensions; i++)
     {
         for(int j=0; j<this->numDimensions; j++)
@@ -590,9 +493,6 @@ void DataObject::calcTotalStatistics()
     // Standard deviation of each dim
     for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
     {
-        if(!visible(elem))
-            continue;
-
         for(int i=0; i<this->numDimensions; i++)
         {
             x = *(p+i);
@@ -602,7 +502,7 @@ void DataObject::calcTotalStatistics()
 
     for(int i=0; i<this->numDimensions; i++)
     {
-        standardDeviations[i] = sqrt(standardDeviations[i]/(qreal)this->numVisible);
+        standardDeviations[i] = sqrt(standardDeviations[i]/(qreal)this->numElements);
     }
 
     // Correlation Coeff = cov(xy) / stdev(x)*stdev(y)
@@ -617,110 +517,50 @@ void DataObject::calcTotalStatistics()
     }
 }
 
-void DataObject::calcSelectionStatistics()
+qreal DataObject::distanceHardware(DataObject *dso)
 {
-    selDimSums.resize(this->numDimensions);
-    selMinimumValues.resize(this->numDimensions);
-    selMaximumValues.resize(this->numDimensions);
-    selMeanValues.resize(this->numDimensions);
-    selStandardDeviations.resize(this->numDimensions);
+    // dso must have same hardware topology
+    if(topo != dso->topo)
+        return -1;
+    if(this == dso)
+        return 0;
 
-    selCovarianceMatrix.resize(this->numDimensions*this->numDimensions);
-    selCorrelationMatrix.resize(this->numDimensions*this->numDimensions);
-
-    selDimSums.fill(0);
-    selMeanValues.fill(0);
-    selStandardDeviations.fill(0);
-
-    for(int i=0; i<this->numDimensions; i++)
+    // Get difference of cycles for each level
+    QVector<qreal> depthDistances;
+    int depth = topo->hardwareResourceMatrix.size();
+    for(int d=0; d<depth; d++)
     {
-        selMinimumValues[i] = maximumValues[i];
-        selMaximumValues[i] = minimumValues[i];
-    }
-
-    // Means and combined means
-    QVector<qreal>::Iterator p;
-    qreal x, y;
-    long long elem;
-
-    QVector<qreal> meanXY;
-    meanXY.resize(this->numDimensions*this->numDimensions);
-    meanXY.fill(0);
-    for(elem=0,p=this->begin; p!=this->end; elem++,p+=this->numDimensions)
-    {
-        if(!selected(elem))
-            continue;
-
-        for(int i=0; i<this->numDimensions; i++)
+        qreal ddist = 0;
+        int width = topo->hardwareResourceMatrix[d].size();
+        for(int w=0; w<width; w++)
         {
-            x = *(p+i);
-            selDimSums[i] += x;
-            selMinimumValues[i] = min(x,selMinimumValues[i]);
-            selMaximumValues[i] = max(x,selMaximumValues[i]);
-
-            for(int j=0; j<this->numDimensions; j++)
-            {
-                y = *(p+j);
-                meanXY[ROWMAJOR_2D(i,j,this->numDimensions)] += x*y;
-            }
+            hardwareResourceNode *node = topo->hardwareResourceMatrix[d][w];
+            struct SampleSet ss1 = node->sampleSets[this];
+            struct SampleSet ss2 = node->sampleSets[dso];
+            ddist += abs(ss1.totCycles - ss2.totCycles);
         }
+        depthDistances.push_back(ddist);
     }
 
-    // Divide by this->numSelected to get mean
-    for(int i=0; i<this->numDimensions; i++)
+    // Total distance is some weighted sum of depth distances
+    qreal dist = 0;
+    for(int d=0; d<depth; d++)
     {
-        selMeanValues[i] = selDimSums[i] / (qreal)numSelected;
-        for(int j=0; j<this->numDimensions; j++)
-        {
-            meanXY[ROWMAJOR_2D(i,j,this->numDimensions)] /= (qreal)numSelected;
-        }
+        dist += depthDistances[d];
     }
 
-    // Covariance = E(XY) - E(X)*E(Y)
-    // TODO: Possibly switch to E((x-E(x))*(y-E(y)) to avoid floating-point error
-    for(int i=0; i<this->numDimensions; i++)
-    {
-        for(int j=0; j<this->numDimensions; j++)
-        {
-            selCovarianceMatrix[ROWMAJOR_2D(i,j,this->numDimensions)] =
-                meanXY[ROWMAJOR_2D(i,j,this->numDimensions)] - selMeanValues[i]*selMeanValues[j];
-        }
-    }
-
-    // Standard deviation of each dim
-    for(elem=0,p=this->begin; p!=this->end; elem++,p+=this->numDimensions)
-    {
-        if(!selected(elem))
-            continue;
-
-        for(int i=0; i<this->numDimensions; i++)
-        {
-            x = *(p+i);
-            selStandardDeviations[i] += (x-selMeanValues[i])*(x-selMeanValues[i]);
-        }
-    }
-
-    for(int i=0; i<this->numDimensions; i++)
-    {
-        selStandardDeviations[i] = sqrt(selStandardDeviations[i]/(qreal)numSelected);
-    }
-
-    // Correlation Coeff = cov(xy) / stdev(x)*stdev(y)
-    for(int i=0; i<this->numDimensions; i++)
-    {
-        for(int j=0; j<this->numDimensions; j++)
-        {
-            selCorrelationMatrix[ROWMAJOR_2D(i,j,this->numDimensions)] =
-                    selCovarianceMatrix[ROWMAJOR_2D(i,j,this->numDimensions)] /
-                    (selStandardDeviations[i]*selStandardDeviations[j]);
-        }
-    }
+    return dist;
 }
 
+/*
+ * DataSetObject
+ */
 
 DataSetObject::DataSetObject()
 {
     hw = NULL;
+    selMode = MODE_NEW;
+    selGroup = 1;
 }
 
 int DataSetObject::addData(QString filename)
@@ -732,9 +572,11 @@ int DataSetObject::addData(QString filename)
         con->log("Error Loading Dataset : "+filename);
         return ret;
     }
-    dobj->calcTotalStatistics();
+
+    dobj->calcStatistics();
+    dobj->parent = this;
     dataObjects.push_back(dobj);
-    meta = dobj->meta;
+
     con->log("Added Dataset : "+filename);
     return 0;
 }
@@ -806,7 +648,7 @@ void DataSetObject::setSelectionMode(selection_mode mode)
     }
     con->log(selcmd);
 
-    FOR_EACH_DATA(setSelectionMode(mode));
+    selMode = mode;
 }
 
 void DataSetObject::selectAll()
@@ -859,6 +701,27 @@ void DataSetObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins
     FOR_EACH_DATA(selectByMultiDimRange(dims,mins,maxes));
 }
 
+void DataSetObject::selectByMultiDimRange(QVector<QString> dims, QVector<qreal> mins, QVector<qreal> maxes)
+{
+    QString selcmd("select DIMRANGE ");
+    for(int i=0; i<dims.size(); i++)
+    {
+        selcmd += dims[i] + "=" ;
+        selcmd += QString::number(mins[i]) + ":" ;
+        selcmd += QString::number(maxes[i]) + " ";
+    }
+    con->log(selcmd);
+
+    for(int d=0; d<dataObjects.size(); d++)
+    {
+        QVector<int> intDims;
+        for(int i=0; i<dims.size(); i++)
+            intDims.push_back(dataObjects[d]->meta.indexOf(dims[i]));
+
+        dataObjects[d]->selectByMultiDimRange(intDims,mins,maxes);
+    }
+}
+
 void DataSetObject::selectByVarName(QString str)
 {
     QString selcmd("select VARIABLE "+str);
@@ -873,19 +736,6 @@ void DataSetObject::selectByResource(hardwareResourceNode *node)
     con->log(selcmd);
 
     FOR_EACH_DATA(selectByResource(node));
-}
-
-QVector<qreal> DataSetObject::means()
-{
-    QVector<qreal> ret;
-    ret.resize(dataObjects[0]->numDimensions);
-    for(int dim=0; dim<ret.size(); dim++)
-    {
-        for(int d=0; d<dataObjects.size(); d++)
-            ret[dim] += dataObjects[d]->sumAt(dim);
-        ret[dim] /= (double)numTotal();
-    }
-    return ret;
 }
 
 int DataSetObject::numSelected()
@@ -910,4 +760,96 @@ int DataSetObject::numTotal()
     for(int d=0; d<dataObjects.size(); d++)
         ne += dataObjects[d]->numElements;
     return ne;
+}
+
+void DataSetObject::worstPair(QVector<QVector<qreal> > *dm, int *i0, int *i1)
+{
+    // Find most distant pair and return it
+    qreal maxdist = 0;
+    int maxd0, maxd1;
+    for(int d0=0; d0<dm->size(); d0++)
+    {
+        for(int d1=d0; d0<dm->at(d0).size(); d0++)
+        {
+            if(dm->at(d0).at(d1) > maxdist)
+            {
+                maxd0 = d0;
+                maxd1 = d1;
+                maxdist = dm->at(d0).at(d1);
+            }
+        }
+    }
+
+    *i0 = maxd0;
+    *i1 = maxd1;
+}
+
+int factorial(int x, int result = 1) {
+    if(x == 1) return result; else return factorial(x - 1, x * result);
+}
+
+#define PAIRS(n,r) factorial(n) / (factorial(n-r)*factorial(r))
+
+int DataSetObject::clusterHardware()
+{
+    int clusters = 0;
+
+    int n = dataObjects.size();
+
+    // Create distance matrix
+    QVector<QVector<qreal> > dm;
+    dm.resize(n);
+    for(int d0=0; d0<n; d0++)
+    {
+        dm[d0].resize(d0);
+        dm[d0].fill(0);
+        for(int d1=0; d1<d0; d1++)
+        {
+            dm[d0][d1] = dataObjects[d0]->distanceHardware(dataObjects[d1]);
+        }
+    }
+
+    // Create adjacency matrix (fully connected)
+    QVector<QVector<int> > adj;
+    adj.resize(n);
+    for(int d0=0; d0<n; d0++)
+    {
+        for(int d1=0; d1<n; d1++)
+        {
+            if(d0 != d1)
+                adj[d0].push_back(d1);
+        }
+    }
+
+    // Until we have everything paired up, remove worst pair
+    int pairCount = 0;
+    int fullPairs = n/2;
+    while(pairCount < fullPairs)
+    {
+        int i,j;
+        worstPair(&dm,&i,&j);
+
+        int rm0 = adj[i].indexOf(j);
+        int rm1 = adj[j].indexOf(i);
+
+        adj[i].remove(rm0);
+        adj[j].remove(rm1);
+
+        if(adj[i].size() == 1)
+        {
+            dm.remove(adj[i][0]);
+            dm.remove(i);
+            pairCount--;
+        }
+
+        if(adj[j].size() == 1)
+        {
+            dm.remove(adj[j][0]);
+            dm.remove(j);
+            pairCount--;
+        }
+    }
+
+    
+    return clusters;
 }

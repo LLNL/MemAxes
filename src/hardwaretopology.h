@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #ifndef HARDWARETOPOLOGY_H
 #define HARDWARETOPOLOGY_H
 

@@ -226,10 +226,10 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                                        sourceBlocks[i].lineBlocks[j].block.height());
                 if(lineSelectionBox.contains(e->pos()))
                 {
-                    QVector<int> dims;
+                    QVector<QString> dims;
                     QVector<qreal> val;
 
-                    dims.push_back(dataSet->meta.indexOf("line"));
+                    dims.push_back("line");
                     val.push_back(sourceBlocks[i].lineBlocks[j].line);
 
                     dataSet->selectByMultiDimRange(dims,val,val);

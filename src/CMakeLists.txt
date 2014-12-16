@@ -46,7 +46,7 @@ set(MemAxes_SOURCES
         mainwindow.cpp 
         memtopoviz.cpp 
         parallelcoordinatesviz.cpp 
-        selectionviz.cpp 
+        parseUtil.cpp 
         util.cpp 
         varviz.cpp 
         vizwidget.cpp 

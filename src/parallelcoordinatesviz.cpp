@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "parallelcoordinatesviz.h"
 
 #include <QPaintEvent>
@@ -334,6 +335,8 @@ void ParallelCoordinatesVizWidget::calcHistBins()
 {
     if(!processed)
         return;
+
+    histMaxVals.fill(0);
 
     int elem;
     QVector<qreal>::Iterator p;

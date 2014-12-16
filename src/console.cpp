@@ -104,17 +104,11 @@ void console::inspectCommand(QStringList *args)
     // Print out some info about the current selection
     int numSel = dataSet->numSelected();
     int numTot = dataSet->numTotal();
-    QVector<qreal> means = dataSet->means();
 
     log("Selected Samples : ");
     log(QString::number(numSel));
     log("Total Samples : ");
     log(QString::number(numTot));
-    log("Average Values : ");
-    for(int d=0; d<means.size(); d++)
-    {
-        log(dataSet->meta[d]+QString(" : ")+QString::number(means.at(d)));
-    }
 }
 
 void console::selectCommand(QStringList *args)
@@ -170,18 +164,13 @@ QUERY_TYPE console::getQueryType(QString qtype)
     return QUERY_UNKNOWN;
 }
 
-int console::dimFromString(QString dstr)
-{
-    return dataSet->meta.indexOf(dstr);
-}
-
 dimRange console::createDimRange(QString str)
 {
     QStringList eqSplit = str.split("=");
     QStringList rangeStrs = eqSplit[1].split(":");
 
     struct dimRange dr;
-    dr.dim = eqSplit[0].toInt();
+    dr.dim = eqSplit[0];
     dr.min = rangeStrs[0].toDouble();
     dr.max = rangeStrs[1].toDouble();
 
