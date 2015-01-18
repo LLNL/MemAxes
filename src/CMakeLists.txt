@@ -1,27 +1,18 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(MemAxes)
+project(MemAxes C CXX)
+
+# Qt5 requires CMake 2.8.9 or higher.
+cmake_minimum_required(VERSION 2.8.9)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-#########################################
-# Set QT and VTK Build Directories Here #
-#########################################
-set(QT_DIR "/usr/local/opt/qt5/")
-set(VTK_DIR "/Users/chai/src/VTK/Build")
-#########################################
-
-# Necessary Qt cmake variables
-set(CMAKE_PREFIX_PATH ${QT_DIR})
-set(QT_UIC_EXECUTABLE "${QT_DIR}/bin/uic")
-
 # Qt5 + Modules
-find_package(Qt5Widgets)
-find_package(Qt5OpenGL)
+find_package(Qt5 REQUIRED Core Widgets OpenGL)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTOUIC ON) # tested, not working
 
-# OpenGL 
+# OpenGL
 find_package(OpenGL)
 
 # VTK
@@ -36,24 +27,24 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 qt5_wrap_ui(ui_form.h form.ui)
 
 # Sources and UI Files
-set(MemAxes_SOURCES 
-        codeeditor.cpp 
-        codeviz.cpp 
-        console.cpp 
-        dataobject.cpp 
-        hardwaretopology.cpp 
-        main.cpp 
-        mainwindow.cpp 
-        memtopoviz.cpp 
-        parallelcoordinatesviz.cpp 
-        parseUtil.cpp 
-        util.cpp 
-        varviz.cpp 
-        vizwidget.cpp 
-        volumevizwidget.cpp)
+set(MemAxes_SOURCES
+  codeeditor.cpp
+  codeviz.cpp
+  console.cpp
+  dataobject.cpp
+  hardwaretopology.cpp
+  main.cpp
+  mainwindow.cpp
+  memtopoviz.cpp
+  parallelcoordinatesviz.cpp
+  parseUtil.cpp
+  util.cpp
+  varviz.cpp
+  vizwidget.cpp
+  volumevizwidget.cpp)
 
-set(MemAxes_UIC 
-        ui_form.h)
+set(MemAxes_UIC
+  ui_form.h)
 
 # Build Target
 add_executable(MemAxes MACOSX_BUNDLE ${MemAxes_SOURCES} ${MemAxes_UIC})
