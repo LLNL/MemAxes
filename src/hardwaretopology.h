@@ -40,7 +40,7 @@
 #define HARDWARETOPOLOGY_H
 
 #include <QFile>
-#include <QXMLStreamReader>
+#include <QXmlStreamReader>
 #include <QMap>
 
 #include "dataobject.h"
