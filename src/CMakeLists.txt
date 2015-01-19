@@ -1,8 +1,3 @@
-project(MemAxes C CXX)
-
-# Qt5 requires CMake 2.8.9 or higher.
-cmake_minimum_required(VERSION 2.8.9)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Qt5 + Modules
@@ -53,4 +48,4 @@ qt5_use_modules(MemAxes Widgets OpenGL)
 
 target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL ${OPENGL_LIBRARIES} ${VTK_LIBRARIES})
 
-
+install(TARGETS MemAxes DESTINATION bin)
