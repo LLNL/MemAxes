@@ -106,3 +106,11 @@ include loading data, selecting samples in different ways, and
 changing the visibility of samples. This is currently a WIP, you may
 try some of the example commands but keep in mind many of them won't
 work just yet ;)
+
+# Authors
+
+MemAxes was written by Alfredo Gimenez.
+
+# License
+
+MemAxes is released under an LGPL license. For more details see the LICENSE file.
