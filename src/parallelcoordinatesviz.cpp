@@ -35,10 +35,10 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
-
 #include "parallelcoordinatesviz.h"
 
 #include <QPaintEvent>
+#include <QMenu>
 
 #include <iostream>
 #include <cmath>
@@ -63,18 +63,24 @@ ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
     colorMap.push_back(QColor(177,89,40 ));
 
     selOpacity = 0.1;
-    unselOpacity = 0.05;
+    unselOpacity = 0.01;
 
     numHistBins = 100;
     showHistograms = false;
 
     cursorPos.setX(-1);
     selecting = -1;
+    moving = -1;
     movingAxis = -1;
+    mySel = 0;
 
     // Event Filters
     this->installEventFilter(this);
     this->setMouseTracking(true);
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), 
+            this, SLOT(showContextMenu(const QPoint &)));
 }
 
 #define LINES_PER_DATAPT    (numDimensions-1)
@@ -152,6 +158,11 @@ void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
     if(cursorPos.x() != -1)
     {
         selecting = cursorPos.x();
+        if(selMins[selecting] != -1)
+        {
+            moving = selecting;
+            selecting = -1;
+        }
         firstSel = mouseEvent->pos().y();
     }
 
@@ -181,17 +192,20 @@ void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
     if(!processed)
         return;
 
+    mySel = 1;
+
     processSelection();
 
     // No longer selecting
-    selMins.fill(-1);
-    selMaxes.fill(-1);
+    //selMins.fill(-1);
+    //selMaxes.fill(-1);
 
     selecting = -1;
     lastSel = -1;
+    moving = -1;
     movingAxis = -1;
 
-    repaint();
+    //repaint();
 }
 
 bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
@@ -201,7 +215,6 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
     if(!processed)
         return false;
 
-    static qreal prevCursor = cursorPos.x();
     static QPoint prevMouse;
 
     qreal axisMargin = 10;
@@ -222,6 +235,16 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
             selMaxes[selecting] = 1.0-scale(selmin,plotBBox.top(),plotBBox.bottom(),0,1);
         }
 
+        // Move selection box
+        if(moving != -1)
+        {
+            qreal delta = (qreal)(prevMouse.y() - mouseEvent->pos().y())*0.001;
+            selMins[moving] += delta;
+            selMaxes[moving] += delta;
+            mySel = 1;
+            processSelection();
+        }
+
         // Get cursor location
         cursorPos.setX(-1);
         for(int i=0; i<numDimensions; i++)
@@ -238,10 +261,8 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
             }
         }
 
-        if(cursorPos.x() != -1 || prevCursor != cursorPos.x())
+        if(cursorPos.x() != -1 || prevMouse.x() != cursorPos.x())
             repaint();
-
-        prevCursor = cursorPos.x();
 
         // Move axes
         if(movingAxis != -1)
@@ -296,9 +317,15 @@ void ParallelCoordinatesVizWidget::processSelection()
     }
 
     if(selDims.isEmpty())
+    {
+        selMins.fill(-1);
+        selMaxes.fill(-1);
         dataSet->deselectAll();
+    }
     else
+    {
         dataSet->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
+    }
 
     recalcLines();
 
@@ -335,8 +362,6 @@ void ParallelCoordinatesVizWidget::calcHistBins()
 {
     if(!processed)
         return;
-
-    histMaxVals.fill(0);
 
     int elem;
     QVector<qreal>::Iterator p;
@@ -444,11 +469,28 @@ void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
     }
 }
 
+void ParallelCoordinatesVizWidget::showContextMenu(const QPoint &pos)
+{
+    QMenu contextMenu(tr("Context menu"), this);
+
+    QAction action1("Animate!", this);
+    connect(&action1, SIGNAL(triggered()), this, SLOT(removeDataPoint()));
+    contextMenu.addAction(&action1);
+
+    contextMenu.exec(mapToGlobal(pos));
+}
+
 void ParallelCoordinatesVizWidget::selectionChangedSlot()
 {
+    if(mySel == 0)
+    {
+        selMins.fill(-1);
+        selMaxes.fill(-1);
+    }
     calcHistBins();
     recalcLines();
     repaint();
+    mySel = 0;
 }
 
 void ParallelCoordinatesVizWidget::visibilityChangedSlot()
@@ -577,7 +619,7 @@ void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
     painter->setBrush(Qt::NoBrush);
     for(int i=0; i<numDimensions; i++)
     {
-        if(selMins[i] != -1)
+        //if(selMins[i] != -1)
         {
             a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfCursorWidth,
                         plotBBox.top() + plotBBox.height()*(1.0-selMins[i]));

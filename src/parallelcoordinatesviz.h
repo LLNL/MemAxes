@@ -58,6 +58,7 @@ signals:
     void lineSelected(int line);
 
 public slots:
+    void showContextMenu(const QPoint &);
     void selectionChangedSlot();
     void visibilityChangedSlot();
     void setSelOpacity(int val);
@@ -101,7 +102,9 @@ private:
     QPointF cursorPos;
 
     int selecting;
+    int moving;
     int movingAxis;
+    int mySel;
 
     bool showHistograms;
 

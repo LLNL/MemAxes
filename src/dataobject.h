@@ -179,6 +179,8 @@ public:
     hardwareTopology* hwTopo() { return hw; }
     void setConsole(console *icon) { con = icon; }
 
+    int selectionMode() { return selMode; }
+
     // Set data and hardware
     int addData(QString filename);
     int setHardwareTopology(QString filename);
