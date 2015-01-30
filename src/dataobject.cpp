@@ -788,12 +788,8 @@ int factorial(int x, int result = 1) {
     if(x == 1) return result; else return factorial(x - 1, x * result);
 }
 
-#define PAIRS(n,r) factorial(n) / (factorial(n-r)*factorial(r))
-
 int DataSetObject::clusterHardware()
 {
-    int clusters = 0;
-
     int n = dataObjects.size();
 
     // Create distance matrix
@@ -839,17 +835,67 @@ int DataSetObject::clusterHardware()
         {
             dm.remove(adj[i][0]);
             dm.remove(i);
-            pairCount--;
+            pairCount++;
         }
 
         if(adj[j].size() == 1)
         {
             dm.remove(adj[j][0]);
             dm.remove(j);
-            pairCount--;
+            pairCount++;
         }
     }
 
     
-    return clusters;
+    return pairCount;
 }
+
+/*
+ * Spectral Clustering
+ * Using Eigen library
+ */
+
+/*
+#include <Eigen/Dense>
+
+    int clusters = 0;
+
+    int N = dataObjects.size();
+
+    // Create adjacency matrix and degree matrix
+    Eigen::MatrixXd A(N,N);
+    Eigen::MatrixXd D(N,N);
+    
+    D.setZero();
+
+    qreal eps = 100; // threshold for connectivity
+
+    for(int i=0; i<N; i++)
+    {
+        for(int j=i+1; j<N; j++)
+        {
+            qreal d = dataObjects[i]->distanceHardware(dataObjects[j]);
+
+            if(d<eps)
+            {
+                A(i,j) = d;
+                A(j,i) = d;
+
+                D(i,i) = D(i,i)+1;
+                D(j,j) = D(j,j)+1;
+            }
+        }
+    }
+    
+    // Create Laplacian
+    Eigen::MatrixXd L(N,N);
+    L = D - A;
+
+    // Compute the first k eigenvectors l of Lu = lDu
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(L);
+    
+    // Create U = {eigenvectors of L}
+    Eigen::MatrixXd U(eigensolver.eigenvectors());
+
+    // Use rows of U as input to k-means
+*/
