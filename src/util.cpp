@@ -69,6 +69,12 @@ bool within(qreal val, qreal min, qreal max)
     return val >= min && val <= max;
 }
 
+bool overlap(qreal vmin, qreal vmax, qreal min, qreal max)
+{
+    return (within(vmin,min,max) || within(vmax,min,max) ||
+            within(min,vmin,vmax) || within(max,vmin,vmax));
+}
+
 QPointF polarToCartesian(qreal mag, qreal theta)
 {
     return polarToCartesian(QPointF(mag,theta));

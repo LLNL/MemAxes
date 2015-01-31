@@ -165,7 +165,6 @@ void hardwareTopology::addToMatrix(hardwareResourceNode *node)
 
 void hardwareTopology::constructHardwareResourceMatrix()
 {
-    std::cout << "CONSTRUCT" << endl;
    hardwareResourceMatrix.resize(totalDepth+1);
    addToMatrix(hardwareResourceRoot);
 }

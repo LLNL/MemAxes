@@ -42,6 +42,10 @@
 #include <QWidget>
 #include <QBitArray>
 
+#include <map>
+#include <vector>
+#include <assert.h>
+
 #include "hardwaretopology.h"
 #include "util.h"
 #include "console.h"
@@ -60,6 +64,9 @@ enum selection_mode
     MODE_APPEND,
     MODE_FILTER
 };
+
+typedef std::vector<long long> IndexList;
+typedef std::vector<IndexList> IndexHistogram;
 
 class DataObject
 {
@@ -107,6 +114,7 @@ public:
 
     // Calculated statistics
     void calcStatistics(int group = 0);
+    void constructDimHists();
 
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
@@ -156,6 +164,8 @@ private:
 
     QBitArray visibility;
     QVector<int> selectionGroup;
+
+    std::vector<IndexHistogram> dimHists;
 
     QVector<qreal> dimSums;
     QVector<qreal> minimumValues;

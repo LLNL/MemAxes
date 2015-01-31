@@ -57,6 +57,7 @@ qreal scale(qreal val, qreal omin, qreal omax, qreal nmin, qreal nmax);
 qreal lerp(qreal val, qreal min, qreal max);
 qreal clamp(qreal val, qreal min, qreal max);
 bool within(qreal val, qreal min, qreal max);
+bool overlap(qreal vmin, qreal vmax, qreal min, qreal max);
 
 QPointF polarToCartesian(qreal mag, qreal theta);
 QPointF polarToCartesian(QPointF point);

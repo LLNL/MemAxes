@@ -205,6 +205,62 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
     if(parent->selMode == MODE_NEW)
         deselectAll();
 
+    // Which bins do we have to search?
+    for(int d=0; d<dims.size(); d++)
+    {
+        // Get bins at both ends of range
+        int mdim = dims[d];
+        int numBins = dimHists.at(mdim).size();
+        int binMin = scale(mins[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
+        int binMax = scale(maxes[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
+
+        DBGVAR(mdim);
+        DBGVAR(mdim);
+
+        DBGVAR(mins[d]);
+        DBGVAR(maxes[d]);
+
+        DBGVAR(minimumValues[mdim]);
+        DBGVAR(maximumValues[mdim]);
+
+        DBGVAR(binMin);
+        DBGVAR(binMax);
+
+        DBGLN(assert(binMin < numBins));
+        DBGLN(assert(binMax < numBins));
+
+        IndexList &minList = dimHists.at(mdim).at(binMin);
+        IndexList &maxList = dimHists.at(mdim).at(binMax);
+
+        // Check and select within min bin
+        for(int e=0; e<minList.size(); e++)
+        {
+            long long elem = minList.at(e);
+
+            if(within(this->at(elem,mdim),mins[d],maxes[d]))
+                selectData(elem);
+        }
+
+        // Check and select within max bin
+        for(int e=0; e<maxList.size(); e++)
+        {
+            long long elem = maxList.at(e);
+
+            if(within(this->at(elem,mdim),mins[d],maxes[d]))
+                selectData(elem);
+        }
+
+        // Add the rest 
+        for(int b=binMin+1; b<binMax-1; b++)
+        {
+            IndexList &list = dimHists.at(mdim).at(b);
+
+            for(int e=0; e<list.size(); e++)
+                selectData(list.at(e));
+        }
+    }
+    
+    /*
     bool select;
     long long elem;
     QVector<qreal>::Iterator p;
@@ -223,6 +279,7 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
 
         logicalSelectData(elem,select);
     }
+    */
 }
 
 void DataObject::selectByVarName(QString str)
@@ -440,8 +497,8 @@ void DataObject::calcStatistics(int group)
 
     qreal firstVal = *(this->begin);
     dimSums.fill(0);
-    minimumValues.fill(firstVal);
-    maximumValues.fill(firstVal);
+    minimumValues.fill(9999999999);
+    maximumValues.fill(0);
     meanValues.fill(0);
     standardDeviations.fill(0);
 
@@ -470,9 +527,14 @@ void DataObject::calcStatistics(int group)
         }
     }
 
+
     // Divide by this->numElements to get mean
     for(int i=0; i<this->numDimensions; i++)
     {
+        DBGVAR(i);
+        DBGVAR(minimumValues[i]);
+        DBGVAR(maximumValues[i]);
+
         meanValues[i] = dimSums[i] / (qreal)this->numElements;
         for(int j=0; j<this->numDimensions; j++)
         {
@@ -515,6 +577,33 @@ void DataObject::calcStatistics(int group)
                     (standardDeviations[i]*standardDeviations[j]);
         }
     }
+}
+
+void DataObject::constructDimHists()
+{
+    int numBins=100;
+
+    dimHists.resize(this->numDimensions);
+    for(int d=0; d<this->numDimensions; d++)
+        dimHists.at(d).resize(numBins);
+    
+    qreal val;
+    int bin;
+    long long elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
+    {
+        for(int d=0; d<this->numDimensions; d++)
+        {
+            val = *(p+d);
+            bin = scale(val,minimumValues[d],maximumValues[d],0,numBins-1);
+
+            assert(bin < numBins);
+
+            dimHists.at(d).at(bin).push_back(elem);
+        }
+    }
+
 }
 
 qreal DataObject::distanceHardware(DataObject *dso)
@@ -574,6 +663,7 @@ int DataSetObject::addData(QString filename)
     }
 
     dobj->calcStatistics();
+    dobj->constructDimHists();
     dobj->parent = this;
     dataObjects.push_back(dobj);
 
@@ -591,7 +681,6 @@ int DataSetObject::setHardwareTopology(QString filename)
         return ret;
     }
     con->log("Loaded Hardware Topology : "+filename);
-    std::cout << "loaded hardware topology :" << filename.toStdString() << std::endl;
     return 0;
 }
 

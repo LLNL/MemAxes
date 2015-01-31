@@ -65,16 +65,10 @@ void MemTopoViz::processData()
         return;
 
 
-    std::cout << "Hardware Resource Matrix" << std::endl;
     depthRange = IntRange(0,dataSet->hwTopo()->hardwareResourceMatrix.size());
     for(int i=depthRange.first; i<(int)depthRange.second; i++)
     {
         IntRange wr(0,dataSet->hwTopo()->hardwareResourceMatrix[i].size());
-
-        for(int r=0; r<wr.second; r++)
-            std::cout << ".";
-        std::cout << std::endl;
-
         widthRange.push_back(wr);
     }
 

@@ -238,12 +238,10 @@ int MainWindow::loadData()
 
     //err = selectSourceDirectory();
     QString sourceDir(dataDir+QString("/src/"));
-    std::cout << "sourceDir : " << sourceDir.toStdString() << endl;
     DBGLN(codeViz->setSourceDir(sourceDir));
 
     //err = importHardwareTopology();
     QString topoDir(dataDir+QString("/hardware.xml"));
-    std::cout << "topoDir : " << topoDir.toStdString() << endl;
     DBGLN(err = dataSet->setHardwareTopology(topoDir));
     if(err != 0)
     {
@@ -253,7 +251,6 @@ int MainWindow::loadData()
 
     //err = addData();
     QString dataSetDir(dataDir+QString("/data/samples.out"));
-    std::cout << "dataSetDir : " << dataSetDir.toStdString() << endl;
     DBGLN(err = dataSet->addData(dataSetDir)); 
     if(err != 0)
     {
