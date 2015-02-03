@@ -209,31 +209,16 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
     for(int d=0; d<dims.size(); d++)
     {
         // Get bins at both ends of range
-        int mdim = dims[d];
-        int numBins = dimHists.at(mdim).size();
-        int binMin = scale(mins[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
-        int binMax = scale(maxes[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
-
-        DBGVAR(mdim);
-        DBGVAR(mdim);
-
-        DBGVAR(mins[d]);
-        DBGVAR(maxes[d]);
-
-        DBGVAR(minimumValues[mdim]);
-        DBGVAR(maximumValues[mdim]);
-
-        DBGVAR(binMin);
-        DBGVAR(binMax);
-
-        DBGLN(assert(binMin < numBins));
-        DBGLN(assert(binMax < numBins));
+        unsigned int mdim = dims[d];
+        unsigned int numBins = dimHists.at(mdim).size();
+        unsigned int binMin = scale(mins[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
+        unsigned int binMax = scale(maxes[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
 
         IndexList &minList = dimHists.at(mdim).at(binMin);
         IndexList &maxList = dimHists.at(mdim).at(binMax);
 
         // Check and select within min bin
-        for(int e=0; e<minList.size(); e++)
+        for(unsigned int e=0; e<minList.size(); e++)
         {
             long long elem = minList.at(e);
 
@@ -242,7 +227,7 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
         }
 
         // Check and select within max bin
-        for(int e=0; e<maxList.size(); e++)
+        for(unsigned int e=0; e<maxList.size(); e++)
         {
             long long elem = maxList.at(e);
 
@@ -251,35 +236,14 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
         }
 
         // Add the rest 
-        for(int b=binMin+1; b<binMax-1; b++)
+        for(unsigned int b=binMin+1; b<binMax-1; b++)
         {
             IndexList &list = dimHists.at(mdim).at(b);
 
-            for(int e=0; e<list.size(); e++)
+            for(unsigned int e=0; e<list.size(); e++)
                 selectData(list.at(e));
         }
     }
-    
-    /*
-    bool select;
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        select = true;
-
-        for(int i=0; i<dims.size(); i++)
-        {
-            if(!within(*(p+dims[i]),mins[i],maxes[i]))
-            {
-                select = false;
-                break;
-            }
-        }
-
-        logicalSelectData(elem,select);
-    }
-    */
 }
 
 void DataObject::selectByVarName(QString str)

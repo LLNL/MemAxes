@@ -44,7 +44,7 @@
 #include <QVector>
 
 #include "vizwidget.h"
-#include "volumevizwidget.h"
+//#include "volumevizwidget.h"
 #include "codeviz.h"
 #include "varviz.h"
 #include "memtopoviz.h"
@@ -94,7 +94,7 @@ private:
     QString dataDir;
 
     QVector<VizWidget*> vizWidgets;
-    VolumeVizWidget *volumeVizWidget;
+    //VolumeVizWidget *volumeVizWidget;
 
     DataSetObject *dataSet;
     console *con;

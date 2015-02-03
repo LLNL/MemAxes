@@ -5,7 +5,7 @@ set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTOUIC ON) # tested, not working
 
 # Includes, Definitions, Flags
-include_directories(${Qt5Widgets_INCLUDE_DIRS} ${VTK_INCLUDE_DIRS})
+include_directories(${Qt5Widgets_INCLUDE_DIRS})# ${VTK_INCLUDE_DIRS})
 add_definitions(${Qt5Widgets_DEFINITIONS})
 
 # ui files
@@ -25,8 +25,8 @@ set(MemAxes_SOURCES
   parseUtil.cpp
   util.cpp
   varviz.cpp
-  vizwidget.cpp
-  volumevizwidget.cpp)
+  vizwidget.cpp)
+  #volumevizwidget.cpp)
 
 set(MemAxes_UIC
   ui_form.h)
@@ -37,6 +37,6 @@ add_executable(MemAxes MACOSX_BUNDLE ${MemAxes_SOURCES} ${MemAxes_UIC})
 
 qt5_use_modules(MemAxes Widgets OpenGL)
 
-target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL ${OPENGL_LIBRARIES} ${VTK_LIBRARIES})
+target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL ${OPENGL_LIBRARIES})# ${VTK_LIBRARIES})
 
 install(TARGETS MemAxes DESTINATION bin)

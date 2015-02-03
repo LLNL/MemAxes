@@ -41,8 +41,7 @@
 #include <QMenu>
 
 #include <iostream>
-#include <cmath>
-using namespace std;
+#include <algorithm>
 
 #include "util.h"
 
@@ -227,8 +226,8 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
         {
             lastSel = clamp((qreal)mouseEvent->pos().y(),plotBBox.top(),plotBBox.bottom());
 
-            qreal selmin = min(firstSel,lastSel);
-            qreal selmax = max(firstSel,lastSel);
+            qreal selmin = std::min(firstSel,lastSel);
+            qreal selmax = std::max(firstSel,lastSel);
 
             // scale/invert
             selMins[selecting] = 1.0-scale(selmax,plotBBox.top(),plotBBox.bottom(),0,1);
@@ -351,8 +350,8 @@ void ParallelCoordinatesVizWidget::calcMinMaxes()
 
             for(int i=0; i<numDimensions; i++)
             {
-                dimMins[i] = min(dimMins[i],*(p+i));
-                dimMaxes[i] = max(dimMaxes[i],*(p+i));
+                dimMins[i] = std::min(dimMins[i],*(p+i));
+                dimMaxes[i] = std::max(dimMaxes[i],*(p+i));
             }
         }
     }
@@ -382,7 +381,7 @@ void ParallelCoordinatesVizWidget::calcHistBins()
                     histBin = 0;
 
                 histVals[i][histBin] += 1;
-                histMaxVals[i] = fmax(histMaxVals[i],histVals[i][histBin]);
+                histMaxVals[i] = std::max(histMaxVals[i],histVals[i][histBin]);
             }
         }
     }

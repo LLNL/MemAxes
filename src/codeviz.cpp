@@ -39,8 +39,9 @@
 
 #include <QFile>
 #include <QMouseEvent>
+
 #include <iostream>
-using namespace std;
+#include <algorithm>
 
 bool operator<(const sourceBlock &lhs, const sourceBlock &rhs)
 {
@@ -130,19 +131,19 @@ void CodeViz::processData()
 
             int sourceIdx = this->getFileID(dataSet->at(d)->fileNames[elem]);
             sourceBlocks[sourceIdx].val += *(p+dataSet->at(d)->latencyDim);
-            sourceMaxVal = fmax(sourceMaxVal,sourceBlocks[sourceIdx].val);
+            sourceMaxVal = std::max(sourceMaxVal,sourceBlocks[sourceIdx].val);
 
             int lineIdx = this->getLineID(&sourceBlocks[sourceIdx],*(p+dataSet->at(d)->lineDim));
             sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+dataSet->at(d)->latencyDim);
 
-            sourceBlocks[sourceIdx].lineMaxVal = fmax(sourceBlocks[sourceIdx].lineMaxVal,
+            sourceBlocks[sourceIdx].lineMaxVal = std::max(sourceBlocks[sourceIdx].lineMaxVal,
                                                       sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);
         }
     }
 
     if(sourceBlocks.empty())
     {
-        cout << "COW" << endl;
+        std::cout << "COW" << std::endl;
         return;
     }
 
@@ -176,7 +177,7 @@ void CodeViz::drawQtPainter(QPainter *painter)
     if(!processed)
         return;
 
-    int numBlocks = min(numVisibleSourceBlocks,sourceBlocks.size());
+    int numBlocks = std::min(numVisibleSourceBlocks,sourceBlocks.size());
     int blockHeight = drawSpace.height() / numBlocks;
     for(int i=0; i<numBlocks; i++)
     {
@@ -187,7 +188,7 @@ void CodeViz::drawQtPainter(QPainter *painter)
 
         painter->fillRect(sourceBlocks[i].block,Qt::lightGray);
 
-        int numLines = min(numVisibleLineBlocks,sourceBlocks[i].lineBlocks.size());
+        int numLines = std::min(numVisibleLineBlocks,sourceBlocks[i].lineBlocks.size());
         int lineHeight = blockHeight / numLines;
         for(int j=0; j<numLines; j++)
         {

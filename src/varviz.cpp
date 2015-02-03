@@ -39,8 +39,11 @@
 
 #include <QFile>
 #include <QMouseEvent>
+
 #include <iostream>
-using namespace std;
+#include <algorithm>
+
+#include <math.h>
 
 bool operator<(const varBlock &lhs, const varBlock &rhs)
 {
@@ -98,7 +101,7 @@ void VarViz::processData()
 
             int varIdx = this->getVariableID(dataSet->at(d)->varNames[elem]);
             varBlocks[varIdx].val += *(p+dataSet->at(d)->latencyDim);
-            varMaxVal = fmax(varMaxVal,varBlocks[varIdx].val);
+            varMaxVal = std::max(varMaxVal,varBlocks[varIdx].val);
         }
     }
 
@@ -126,7 +129,7 @@ void VarViz::drawQtPainter(QPainter *painter)
     if(!processed)
         return;
 
-    int numBlocks = min(numVariableBlocks, varBlocks.size());
+    int numBlocks = std::min(numVariableBlocks, varBlocks.size());
     if(numBlocks == 0)
         return;
 
