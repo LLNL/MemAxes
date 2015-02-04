@@ -553,7 +553,7 @@ void ParallelCoordinatesVizWidget::paintGL()
     glVertexPointer(FLOATS_PER_POINT,GL_FLOAT,0,verts.constData());
     glColorPointer(FLOATS_PER_COLOR,GL_FLOAT,0,colors.constData());
 
-    glDrawArrays(GL_LINES,0,verts.size()/POINTS_PER_LINE);
+    glDrawArrays(GL_LINES,0,dataSet->numTotal()*POINTS_PER_LINE);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);

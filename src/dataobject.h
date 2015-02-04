@@ -65,8 +65,18 @@ enum selection_mode
     MODE_FILTER
 };
 
-typedef std::vector<long long> IndexList;
-typedef std::vector<IndexList> IndexHistogram;
+struct indexedValue
+{
+    long long idx;
+    qreal val;
+
+    bool operator<(const struct indexedValue &other) const
+        { return val < other.val; }
+    bool operator>(const struct indexedValue &other) const
+        { return val > other.val; }
+};
+
+typedef std::vector<indexedValue> IndexList;
 
 class DataObject
 {
@@ -114,7 +124,7 @@ public:
 
     // Calculated statistics
     void calcStatistics(int group = 0);
-    void constructDimHists();
+    void constructSortedLists();
 
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
@@ -165,7 +175,7 @@ private:
     QBitArray visibility;
     QVector<int> selectionGroup;
 
-    std::vector<IndexHistogram> dimHists;
+    std::vector<IndexList> dimSortedLists;
 
     QVector<qreal> dimSums;
     QVector<qreal> minimumValues;

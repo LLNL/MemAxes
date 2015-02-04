@@ -236,13 +236,11 @@ int MainWindow::loadData()
     if(err != 0)
         return err;
 
-    //err = selectSourceDirectory();
     QString sourceDir(dataDir+QString("/src/"));
-    DBGLN(codeViz->setSourceDir(sourceDir));
+    codeViz->setSourceDir(sourceDir);
 
-    //err = importHardwareTopology();
     QString topoDir(dataDir+QString("/hardware.xml"));
-    DBGLN(err = dataSet->setHardwareTopology(topoDir));
+    err = dataSet->setHardwareTopology(topoDir);
     if(err != 0)
     {
         errdiag("Error loading hardware: "+topoDir);
@@ -251,7 +249,7 @@ int MainWindow::loadData()
 
     //err = addData();
     QString dataSetDir(dataDir+QString("/data/samples.out"));
-    DBGLN(err = dataSet->addData(dataSetDir)); 
+    err = dataSet->addData(dataSetDir);
     if(err != 0)
     {
         errdiag("Error loading dataset: "+dataSetDir);

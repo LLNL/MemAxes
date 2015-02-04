@@ -40,7 +40,8 @@
 #include "parseUtil.h"
 
 #include <iostream>
-using namespace std;
+#include <algorithm>
+#include <functional>
 
 #include <QFile>
 #include <QTextStream>
@@ -200,49 +201,44 @@ void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax)
     }
 }
 
+struct indexedValueLtFunctor
+{
+    indexedValueLtFunctor(const struct indexedValue _it) : it(_it) {}
+
+    struct indexedValue it;
+
+    bool operator()(const struct indexedValue &other)
+    {
+        return it < other;
+    }
+};
+
 void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
 {
     if(parent->selMode == MODE_NEW)
         deselectAll();
 
-    // Which bins do we have to search?
     for(int d=0; d<dims.size(); d++)
     {
-        // Get bins at both ends of range
-        unsigned int mdim = dims[d];
-        unsigned int numBins = dimHists.at(mdim).size();
-        unsigned int binMin = scale(mins[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
-        unsigned int binMax = scale(maxes[d],minimumValues[mdim],maximumValues[mdim],0,numBins-1);
+        int dim = dims[d];
+        std::vector<indexedValue>::iterator itMin;
+        std::vector<indexedValue>::iterator itMax;
 
-        IndexList &minList = dimHists.at(mdim).at(binMin);
-        IndexList &maxList = dimHists.at(mdim).at(binMax);
+        struct indexedValue ivMinQuery = {-1,mins[d]};
+        struct indexedValue ivMaxQuery = {-1,maxes[d]};
 
-        // Check and select within min bin
-        for(unsigned int e=0; e<minList.size(); e++)
+        itMin = std::find_if(dimSortedLists.at(dim).begin(),
+                             dimSortedLists.at(dim).end(),
+                             indexedValueLtFunctor(ivMinQuery));
+        itMax = std::find_if(dimSortedLists.at(dim).begin(),
+                             dimSortedLists.at(dim).end(),
+                             indexedValueLtFunctor(ivMaxQuery));
+
+        for(itMin; itMin != itMax; itMin++)
         {
-            long long elem = minList.at(e);
-
-            if(within(this->at(elem,mdim),mins[d],maxes[d]))
-                selectData(elem);
+            selectData(itMin->idx);
         }
-
-        // Check and select within max bin
-        for(unsigned int e=0; e<maxList.size(); e++)
-        {
-            long long elem = maxList.at(e);
-
-            if(within(this->at(elem,mdim),mins[d],maxes[d]))
-                selectData(elem);
-        }
-
-        // Add the rest 
-        for(unsigned int b=binMin+1; b<binMax-1; b++)
-        {
-            IndexList &list = dimHists.at(mdim).at(b);
-
-            for(unsigned int e=0; e<list.size(); e++)
-                selectData(list.at(e));
-        }
+        selectData(itMax->idx);
     }
 }
 
@@ -408,8 +404,8 @@ int DataObject::parseCSVFile(QString dataFileName)
 
         if(lineValues.size() != this->numDimensions)
         {
-            cerr << "ERROR: element dimensions do not match metadata!" << endl;
-            cerr << "At element " << elemid << endl;
+            std::cerr << "ERROR: element dimensions do not match metadata!" << std::endl;
+            std::cerr << "At element " << elemid << std::endl;
             return -1;
         }
 
@@ -480,8 +476,8 @@ void DataObject::calcStatistics(int group)
         {
             x = *(p+i);
             dimSums[i] += x;
-            minimumValues[i] = min(x,minimumValues[i]);
-            maximumValues[i] = max(x,maximumValues[i]);
+            minimumValues[i] = std::min(x,minimumValues[i]);
+            maximumValues[i] = std::max(x,maximumValues[i]);
 
             for(int j=0; j<this->numDimensions; j++)
             {
@@ -491,14 +487,9 @@ void DataObject::calcStatistics(int group)
         }
     }
 
-
     // Divide by this->numElements to get mean
     for(int i=0; i<this->numDimensions; i++)
     {
-        DBGVAR(i);
-        DBGVAR(minimumValues[i]);
-        DBGVAR(maximumValues[i]);
-
         meanValues[i] = dimSums[i] / (qreal)this->numElements;
         for(int j=0; j<this->numDimensions; j++)
         {
@@ -543,31 +534,18 @@ void DataObject::calcStatistics(int group)
     }
 }
 
-void DataObject::constructDimHists()
+void DataObject::constructSortedLists()
 {
-    int numBins=100;
-
-    dimHists.resize(this->numDimensions);
+    dimSortedLists.resize(this->numDimensions);
     for(int d=0; d<this->numDimensions; d++)
-        dimHists.at(d).resize(numBins);
-    
-    qreal val;
-    int bin;
-    long long elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
     {
-        for(int d=0; d<this->numDimensions; d++)
+        for(int e=0; e<this->numElements; e++)
         {
-            val = *(p+d);
-            bin = scale(val,minimumValues[d],maximumValues[d],0,numBins-1);
-
-            assert(bin < numBins);
-
-            dimHists.at(d).at(bin).push_back(elem);
+            struct indexedValue di = { e, at(e,d) };
+            dimSortedLists.at(d).push_back(di);
         }
+        std::sort(dimSortedLists.at(d).begin(),dimSortedLists.at(d).end());
     }
-
 }
 
 qreal DataObject::distanceHardware(DataObject *dso)
@@ -627,7 +605,7 @@ int DataSetObject::addData(QString filename)
     }
 
     dobj->calcStatistics();
-    dobj->constructDimHists();
+    dobj->constructSortedLists();
     dobj->parent = this;
     dataObjects.push_back(dobj);
 
