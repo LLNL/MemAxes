@@ -271,11 +271,11 @@ void MemTopoViz::calcMinMaxes()
                 qreal val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples->size();
                 //val = (qreal)(*numCycles) / (qreal)samples->size();
 
-                depthValRanges[i].first=min(depthValRanges[i].first,val);
+                depthValRanges[i].first=0;//min(depthValRanges[i].first,val);
                 depthValRanges[i].second=max(depthValRanges[i].second,val);
 
                 qreal trans = node->transactions;
-                depthTransRanges[i].first=min(depthTransRanges[i].first,trans);
+                depthTransRanges[i].first=0;//min(depthTransRanges[i].first,trans);
                 depthTransRanges[i].second=max(depthTransRanges[i].second,trans);
                 
             }

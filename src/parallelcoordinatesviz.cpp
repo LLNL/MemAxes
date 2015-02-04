@@ -61,17 +61,16 @@ ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
     colorMap.push_back(QColor(255,255,153));
     colorMap.push_back(QColor(177,89,40 ));
 
-    selOpacity = 0.1;
-    unselOpacity = 0.01;
+    selOpacity = 0.4;
+    unselOpacity = 0.1;
 
     numHistBins = 100;
     showHistograms = false;
 
     cursorPos.setX(-1);
-    selecting = -1;
-    moving = -1;
+    selectionAxis = -1;
+    animationAxis = -1;
     movingAxis = -1;
-    mySel = 0;
 
     // Event Filters
     this->installEventFilter(this);
@@ -154,33 +153,17 @@ void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
     if(!processed)
         return;
 
-    if(cursorPos.x() != -1)
+    QPoint mousePos = mouseEvent->pos();
+
+    if(cursorPos.x() != -1 && mousePos.y() > plotBBox.top())
     {
-        selecting = cursorPos.x();
-        if(selMins[selecting] != -1)
-        {
-            moving = selecting;
-            selecting = -1;
-        }
-        firstSel = mouseEvent->pos().y();
+        selectionAxis = cursorPos.x();
+        firstSel = mousePos.y();
     }
 
-    if(mouseEvent->pos().y() > 0
-            && mouseEvent->pos().y() < plotBBox.top())
+    if(mousePos.y() > 0 && mousePos.y() < plotBBox.top())
     {
-        int xval = mouseEvent->pos().x();
-
-        qreal dist;
-        int closestAxis = plotBBox.width();
-        for(int i=0; i<numDimensions; i++)
-        {
-            dist = abs(40+axesPositions[i]*plotBBox.width()-xval);
-            if(dist < closestAxis)
-            {
-                closestAxis = dist;
-                movingAxis = i;
-            }
-        }
+        movingAxis = getClosestAxis(mousePos.x());
     }
 }
 
@@ -191,20 +174,17 @@ void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
     if(!processed)
         return;
 
-    mySel = 1;
+    if(event->button() == Qt::MouseButton::LeftButton && lastSel == -1)
+    {
+        selMins[selectionAxis] = -1;
+        selMaxes[selectionAxis] = -1;
+    }
 
     processSelection();
 
-    // No longer selecting
-    //selMins.fill(-1);
-    //selMaxes.fill(-1);
-
-    selecting = -1;
-    lastSel = -1;
-    moving = -1;
     movingAxis = -1;
-
-    //repaint();
+    selectionAxis = -1;
+    lastSel = -1;
 }
 
 bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
@@ -214,68 +194,49 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
     if(!processed)
         return false;
 
-    static QPoint prevMouse;
+    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    QPoint mousePos = mouseEvent->pos();
+    QPoint mouseDelta = mousePos - prevMousePos;
 
-    qreal axisMargin = 10;
     if (event->type() == QEvent::MouseMove)
     {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        bool needsRepaint = false;
 
-        // Change selection
-        if(selecting != -1)
+        // Dragging to create a selection
+        if(selectionAxis != -1)
         {
-            lastSel = clamp((qreal)mouseEvent->pos().y(),plotBBox.top(),plotBBox.bottom());
+            lastSel = clamp((qreal)mousePos.y(),plotBBox.top(),plotBBox.bottom());
 
             qreal selmin = std::min(firstSel,lastSel);
             qreal selmax = std::max(firstSel,lastSel);
 
-            // scale/invert
-            selMins[selecting] = 1.0-scale(selmax,plotBBox.top(),plotBBox.bottom(),0,1);
-            selMaxes[selecting] = 1.0-scale(selmin,plotBBox.top(),plotBBox.bottom(),0,1);
+            selMins[selectionAxis] = 1.0-scale(selmax,plotBBox.top(),plotBBox.bottom(),0,1);
+            selMaxes[selectionAxis] = 1.0-scale(selmin,plotBBox.top(),plotBBox.bottom(),0,1);
+
+            needsRepaint = true;
         }
 
-        // Move selection box
-        if(moving != -1)
-        {
-            qreal delta = (qreal)(prevMouse.y() - mouseEvent->pos().y())*0.001;
-            selMins[moving] += delta;
-            selMaxes[moving] += delta;
-            mySel = 1;
-            processSelection();
-        }
+        // Set cursor position
+        int axis = getClosestAxis(mousePos.x());
 
-        // Get cursor location
-        cursorPos.setX(-1);
-        for(int i=0; i<numDimensions; i++)
-        {
-            qreal left = plotBBox.left()+axesPositions[i]*plotBBox.width()-axisMargin;
-            qreal right = left+2.0*axisMargin;
-            if(left < mouseEvent->pos().x()
-                    && mouseEvent->pos().x() <= right
-                    && plotBBox.top() < mouseEvent->pos().y()
-                    && mouseEvent->pos().y() <= plotBBox.bottom())
-            {
-                cursorPos = QPointF(i,mouseEvent->pos().y());
-                break;
-            }
-        }
+        cursorPos.setX(axis);
+        cursorPos.setY(mousePos.y());
 
-        if(cursorPos.x() != -1 || prevMouse.x() != cursorPos.x())
-            repaint();
+        if(cursorPos != prevCursorPos)
+            needsRepaint = true;
 
         // Move axes
-        if(movingAxis != -1)
+        if(movingAxis != -1 && mouseDelta.x() != 0)
         {
-            qreal delta = mouseEvent->pos().x() - prevMouse.x();
-            axesPositions[movingAxis] += delta/plotBBox.width();
+            axesPositions[movingAxis] += (qreal)mouseDelta.x()/plotBBox.width();
 
+            // Sort moved axes
             for(int i=0; i<numDimensions-1; i++)
             {
-                // sort moved axes
                 for(int j=i+1; j<numDimensions; j++)
                 {
-                    if(     axesPositions[axesOrder[j]] <
-                            axesPositions[axesOrder[i]])
+                    if(axesPositions[axesOrder[j]] <
+                       axesPositions[axesOrder[i]])
                     {
                         int tmp = axesOrder[j];
                         axesOrder[j] = axesOrder[i];
@@ -285,15 +246,34 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
             }
 
             recalcLines();
-
-            if(delta != 0)
-                repaint();
+            needsRepaint = true;
         }
 
-        prevMouse = mouseEvent->pos();
+        if(needsRepaint)
+            repaint();
     }
 
+    prevMousePos = mousePos;
+    prevCursorPos = cursorPos;
+
     return false;
+}
+
+int ParallelCoordinatesVizWidget::getClosestAxis(int xval)
+{
+    qreal dist;
+    int closestDistance = plotBBox.width();
+    int closestAxis = -1;
+    for(int i=0; i<numDimensions; i++)
+    {
+        dist = abs(40+axesPositions[i]*plotBBox.width()-xval);
+        if(dist < closestDistance)
+        {
+            closestDistance = dist;
+            closestAxis = i;
+        }
+    }
+    return closestAxis;
 }
 
 void ParallelCoordinatesVizWidget::processSelection()
@@ -470,26 +450,22 @@ void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
 
 void ParallelCoordinatesVizWidget::showContextMenu(const QPoint &pos)
 {
-    QMenu contextMenu(tr("Context menu"), this);
+    contextMenuMousePos = pos;
 
-    QAction action1("Animate!", this);
-    connect(&action1, SIGNAL(triggered()), this, SLOT(removeDataPoint()));
-    contextMenu.addAction(&action1);
+    QMenu contextMenu(tr("Axis Menu"), this);
+
+    QAction actionAnimate("Animate!", this);
+    connect(&actionAnimate, SIGNAL(triggered()), this, SLOT(beginAnimation()));
+    contextMenu.addAction(&actionAnimate);
 
     contextMenu.exec(mapToGlobal(pos));
 }
 
 void ParallelCoordinatesVizWidget::selectionChangedSlot()
 {
-    if(mySel == 0)
-    {
-        selMins.fill(-1);
-        selMaxes.fill(-1);
-    }
     calcHistBins();
     recalcLines();
     repaint();
-    mySel = 0;
 }
 
 void ParallelCoordinatesVizWidget::visibilityChangedSlot()
@@ -517,6 +493,43 @@ void ParallelCoordinatesVizWidget::setShowHistograms(bool checked)
 {
     showHistograms = checked;
     repaint();
+}
+
+void ParallelCoordinatesVizWidget::beginAnimation()
+{
+    animationAxis = getClosestAxis(contextMenuMousePos.x());
+    movingAxis = -1;
+
+    qreal selDelta = selMaxes[animationAxis] - selMins[animationAxis];
+    if(selDelta == 0)
+        selDelta = 0.1;
+
+    selMins[animationAxis] = 0;
+    selMaxes[animationAxis] = selDelta;
+
+    processSelection();
+    repaint();
+
+    connect(&animTimer,SIGNAL(timeout()),this,SLOT(animateUp()));
+    animTimer.start(1000/60);
+}
+
+void ParallelCoordinatesVizWidget::animateUp()
+{
+    selMins[animationAxis] += 0.005;
+    selMaxes[animationAxis] += 0.005;
+
+    processSelection();
+    repaint();
+
+    if(selMaxes[animationAxis] >= 1)
+        stopAnimation();
+}
+
+void ParallelCoordinatesVizWidget::stopAnimation()
+{
+    animTimer.stop();
+    animationAxis = -1;
 }
 
 void ParallelCoordinatesVizWidget::paintGL()
@@ -553,7 +566,7 @@ void ParallelCoordinatesVizWidget::paintGL()
     glVertexPointer(FLOATS_PER_POINT,GL_FLOAT,0,verts.constData());
     glColorPointer(FLOATS_PER_COLOR,GL_FLOAT,0,colors.constData());
 
-    glDrawArrays(GL_LINES,0,dataSet->numTotal()*POINTS_PER_LINE);
+    glDrawArrays(GL_LINES,0,verts.size() / POINTS_PER_LINE / 1000);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);

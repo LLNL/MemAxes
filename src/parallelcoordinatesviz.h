@@ -64,6 +64,9 @@ public slots:
     void setSelOpacity(int val);
     void setUnselOpacity(int val);
     void setShowHistograms(bool checked);
+    void beginAnimation();
+    void animateUp();
+    void stopAnimation();
 
 protected:
     void processData();
@@ -76,6 +79,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event);
 
 private:
+    int getClosestAxis(int xval);
     void processSelection();
     void calcMinMaxes();
     void calcHistBins();
@@ -83,6 +87,8 @@ private:
 private:
     int numDimensions;
     int numHistBins;
+
+    QTimer animTimer;
 
     QRectF plotBBox;
     ColorMap colorMap;
@@ -99,12 +105,15 @@ private:
     QVector<int> axesOrder;
     QVector<qreal> axesPositions;
 
-    QPointF cursorPos;
+    QPoint contextMenuMousePos;
+    QPoint prevMousePos;
 
-    int selecting;
-    int moving;
+    QPointF cursorPos;
+    QPointF prevCursorPos;
+
+    int selectionAxis;
+    int animationAxis;
     int movingAxis;
-    int mySel;
 
     bool showHistograms;
 
@@ -114,6 +123,7 @@ private:
     qreal selOpacity;
     qreal unselOpacity;
 
+    // OpenGL
     QVector<GLfloat> verts;
     QVector<GLfloat> colors;
 };
