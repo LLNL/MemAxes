@@ -61,6 +61,13 @@ ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
     colorMap.push_back(QColor(255,255,153));
     colorMap.push_back(QColor(177,89,40 ));
 
+    needsCalcHistBins = true;
+    needsCalcMinMaxes = true;
+    needsProcessData = true;
+    needsProcessSelection = true;
+    needsRecalcLines = true;
+    needsRepaint = true;
+
     selOpacity = 0.4;
     unselOpacity = 0.1;
 
@@ -137,9 +144,9 @@ void ParallelCoordinatesVizWidget::processData()
 
     processed = true;
 
-    calcMinMaxes();
-    calcHistBins();
-    recalcLines();
+    needsCalcMinMaxes = true;
+    needsCalcHistBins = true;
+    needsRecalcLines = true;
 }
 
 void ParallelCoordinatesVizWidget::leaveEvent(QEvent *e)
@@ -164,6 +171,7 @@ void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
     if(mousePos.y() > 0 && mousePos.y() < plotBBox.top())
     {
         movingAxis = getClosestAxis(mousePos.x());
+        assert(movingAxis < numDimensions);
     }
 }
 
@@ -174,7 +182,7 @@ void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
     if(!processed)
         return;
 
-    if(event->button() == Qt::MouseButton::LeftButton && lastSel == -1)
+    if(selectionAxis != -1 && event->button() == Qt::MouseButton::LeftButton && lastSel == -1)
     {
         selMins[selectionAxis] = -1;
         selMaxes[selectionAxis] = -1;
@@ -227,9 +235,10 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
         // Move axes
         if(movingAxis != -1 && mouseDelta.x() != 0)
         {
-            axesPositions[movingAxis] += (qreal)mouseDelta.x()/plotBBox.width();
+            axesPositions[movingAxis] = ((qreal)mousePos.x()-plotBBox.left())/plotBBox.width();
 
             // Sort moved axes
+            bool reorder = false;
             for(int i=0; i<numDimensions-1; i++)
             {
                 for(int j=i+1; j<numDimensions; j++)
@@ -240,11 +249,12 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
                         int tmp = axesOrder[j];
                         axesOrder[j] = axesOrder[i];
                         axesOrder[i] = tmp;
+                        reorder = true;
                     }
                 }
             }
 
-            recalcLines();
+            needsRecalcLines = true;
             needsRepaint = true;
         }
     }
@@ -303,7 +313,7 @@ void ParallelCoordinatesVizWidget::processSelection()
         dataSet->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
     }
 
-    recalcLines();
+    needsRecalcLines = true;
 
     emit selectionChangedSig();
 }
@@ -460,29 +470,29 @@ void ParallelCoordinatesVizWidget::showContextMenu(const QPoint &pos)
 
 void ParallelCoordinatesVizWidget::selectionChangedSlot()
 {
-    calcHistBins();
-    recalcLines();
+    needsCalcHistBins = true;
+    needsRecalcLines = true;
     needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::visibilityChangedSlot()
 {
-    processData();
-    calcMinMaxes();
+    needsProcessData = true;
+    needsCalcMinMaxes = true;
     needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::setSelOpacity(int val)
 {
     selOpacity = (qreal)val/1000.0;
-    recalcLines();
+    needsRecalcLines = true;
     needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::setUnselOpacity(int val)
 {
     unselOpacity = (qreal)val/1000.0;
-    recalcLines();
+    needsRecalcLines = true;
     needsRepaint = true;
 }
 
@@ -494,20 +504,50 @@ void ParallelCoordinatesVizWidget::setShowHistograms(bool checked)
 
 void ParallelCoordinatesVizWidget::frameUpdate()
 {
+    // Animate
     if(animationAxis != -1)
     {
         selMins[animationAxis] += 0.005;
         selMaxes[animationAxis] += 0.005;
 
-        processSelection();
+        needsProcessSelection = true;
         needsRepaint = true;
 
         if(selMaxes[animationAxis] >= 1)
             animationAxis = -1;
     }
 
+    // Necessary updates
+    if(needsProcessData)
+    {
+        processData();
+        needsProcessData = false;
+    }
+    if(needsProcessSelection)
+    {
+        processSelection();
+        needsProcessSelection = false;
+    }
+    if(needsCalcMinMaxes)
+    {
+        calcMinMaxes();
+        needsCalcMinMaxes = false;
+    }
+    if(needsCalcHistBins)
+    {
+        calcHistBins();
+        needsCalcHistBins = false;
+    }
+    if(needsRecalcLines)
+    {
+        recalcLines();
+        needsRecalcLines = false;
+    }
     if(needsRepaint)
+    {
         repaint();
+        needsRepaint = false;
+    }
 }
 
 void ParallelCoordinatesVizWidget::beginAnimation()

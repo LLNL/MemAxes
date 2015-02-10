@@ -85,6 +85,12 @@ private:
     void calcHistBins();
 
 private:
+    bool needsRecalcLines;
+    bool needsCalcHistBins;
+    bool needsCalcMinMaxes;
+    bool needsProcessData;
+    bool needsProcessSelection;
+
     int numDimensions;
     int numHistBins;
 

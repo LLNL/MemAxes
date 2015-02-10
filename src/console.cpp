@@ -35,6 +35,9 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
+#include <QTime>
+
 #include "console.h"
 
 static QString titleText(
@@ -234,7 +237,8 @@ void console::log(const char *msg)
 
 void console::log(QString msg)
 {
-    this->append(msg);
+    QString timestamp = QTime::currentTime().toString();
+    this->append(timestamp+"$ "+msg);
 
     // Scroll to bottom
     sb->setValue(sb->maximum());

@@ -68,7 +68,10 @@ QSize VizWidget::sizeHint() const
 void VizWidget::frameUpdate()
 {
    if(needsRepaint)
+   {
        repaint();
+       needsRepaint = false;
+   }
 }
 
 void VizWidget::selectionChangedSlot()
