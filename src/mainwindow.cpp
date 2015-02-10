@@ -202,10 +202,24 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(vizWidgets[i], SIGNAL(visibilityChangedSig()), this, SLOT(visibilityChangedSlot()));
         connect(this, SIGNAL(visibilityChangedSig()), vizWidgets[i], SLOT(visibilityChangedSlot()));
     }
+
+    frameTimer = new QTimer(this);
+    frameTimer->setInterval(1000/60); // 60fps
+    connect(frameTimer,SIGNAL(timeout()),this,SLOT(frameUpdateAll()));
+    frameTimer->start();
 }
 
 MainWindow::~MainWindow()
 {
+}
+
+void MainWindow::frameUpdateAll()
+{
+    for(int i=0; i<vizWidgets.size(); i++)
+    {
+        vizWidgets[i]->frameUpdate();
+    }
+    //volumeVizWidget->frameUpdate();
 }
 
 void MainWindow::selectionChangedSlot()

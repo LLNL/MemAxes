@@ -53,6 +53,7 @@ VizWidget::VizWidget(QWidget *parent) :
     margin = 20;
     bgColor = QColor(248,248,255);
     processed = false;
+    needsRepaint = false;
 }
 
 VizWidget::~VizWidget()
@@ -64,14 +65,20 @@ QSize VizWidget::sizeHint() const
     return QSize(400, 400);
 }
 
+void VizWidget::frameUpdate()
+{
+   if(needsRepaint)
+       repaint();
+}
+
 void VizWidget::selectionChangedSlot()
 {
-    repaint();
+    needsRepaint = true;
 }
 
 void VizWidget::visibilityChangedSlot()
 {
-    repaint();
+    needsRepaint = true;
 }
 
 void VizWidget::initializeGL()

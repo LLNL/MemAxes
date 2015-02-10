@@ -76,7 +76,7 @@ void MemTopoViz::processData()
 
     calcMinMaxes();
     resizeNodeBoxes();
-    repaint();
+    needsRepaint = true;
 }
 
 void MemTopoViz::selectionChangedSlot()
@@ -86,7 +86,7 @@ void MemTopoViz::selectionChangedSlot()
 
     calcMinMaxes();
     resizeNodeBoxes();
-    repaint();
+    needsRepaint = true;
 }
 
 void MemTopoViz::visibilityChangedSlot()
@@ -96,7 +96,7 @@ void MemTopoViz::visibilityChangedSlot()
 
     calcMinMaxes();
     resizeNodeBoxes();
-    repaint();
+    needsRepaint = true;
 }
 
 void MemTopoViz::drawQtPainter(QPainter *painter)
@@ -238,7 +238,7 @@ void MemTopoViz::resizeEvent(QResizeEvent *e)
         return;
 
     resizeNodeBoxes();
-    repaint();
+    needsRepaint = true;
 }
 
 void MemTopoViz::calcMinMaxes()

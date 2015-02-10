@@ -145,7 +145,7 @@ void ParallelCoordinatesVizWidget::processData()
 void ParallelCoordinatesVizWidget::leaveEvent(QEvent *e)
 {
     VizWidget::leaveEvent(e);
-    repaint();
+    needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
@@ -200,8 +200,6 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
 
     if (event->type() == QEvent::MouseMove)
     {
-        bool needsRepaint = false;
-
         // Dragging to create a selection
         if(selectionAxis != -1)
         {
@@ -220,7 +218,8 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
         int axis = getClosestAxis(mousePos.x());
 
         cursorPos.setX(axis);
-        cursorPos.setY(mousePos.y());
+        cursorPos.setY(std::max((int)mousePos.y(),(int)plotBBox.top()));
+        cursorPos.setY(std::min((int)cursorPos.y(),(int)plotBBox.bottom()));
 
         if(cursorPos != prevCursorPos)
             needsRepaint = true;
@@ -248,9 +247,6 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
             recalcLines();
             needsRepaint = true;
         }
-
-        if(needsRepaint)
-            repaint();
     }
 
     prevMousePos = mousePos;
@@ -297,6 +293,7 @@ void ParallelCoordinatesVizWidget::processSelection()
 
     if(selDims.isEmpty())
     {
+        animationAxis = -1;
         selMins.fill(-1);
         selMaxes.fill(-1);
         dataSet->deselectAll();
@@ -465,34 +462,52 @@ void ParallelCoordinatesVizWidget::selectionChangedSlot()
 {
     calcHistBins();
     recalcLines();
-    repaint();
+    needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::visibilityChangedSlot()
 {
     processData();
     calcMinMaxes();
-    repaint();
+    needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::setSelOpacity(int val)
 {
     selOpacity = (qreal)val/1000.0;
     recalcLines();
-    repaint();
+    needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::setUnselOpacity(int val)
 {
     unselOpacity = (qreal)val/1000.0;
     recalcLines();
-    repaint();
+    needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::setShowHistograms(bool checked)
 {
     showHistograms = checked;
-    repaint();
+    needsRepaint = true;
+}
+
+void ParallelCoordinatesVizWidget::frameUpdate()
+{
+    if(animationAxis != -1)
+    {
+        selMins[animationAxis] += 0.005;
+        selMaxes[animationAxis] += 0.005;
+
+        processSelection();
+        needsRepaint = true;
+
+        if(selMaxes[animationAxis] >= 1)
+            animationAxis = -1;
+    }
+
+    if(needsRepaint)
+        repaint();
 }
 
 void ParallelCoordinatesVizWidget::beginAnimation()
@@ -508,28 +523,7 @@ void ParallelCoordinatesVizWidget::beginAnimation()
     selMaxes[animationAxis] = selDelta;
 
     processSelection();
-    repaint();
-
-    connect(&animTimer,SIGNAL(timeout()),this,SLOT(animateUp()));
-    animTimer.start(1000/60);
-}
-
-void ParallelCoordinatesVizWidget::animateUp()
-{
-    selMins[animationAxis] += 0.005;
-    selMaxes[animationAxis] += 0.005;
-
-    processSelection();
-    repaint();
-
-    if(selMaxes[animationAxis] >= 1)
-        stopAnimation();
-}
-
-void ParallelCoordinatesVizWidget::stopAnimation()
-{
-    animTimer.stop();
-    animationAxis = -1;
+    needsRepaint = true;
 }
 
 void ParallelCoordinatesVizWidget::paintGL()
@@ -566,7 +560,7 @@ void ParallelCoordinatesVizWidget::paintGL()
     glVertexPointer(FLOATS_PER_POINT,GL_FLOAT,0,verts.constData());
     glColorPointer(FLOATS_PER_COLOR,GL_FLOAT,0,colors.constData());
 
-    glDrawArrays(GL_LINES,0,verts.size() / POINTS_PER_LINE / 1000);
+    glDrawArrays(GL_LINES,0,verts.size() / POINTS_PER_LINE / 10);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);

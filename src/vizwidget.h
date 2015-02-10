@@ -56,6 +56,7 @@ signals:
     void visibilityChangedSig();
 
 public slots:
+    virtual void frameUpdate();
     virtual void selectionChangedSlot();
     virtual void visibilityChangedSlot();
 
@@ -83,6 +84,8 @@ protected:
 
     int margin;
     QColor bgColor;
+
+    bool needsRepaint;
 };
 
 #endif // VIZWIDGET_H

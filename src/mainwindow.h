@@ -40,6 +40,7 @@
 
 #include <QMainWindow>
 #include <QErrorMessage>
+#include <QTimer>
 
 #include <QVector>
 
@@ -69,6 +70,7 @@ signals:
     void visibilityChangedSig();
 
 public slots:
+    void frameUpdateAll();
     void selectionChangedSlot();
     void visibilityChangedSlot();
     int loadData();
@@ -86,16 +88,18 @@ public slots:
 
 private:
     Ui::MainWindow *ui;
+
+    QTimer *frameTimer;
+
     CodeEditor *codeEditor;
     CodeViz *codeViz;
     MemTopoViz *memViz;
     VarViz *varViz;
-    //QString sourceDir;
-    QString dataDir;
 
     QVector<VizWidget*> vizWidgets;
     //VolumeVizWidget *volumeVizWidget;
 
+    QString dataDir;
     DataSetObject *dataSet;
     console *con;
 };

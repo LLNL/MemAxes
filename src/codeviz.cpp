@@ -164,7 +164,7 @@ void CodeViz::selectionChangedSlot()
     if(processed)
     {
         processData();
-        repaint();
+        needsRepaint = true;
     }
 }
 

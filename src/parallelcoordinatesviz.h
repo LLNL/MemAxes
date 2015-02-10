@@ -58,15 +58,15 @@ signals:
     void lineSelected(int line);
 
 public slots:
-    void showContextMenu(const QPoint &);
+    void frameUpdate();
     void selectionChangedSlot();
     void visibilityChangedSlot();
+
+    void showContextMenu(const QPoint &);
     void setSelOpacity(int val);
     void setUnselOpacity(int val);
     void setShowHistograms(bool checked);
     void beginAnimation();
-    void animateUp();
-    void stopAnimation();
 
 protected:
     void processData();
@@ -87,8 +87,6 @@ private:
 private:
     int numDimensions;
     int numHistBins;
-
-    QTimer animTimer;
 
     QRectF plotBBox;
     ColorMap colorMap;
