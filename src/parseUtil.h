@@ -39,7 +39,7 @@
 #include <QVector>
 #include <QString>
 
-int createUniqueID(QVector<QString> existing, QString name);
+size_t createUniqueID(QVector<QString> &existing, QString name);
 int dseDepth(int enc);
 int dseDirty(int enc);
 std::string encToString(int enc);

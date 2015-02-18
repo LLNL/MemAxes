@@ -89,7 +89,7 @@ void console::setConsoleInput(QPlainTextEdit *in)
     connect(console_input,SIGNAL(blockCountChanged(int)),this,SLOT(command(int)));
 }
 
-void console::setDataSet(DataSetObject *dsobj)
+void console::setDataSet(DataObject *dsobj)
 {
     dataSet = dsobj;
 }
@@ -105,8 +105,8 @@ void console::inspectCommand(QStringList *args)
     Q_UNUSED(args);
 
     // Print out some info about the current selection
-    int numSel = dataSet->numSelected();
-    int numTot = dataSet->numTotal();
+    int numSel = dataSet->numSelected;
+    int numTot = dataSet->numElements;
 
     log("Selected Samples : ");
     log(QString::number(numSel));
@@ -139,7 +139,7 @@ void console::selectCommand(QStringList *args)
     if(qt == QUERY_DIMRANGE)
     {
         struct dimRangeQuery drq = createDimRangeQuery(args);
-        dataSet->selectByMultiDimRange(drq.dims,drq.mins,drq.maxes);
+        //dataSet->selectByMultiDimRange(drq.dims,drq.mins,drq.maxes);
         emit selectionChangedSig();
         return;
     }
@@ -231,7 +231,6 @@ void console::command(int i)
 
 void console::log(const char *msg)
 {
-    DBGVAR(msg);
     log(QString(msg));
 }
 

@@ -43,6 +43,7 @@
 #include <QBitArray>
 
 #include <map>
+#include <set>
 #include <vector>
 #include <assert.h>
 
@@ -58,6 +59,9 @@ class hardwareTopology;
 class hardwareResourceNode;
 class console;
 
+typedef unsigned long long ElemIndex;
+typedef std::set<ElemIndex> ElemSet;
+
 enum selection_mode
 {
     MODE_NEW = 0,
@@ -67,7 +71,7 @@ enum selection_mode
 
 struct indexedValue
 {
-    long long idx;
+    ElemIndex idx;
     qreal val;
 
     bool operator<(const struct indexedValue &other) const
@@ -86,28 +90,35 @@ public:
     DataObject();
 
 public:
+    hardwareTopology *getTopo() { return topo; }
+    int loadHardwareTopology(QString filename);
+    bool empty() { return numElements == 0; }
+
     // Initialization
-    void allocate();
-    void collectTopoSamples(hardwareTopology *hw, bool sel = false);
-    int parseCSVFile(QString dataFileName);
+    int loadData(QString filename);
     void selectionChanged() { collectTopoSamples(topo); }
+    void visibilityChanged() { collectTopoSamples(topo); }
 
-    // Selection
-    int selected(unsigned int index);
-    bool visible(unsigned int index);
+    void setConsole(console *c) { con = c; }
 
+private:
+    void allocate();
+    void collectTopoSamples(hardwareTopology *hw);
+    int parseCSVFile(QString dataFileName);
+
+public:
+    // Selection & Visibility
+    selection_mode selectionMode() { return selMode; }
+    void setSelectionMode(selection_mode mode, bool silent = false);
+    int selected(ElemIndex index);
+    bool visible(ElemIndex index);
     bool selectionDefined();
-    bool skip(unsigned int index);
 
-    void selectData(unsigned int index, int group = -1);
-    void deselectData(unsigned int index);
-    void logicalSelectData(unsigned int index, bool select, int group = -1);
-
-    void selectAll();
+    void selectData(ElemIndex index, int group = 1);
+    void selectAll(int group = 1);
     void deselectAll();
-    void selectAllVisible();
+    void selectAllVisible(int group = 1);
 
-    // Visibility
     void showData(unsigned int index);
     void hideData(unsigned int index);
     void showAll();
@@ -115,15 +126,17 @@ public:
     void hideSelected();
     void hideUnselected();
 
-    // Selection Queries
-    void selectByDimRange(int dim, qreal vmin, qreal vmax);
-    void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
-    void selectBySourceFileName(QString str);
-    void selectByVarName(QString str);
-    void selectByResource(hardwareResourceNode *node);
+    void selectSet(ElemSet &s, int group = 1);
+    void selectByDimRange(int dim, qreal vmin, qreal vmax, int group = 1);
+    void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes, int group = 1);
+    void selectBySourceFileName(QString str, int group = 1);
+    void selectByVarName(QString str, int group = 1);
+    void selectByResource(hardwareResourceNode *node, int group = 1);
+
+    ElemSet& getSelectionSet(int group = 1) { return selectionSets.at(group); }
 
     // Calculated statistics
-    void calcStatistics(int group = 0);
+    void calcStatistics();
     void constructSortedLists();
 
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
@@ -145,10 +158,10 @@ public:
     hardwareTopology *topo;
 
     // Counts
-    long long numDimensions;
-    long long numElements;
-    long long numSelected;
-    long long numVisible;
+    ElemIndex numDimensions;
+    ElemIndex numElements;
+    ElemIndex numSelected;
+    ElemIndex numVisible;
 
     // Hard-coded dimensions
     int sourceDim;
@@ -170,10 +183,9 @@ public:
     QVector<qreal>::Iterator end;
 
 private:
-    DataSetObject *parent;
-
     QBitArray visibility;
     QVector<int> selectionGroup;
+    std::vector<ElemSet> selectionSets;
 
     std::vector<IndexList> dimSortedLists;
 
@@ -184,63 +196,13 @@ private:
     QVector<qreal> standardDeviations;
     QVector<qreal> covarianceMatrix;
     QVector<qreal> correlationMatrix;
-};
-
-class DataSetObject
-{
-    friend class DataObject;
-
-public:
-    DataSetObject();
-
-    DataObject* at(int i) { return dataObjects[i]; }
-    bool isEmpty() { return dataObjects.isEmpty(); }
-    int size() { return dataObjects.size(); }
-    hardwareTopology* hwTopo() { return hw; }
-    void setConsole(console *icon) { con = icon; }
-
-    int selectionMode() { return selMode; }
-
-    // Set data and hardware
-    int addData(QString filename);
-    int setHardwareTopology(QString filename);
-
-    // Triggers
-    bool selectionDefined();
-    void selectionChanged();
-    void visibilityChanged();
-
-    // Selection/Visibility
-    void hideUnselected();
-    void showAll();
-    void deselectAll();
-    void hideSelected();
-    void setSelectionMode(selection_mode mode);
-    void selectAll();
-    void selectAllVisible();
-
-    // Selection Queries
-    void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
-    void selectByMultiDimRange(QVector<QString> dims, QVector<qreal> mins, QVector<qreal> maxes);
-    void selectByVarName(QString str);
-    void selectByResource(hardwareResourceNode *node);
-
-    // Calculated values
-    int numSelected();
-    int numUnselected();
-    int numTotal();
-
-    // Clustering
-    void worstPair(QVector<QVector<qreal> > *dm, int *i0, int *i1);
-    int clusterHardware();
 
 private:
     console *con;
-    hardwareTopology *hw;
     QVector<DataObject*> dataObjects;
 
     int selGroup;
-    int selMode;
+    selection_mode selMode;
 };
 
 #endif // DATAOBJECT_H

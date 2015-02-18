@@ -38,7 +38,7 @@
 
 #include "parseUtil.h"
 
-int createUniqueID(QVector<QString> existing, QString name)
+size_t createUniqueID(QVector<QString> &existing, QString name)
 {
     for(int i=0; i<existing.size(); i++)
     {

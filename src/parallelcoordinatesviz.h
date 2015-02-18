@@ -67,6 +67,7 @@ public slots:
     void setUnselOpacity(int val);
     void setShowHistograms(bool checked);
     void beginAnimation();
+    void endAnimation();
 
 protected:
     void processData();
@@ -90,6 +91,9 @@ private:
     bool needsCalcMinMaxes;
     bool needsProcessData;
     bool needsProcessSelection;
+
+    ElemSet animSet;
+    bool emptySet;
 
     int numDimensions;
     int numHistBins;

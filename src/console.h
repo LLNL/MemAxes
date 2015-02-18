@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
@@ -45,7 +46,7 @@
 #include "dataobject.h"
 #include "util.h"
 
-class DataSetObject;
+class DataObject;
 
 enum CMD_TYPE {
     CMD_HELP = 0,
@@ -80,7 +81,7 @@ public:
     console(QWidget *parent = 0);
 
     void setConsoleInput(QPlainTextEdit *in);
-    void setDataSet(DataSetObject *dsobj);
+    void setDataSet(DataObject *dsobj);
 
 signals:
     void selectionChangedSig();
@@ -102,7 +103,7 @@ public slots:
 
 private:
     QPlainTextEdit *console_input;
-    DataSetObject *dataSet;
+    DataObject *dataSet;
     QScrollBar *sb;
 };
 

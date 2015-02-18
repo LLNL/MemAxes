@@ -54,6 +54,8 @@ VizWidget::VizWidget(QWidget *parent) :
     bgColor = QColor(248,248,255);
     processed = false;
     needsRepaint = false;
+
+    dataSet = NULL;
 }
 
 VizWidget::~VizWidget()
@@ -131,10 +133,9 @@ void VizWidget::paintEvent(QPaintEvent *event)
     }
 }
 
-void VizWidget::setDataSet(DataSetObject *iDataSet)
+void VizWidget::setDataSet(DataObject *iDataSet)
 {
     dataSet = iDataSet;
-    processData();
 }
 
 void VizWidget::setConsole(console *iCon)

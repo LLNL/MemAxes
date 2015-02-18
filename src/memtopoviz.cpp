@@ -61,14 +61,13 @@ void MemTopoViz::processData()
 {
     processed = false;
 
-    if(dataSet->isEmpty() || !dataSet->hwTopo())
+    if(dataSet->getTopo() == NULL)
         return;
 
-
-    depthRange = IntRange(0,dataSet->hwTopo()->hardwareResourceMatrix.size());
+    depthRange = IntRange(0,dataSet->getTopo()->hardwareResourceMatrix.size());
     for(int i=depthRange.first; i<(int)depthRange.second; i++)
     {
-        IntRange wr(0,dataSet->hwTopo()->hardwareResourceMatrix[i].size());
+        IntRange wr(0,dataSet->getTopo()->hardwareResourceMatrix[i].size());
         widthRange.push_back(wr);
     }
 
@@ -118,11 +117,8 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
         // Get value by cycles or samples
         int numCycles = 0;
         int numSamples = 0;
-        for(int d=0; d<dataSet->size(); d++)
-        {
-            numSamples += node->sampleSets[dataSet->at(d)].selSamples.size();
-            numCycles += node->sampleSets[dataSet->at(d)].selCycles;
-        }
+        numSamples += node->sampleSets[dataSet].selSamples.size();
+        numCycles += node->sampleSets[dataSet].selCycles;
 
         qreal val = (dataMode == COLORBY_CYCLES) ? numCycles : numSamples;
 
@@ -194,7 +190,7 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
     {
         QString label;
 
-        if(node->depth == dataSet->hwTopo()->totalDepth)
+        if(node->depth == dataSet->getTopo()->totalDepth)
             label = "CPU " + QString::number(node->id) + "\n";
         else if(node->depth > 1)
             label = "L" + QString::number(node->id) + " Cache\n";
@@ -210,11 +206,8 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
 
         int numCycles = 0;
         int numSamples = 0;
-        for(int d=0; d<dataSet->size(); d++)
-        {
-            numSamples += node->sampleSets[dataSet->at(d)].selSamples.size();
-            numCycles += node->sampleSets[dataSet->at(d)].selCycles;
-        }
+        numSamples += node->sampleSets[dataSet].selSamples.size();
+        numCycles += node->sampleSets[dataSet].selCycles;
 
         label += "Samples: " + QString::number(numSamples) + "\n";
         label += "Cycles: " + QString::number(numCycles) + "\n";
@@ -258,27 +251,23 @@ void MemTopoViz::calcMinMaxes()
         // Get min/max for this row
         for(int j=widthRange[r].first; j<widthRange[r].second; j++)
         {
-            for(int d=0; d<dataSet->size(); d++)
-            {
-                hardwareResourceNode *node = dataSet->hwTopo()->hardwareResourceMatrix[i][j];
+            hardwareResourceNode *node = dataSet->getTopo()->hardwareResourceMatrix[i][j];
 
-                if(!node->sampleSets.contains(dataSet->at(d)))
-                    continue;
+            if(!node->sampleSets.contains(dataSet))
+                continue;
 
-                QVector<int> *samples = &node->sampleSets[dataSet->at(d)].selSamples;
-                int *numCycles = &node->sampleSets[dataSet->at(d)].selCycles;
+            ElemSet &samples = node->sampleSets[dataSet].selSamples;
+            int *numCycles = &node->sampleSets[dataSet].selCycles;
 
-                qreal val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples->size();
-                //val = (qreal)(*numCycles) / (qreal)samples->size();
+            qreal val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples.size();
+            //val = (qreal)(*numCycles) / (qreal)samples->size();
 
-                depthValRanges[i].first=0;//min(depthValRanges[i].first,val);
-                depthValRanges[i].second=max(depthValRanges[i].second,val);
+            depthValRanges[i].first=0;//min(depthValRanges[i].first,val);
+            depthValRanges[i].second=max(depthValRanges[i].second,val);
 
-                qreal trans = node->transactions;
-                depthTransRanges[i].first=0;//min(depthTransRanges[i].first,trans);
-                depthTransRanges[i].second=max(depthTransRanges[i].second,trans);
-                
-            }
+            qreal trans = node->transactions;
+            depthTransRanges[i].first=0;//min(depthTransRanges[i].first,trans);
+            depthTransRanges[i].second=max(depthTransRanges[i].second,trans);
         }
     }
 }
@@ -296,15 +285,15 @@ void MemTopoViz::resizeNodeBoxes()
     float nodeMarginY = 10.0f;
 
     float deltaX = 0;
-    float deltaY = drawBox.height() / dataSet->hwTopo()->hardwareResourceMatrix.size();
+    float deltaY = drawBox.height() / dataSet->getTopo()->hardwareResourceMatrix.size();
 
     // Adjust boxes to fill the drawBox space
-    for(int i=0; i<dataSet->hwTopo()->hardwareResourceMatrix.size(); i++)
+    for(int i=0; i<dataSet->getTopo()->hardwareResourceMatrix.size(); i++)
     {
-        deltaX = drawBox.width() / (float)dataSet->hwTopo()->hardwareResourceMatrix[i].size();
-        for(int j=0; j<dataSet->hwTopo()->hardwareResourceMatrix[i].size(); j++)
+        deltaX = drawBox.width() / (float)dataSet->getTopo()->hardwareResourceMatrix[i].size();
+        for(int j=0; j<dataSet->getTopo()->hardwareResourceMatrix[i].size(); j++)
         {
-            hardwareResourceNode *node = dataSet->hwTopo()->hardwareResourceMatrix[i][j];
+            hardwareResourceNode *node = dataSet->getTopo()->hardwareResourceMatrix[i][j];
             int depth = node->depth;
 
             // Create Node Box

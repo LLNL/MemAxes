@@ -61,7 +61,7 @@ public slots:
     virtual void visibilityChangedSlot();
 
 public:
-    void setDataSet(DataSetObject *iDataSet);
+    void setDataSet(DataObject *iDataSet);
     void setConsole(console *iCon);
     virtual void processData();
 
@@ -80,7 +80,7 @@ private:
 protected:
     bool processed;
     console *con;
-    DataSetObject *dataSet;
+    DataObject *dataSet;
 
     int margin;
     QColor bgColor;

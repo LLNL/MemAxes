@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include "codeviz.h"
 
 #include <QFile>
@@ -111,9 +112,6 @@ void CodeViz::processData()
 {
     processed = false;
 
-    if(dataSet->isEmpty())
-        return;
-
     closeAll();
 
     sourceMaxVal = 0;
@@ -122,28 +120,25 @@ void CodeViz::processData()
     // Get metric values
     int elem = 0;
     QVector<qreal>::Iterator p;
-    for(int d=0; d<dataSet->size(); d++)
+    for(elem=0, p=dataSet->begin; p!=dataSet->end; elem++, p+=dataSet->numDimensions)
     {
-        for(elem=0, p=dataSet->at(d)->begin; p!=dataSet->at(d)->end; elem++, p+=dataSet->at(d)->numDimensions)
-        {
-            if(dataSet->selectionDefined() && !dataSet->at(d)->selected(elem))
-                continue;
+        if(dataSet->selectionDefined() && !dataSet->selected(elem))
+            continue;
 
-            int sourceIdx = this->getFileID(dataSet->at(d)->fileNames[elem]);
-            sourceBlocks[sourceIdx].val += *(p+dataSet->at(d)->latencyDim);
-            sourceMaxVal = std::max(sourceMaxVal,sourceBlocks[sourceIdx].val);
+        int sourceIdx = this->getFileID(dataSet->fileNames[elem]);
+        sourceBlocks[sourceIdx].val += *(p+dataSet->latencyDim);
+        sourceMaxVal = std::max(sourceMaxVal,sourceBlocks[sourceIdx].val);
 
-            int lineIdx = this->getLineID(&sourceBlocks[sourceIdx],*(p+dataSet->at(d)->lineDim));
-            sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+dataSet->at(d)->latencyDim);
+        int lineIdx = this->getLineID(&sourceBlocks[sourceIdx],*(p+dataSet->lineDim));
+        sourceBlocks[sourceIdx].lineBlocks[lineIdx].val += *(p+dataSet->latencyDim);
 
-            sourceBlocks[sourceIdx].lineMaxVal = std::max(sourceBlocks[sourceIdx].lineMaxVal,
-                                                      sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);
-        }
+        sourceBlocks[sourceIdx].lineMaxVal = std::max(sourceBlocks[sourceIdx].lineMaxVal,
+                                                  sourceBlocks[sourceIdx].lineBlocks[lineIdx].val);
     }
 
     if(sourceBlocks.empty())
     {
-        std::cout << "COW" << std::endl;
+        processed = true;
         return;
     }
 
@@ -174,7 +169,7 @@ void CodeViz::drawQtPainter(QPainter *painter)
 
     painter->fillRect(drawSpace, bgColor);
 
-    if(!processed)
+    if(!processed || sourceBlocks.empty())
         return;
 
     int numBlocks = std::min(numVisibleSourceBlocks,sourceBlocks.size());
@@ -227,13 +222,10 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                                        sourceBlocks[i].lineBlocks[j].block.height());
                 if(lineSelectionBox.contains(e->pos()))
                 {
-                    QVector<QString> dims;
-                    QVector<qreal> val;
+                    int dim = dataSet->lineDim;
+                    qreal lineval = sourceBlocks[i].lineBlocks[j].line;
 
-                    dims.push_back("line");
-                    val.push_back(sourceBlocks[i].lineBlocks[j].line);
-
-                    dataSet->selectByMultiDimRange(dims,val,val);
+                    dataSet->selectByDimRange(dim,lineval-1,lineval);
 
                     emit sourceFileSelected(sourceBlocks[i].file);
                     emit sourceLineSelected(sourceBlocks[i].lineBlocks[j].line);

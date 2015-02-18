@@ -43,16 +43,21 @@
 #include <QXmlStreamReader>
 #include <QMap>
 
+#include <vector>
+
 #include "dataobject.h"
 
 class DataObject;
+
+typedef unsigned long long ElemIndex;
+typedef std::set<ElemIndex> ElemSet;
 
 struct SampleSet
 {
     int totCycles;
     int selCycles;
-    QVector<int> totSamples;
-    QVector<int> selSamples;
+    ElemSet totSamples;
+    ElemSet selSamples;
 };
 
 class hardwareResourceNode

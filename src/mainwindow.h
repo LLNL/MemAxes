@@ -100,7 +100,7 @@ private:
     //VolumeVizWidget *volumeVizWidget;
 
     QString dataDir;
-    DataSetObject *dataSet;
+    DataObject *dataSet;
     console *con;
 };
 

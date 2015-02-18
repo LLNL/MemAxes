@@ -62,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowTitle(tr("MemAxes"));
     ui->menuBar->setNativeMenuBar(true);
 
-    dataSet = new DataSetObject();
+    dataSet = new DataObject();
 
     con = new console(this);
     ui->consoleLayout->addWidget(con);
@@ -129,7 +129,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QFile*)));
     connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), codeEditor, SLOT(setFile(QFile*)));
     connect(codeViz, SIGNAL(sourceLineSelected(int)), codeEditor, SLOT(setLine(int)));
-
 
     /*
      * Volume Viz
@@ -254,16 +253,15 @@ int MainWindow::loadData()
     codeViz->setSourceDir(sourceDir);
 
     QString topoDir(dataDir+QString("/hardware.xml"));
-    err = dataSet->setHardwareTopology(topoDir);
+    err = dataSet->loadHardwareTopology(topoDir);
     if(err != 0)
     {
         errdiag("Error loading hardware: "+topoDir);
         return err;
     }
 
-    //err = addData();
     QString dataSetDir(dataDir+QString("/data/samples.out"));
-    err = dataSet->addData(dataSetDir);
+    err = dataSet->loadData(dataSetDir);
     if(err != 0)
     {
         errdiag("Error loading dataset: "+dataSetDir);
