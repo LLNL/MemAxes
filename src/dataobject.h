@@ -47,7 +47,7 @@
 #include <vector>
 #include <assert.h>
 
-#include "hardwaretopology.h"
+#include "hwtopo.h"
 #include "util.h"
 #include "console.h"
 
@@ -55,8 +55,8 @@
 #define VISIBLE true
 
 class DataSetObject;
-class hardwareTopology;
-class hardwareResourceNode;
+class hwTopo;
+class hwNode;
 class console;
 
 typedef unsigned long long ElemIndex;
@@ -90,7 +90,7 @@ public:
     DataObject();
 
 public:
-    hardwareTopology *getTopo() { return topo; }
+    hwTopo *getTopo() { return topo; }
     int loadHardwareTopology(QString filename);
     bool empty() { return numElements == 0; }
 
@@ -103,7 +103,7 @@ public:
 
 private:
     void allocate();
-    void collectTopoSamples(hardwareTopology *hw);
+    void collectTopoSamples(hwTopo *hw);
     int parseCSVFile(QString dataFileName);
 
 public:
@@ -131,7 +131,7 @@ public:
     void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes, int group = 1);
     void selectBySourceFileName(QString str, int group = 1);
     void selectByVarName(QString str, int group = 1);
-    void selectByResource(hardwareResourceNode *node, int group = 1);
+    void selectByResource(hwNode *node, int group = 1);
 
     ElemSet& getSelectionSet(int group = 1) { return selectionSets.at(group); }
 
@@ -155,7 +155,7 @@ public:
 
 public:
     QStringList meta;
-    hardwareTopology *topo;
+    hwTopo *topo;
 
     // Counts
     ElemIndex numDimensions;

@@ -61,11 +61,11 @@ enum DataMode
 struct NodeBox
 {
     NodeBox() {memset(this,0,sizeof(*this));}
-    NodeBox(hardwareResourceNode* n, 
+    NodeBox(hwNode* n, 
             QRectF b)
             : node(n),box(b) {}
 
-    hardwareResourceNode* node;
+    hwNode* node;
     QRectF box;
     qreal val;
 };
@@ -73,13 +73,13 @@ struct NodeBox
 struct LinkBox
 {
     LinkBox() {memset(this,0,sizeof(*this));}
-    LinkBox(hardwareResourceNode* p, 
-            hardwareResourceNode* c, 
+    LinkBox(hwNode* p, 
+            hwNode* c, 
             QRectF b) 
             : parent(p),child(c),box(b) {}
 
-    hardwareResourceNode* parent;
-    hardwareResourceNode* child;
+    hwNode* parent;
+    hwNode* child;
     QRectF box;
     qreal val;
 };
@@ -124,13 +124,13 @@ public slots:
 private:
     void calcMinMaxes();
     void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
-                                    hardwareTopology *topo,
+                                    hwTopo *topo,
                                     QVector<RealRange> &valRanges,
                                     QVector<RealRange> &transRanges, DataMode m,
                                     QVector<NodeBox> &nbout,
                                     QVector<LinkBox> &lbout);
-hardwareResourceNode* nodeAtPosition(QPoint p);
-    void selectSamplesWithinNode(hardwareResourceNode *lvl);
+hwNode* nodeAtPosition(QPoint p);
+    void selectSamplesWithinNode(hwNode *lvl);
 
 private:
 

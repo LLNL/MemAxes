@@ -60,10 +60,10 @@ struct SampleSet
     ElemSet selSamples;
 };
 
-class hardwareResourceNode
+class hwNode
 {
 public:
-    hardwareResourceNode();
+    hwNode();
 
     QString name;
 
@@ -72,18 +72,18 @@ public:
     long long size;
     long long transactions;
 
-    hardwareResourceNode *parent;
-    QVector<hardwareResourceNode*> children;
+    hwNode *parent;
+    QVector<hwNode*> children;
 
     QMap<DataObject*,SampleSet> sampleSets;
 };
 
-class hardwareTopology
+class hwTopo
 {
 public:
-    hardwareTopology();
+    hwTopo();
 
-    hardwareResourceNode *hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hardwareResourceNode *parent);
+    hwNode *hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *parent);
     int loadHardwareTopologyFromXML(QString fileName);
 
     QString hardwareName;
@@ -92,21 +92,21 @@ public:
     int numNUMADomains;
     int totalDepth;
 
-    hardwareResourceNode *hardwareResourceRoot;
+    hwNode *hardwareResourceRoot;
 
-    QVector<hardwareResourceNode*> allHardwareResourceNodes;
-    QVector< QVector<hardwareResourceNode*> > hardwareResourceMatrix;
+    QVector<hwNode*> allHardwareResourceNodes;
+    QVector< QVector<hwNode*> > hardwareResourceMatrix;
 
-    QVector<hardwareResourceNode*> *CPUNodes;
-    QVector<hardwareResourceNode*> *NUMANodes;
+    QVector<hwNode*> *CPUNodes;
+    QVector<hwNode*> *NUMANodes;
 
-    QMap<int,hardwareResourceNode*> CPUIDMap;
-    QMap<int,hardwareResourceNode*> NUMAIDMap;
+    QMap<int,hwNode*> CPUIDMap;
+    QMap<int,hwNode*> NUMAIDMap;
 
 private:
     void processLoadedTopology();
     void constructHardwareResourceMatrix();
-    void addToMatrix(hardwareResourceNode *node);
+    void addToMatrix(hwNode *node);
 };
 
 #endif // HARDWARETOPOLOGY_H

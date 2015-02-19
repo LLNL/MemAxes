@@ -35,16 +35,17 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
-#include "hardwaretopology.h"
+
+#include "hwtopo.h"
 
 #include <iostream>
 using namespace std;
 
-hardwareResourceNode::hardwareResourceNode()
+hwNode::hwNode()
 {
 }
 
-hardwareTopology::hardwareTopology()
+hwTopo::hwTopo()
 {
     numCPUs = 0;
     numNUMADomains = 0;
@@ -53,9 +54,9 @@ hardwareTopology::hardwareTopology()
     hardwareResourceRoot = NULL;
 }
 
-hardwareResourceNode *hardwareTopology::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hardwareResourceNode *parent)
+hwNode *hwTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *parent)
 {
-    hardwareResourceNode *newLevel = new hardwareResourceNode();
+    hwNode *newLevel = new hwNode();
 
     newLevel->parent = parent;
     newLevel->name = xml->name().toString(); // Hardware, NUMA, Cache, CPU
@@ -76,7 +77,7 @@ hardwareResourceNode *hardwareTopology::hardwareResourceNodeFromXMLNode(QXmlStre
     {
         if(xml->isStartElement())
         {
-            hardwareResourceNode *child = hardwareResourceNodeFromXMLNode(xml, newLevel);
+            hwNode *child = hardwareResourceNodeFromXMLNode(xml, newLevel);
             newLevel->children.push_back(child);
         }
 
@@ -86,7 +87,7 @@ hardwareResourceNode *hardwareTopology::hardwareResourceNodeFromXMLNode(QXmlStre
     return newLevel;
 }
 
-int hardwareTopology::loadHardwareTopologyFromXML(QString fileName)
+int hwTopo::loadHardwareTopologyFromXML(QString fileName)
 {
     QFile* file = new QFile(fileName);
 
@@ -119,7 +120,7 @@ int hardwareTopology::loadHardwareTopologyFromXML(QString fileName)
     return 0;
 }
 
-void hardwareTopology::processLoadedTopology()
+void hwTopo::processLoadedTopology()
 {
     allHardwareResourceNodes.clear();
     hardwareResourceMatrix.clear();
@@ -148,7 +149,7 @@ void hardwareTopology::processLoadedTopology()
 
 }
 
-void hardwareTopology::addToMatrix(hardwareResourceNode *node)
+void hwTopo::addToMatrix(hwNode *node)
 {
     hardwareResourceMatrix[node->depth].push_back(node);
     allHardwareResourceNodes.push_back(node);
@@ -163,7 +164,7 @@ void hardwareTopology::addToMatrix(hardwareResourceNode *node)
 
 }
 
-void hardwareTopology::constructHardwareResourceMatrix()
+void hwTopo::constructHardwareResourceMatrix()
 {
    hardwareResourceMatrix.resize(totalDepth+1);
    addToMatrix(hardwareResourceRoot);

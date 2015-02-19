@@ -17,7 +17,7 @@ set(SOURCES
   codevizwidget.cpp
   console.cpp
   dataobject.cpp
-  hardwaretopology.cpp
+  hwtopo.cpp
   main.cpp
   mainwindow.cpp
   hwtopovizwidget.cpp
@@ -32,7 +32,7 @@ set(HEADERS
   codevizwidget.h
   console.h
   dataobject.h
-  hardwaretopology.h
+  hwtopo.h
   mainwindow.h
   hwtopovizwidget.h
   pcvizwidget.h

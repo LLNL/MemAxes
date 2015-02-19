@@ -61,7 +61,7 @@ DataObject::DataObject()
 
 int DataObject::loadHardwareTopology(QString filename)
 {
-    topo = new hardwareTopology();
+    topo = new hwTopo();
     int err = topo->loadHardwareTopologyFromXML(filename);
     return err;
 }
@@ -311,7 +311,7 @@ void DataObject::selectByVarName(QString str, int group)
     selectSet(selSet,group);
 }
 
-void DataObject::selectByResource(hardwareResourceNode *node, int group)
+void DataObject::selectByResource(hwNode *node, int group)
 {
     selectSet(node->sampleSets[this].totSamples,group);
 }
@@ -381,7 +381,7 @@ void DataObject::selectSet(ElemSet &s, int group)
     }
 }
 
-void DataObject::collectTopoSamples(hardwareTopology *hw)
+void DataObject::collectTopoSamples(hwTopo *hw)
 {
     topo = hw;
 
@@ -406,8 +406,8 @@ void DataObject::collectTopoSamples(hardwareTopology *hw)
         int cycles = *(p+latencyDim);
 
         // Search for nodes
-        hardwareResourceNode *cpuNode = topo->CPUIDMap[cpu];
-        hardwareResourceNode *node = cpuNode;
+        hwNode *cpuNode = topo->CPUIDMap[cpu];
+        hwNode *node = cpuNode;
 
         // Update data for serving resource
         node->sampleSets[this].totSamples.insert(elem);
@@ -675,7 +675,7 @@ qreal DataObject::distanceHardware(DataObject *dso)
         int width = topo->hardwareResourceMatrix[d].size();
         for(int w=0; w<width; w++)
         {
-            hardwareResourceNode *node = topo->hardwareResourceMatrix[d][w];
+            hwNode *node = topo->hardwareResourceMatrix[d][w];
             struct SampleSet ss1 = node->sampleSets[this];
             struct SampleSet ss2 = node->sampleSets[dso];
             ddist += abs(ss1.totCycles - ss2.totCycles);

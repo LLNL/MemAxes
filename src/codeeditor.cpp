@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #include <QPlainTextEdit>
 #include <QPainter>
 #include <QTextBlock>

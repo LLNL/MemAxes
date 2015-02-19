@@ -125,7 +125,7 @@ void HWTopoVizWidget::drawTopo(QPainter *painter, QRectF rect, ColorMap &cm, QVe
     painter->setPen(QPen(Qt::black));
     for(int b=0; b<nb.size(); b++)
     {
-        hardwareResourceNode *node = nb.at(b).node;
+        hwNode *node = nb.at(b).node;
         QRectF box = nb.at(b).box;
         QString text = QString::number(node->id);
 
@@ -183,7 +183,7 @@ void HWTopoVizWidget::mousePressEvent(QMouseEvent *e)
     if(!processed)
         return;
 
-    hardwareResourceNode *node = nodeAtPosition(e->pos());
+    hwNode *node = nodeAtPosition(e->pos());
 
     if(node)
     {
@@ -197,7 +197,7 @@ void HWTopoVizWidget::mouseMoveEvent(QMouseEvent* e)
     if(!processed)
         return;
 
-    hardwareResourceNode *node = nodeAtPosition(e->pos());
+    hwNode *node = nodeAtPosition(e->pos());
 
     if(node)
     {
@@ -264,7 +264,7 @@ void HWTopoVizWidget::calcMinMaxes()
         // Get min/max for this row
         for(int j=widthRange[r].first; j<widthRange[r].second; j++)
         {
-            hardwareResourceNode *node = dataSet->getTopo()->hardwareResourceMatrix[i][j];
+            hwNode *node = dataSet->getTopo()->hardwareResourceMatrix[i][j];
 
             if(!node->sampleSets.contains(dataSet))
                 continue;
@@ -289,7 +289,7 @@ void HWTopoVizWidget::calcMinMaxes()
 }
 
 void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
-                                    hardwareTopology *topo,
+                                    hwTopo *topo,
                                     QVector<RealRange> &valRanges,
                                     QVector<RealRange> &transRanges,
                                     DataMode m,
@@ -373,14 +373,14 @@ void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
     needsRepaint = true;
 }
 
-hardwareResourceNode *HWTopoVizWidget::nodeAtPosition(QPoint p)
+hwNode *HWTopoVizWidget::nodeAtPosition(QPoint p)
 {
     QRectF drawBox = this->rect();
     drawBox.adjust(margin,margin,-margin,-margin);
 
     for(int b=0; b<nodeBoxes.size(); b++)
     {
-        hardwareResourceNode *node = nodeBoxes[b].node;
+        hwNode *node = nodeBoxes[b].node;
         QRectF box = nodeBoxes[b].box;
 
         bool containsP = false;
@@ -401,7 +401,7 @@ hardwareResourceNode *HWTopoVizWidget::nodeAtPosition(QPoint p)
     return NULL;
 }
 
-void HWTopoVizWidget::selectSamplesWithinNode(hardwareResourceNode *node)
+void HWTopoVizWidget::selectSamplesWithinNode(hwNode *node)
 {
     dataSet->selectByResource(node);
     emit selectionChangedSig();

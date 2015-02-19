@@ -35,6 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -50,7 +51,7 @@
 #include "pcvizwidget.h"
 #include "hwtopovizwidget.h"
 
-#include "hardwaretopology.h"
+#include "hwtopo.h"
 #include "codeeditor.h"
 #include "console.h"
 
