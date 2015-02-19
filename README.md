@@ -40,17 +40,19 @@ build Qt5.
 ## Hardware Topology
 ![image](images/topo.png)
 
-The hardware resources of a node are displayed as a hierarchy, where
-the node is the root, its memory resources are internal nodes, and
-logical cores are the leaves. MemAxes displays this hierarchy either
-radially, as a Sunburst chart, or vertically, as an Icicle chart
-(user-specified).
+The hardware resources of a node are displayed as a hierarchy.
+Internal nodes in the hierarchy represent memory resources, i.e. 
+NUMA nodes and caches, and leaves represent logical processors. 
+MemAxes can show this hierarchy either radially (as shown) or vertically, 
+by choosing either Sunburst or Icicle, respectively.
 
-Within the nodes, MemAxes displays either the number of total memory
-access cycles or samples associated with a particular resource as a
-mini bar chart. The bar charts are scaled relative to all other
-resources at the same depth, e.g. all L1 caches use the same scale,
-but may not use the same scale used by L2 caches.
+The colors of the segments within the hierarchy represent either total
+memory access cycles associated with the resource or total memory access 
+samples associated with it (you can select an option in the top pane). 
+
+The thick black lines between segments represent the total number of 
+transactions between pairs of resources, assuming the hardware copies 
+memory between caches from largest to smallest after the memory is found.
 
 Nodes may be selected by clicking, upon which all samples associated
 with the clicked resource will be selected. On mouse hover, a tooltip
@@ -83,17 +85,11 @@ There is no selection capability in this view, but the rendering will
 represent the current selection only (or the entire dataset, if
 nothing is selected).
 
-## Parallel Coordinates
+## Parallel Histograms
 ![image](images/pcoords.png)
 
-The parallel coordinate view is an abstract multidimensional
-representation that shows all values of all samples in one view. Each
-parallel axis denotes an attribute of the sample, and each polyline
-that intersects the axes represents a single sample.
-
-MemAxes includes options to change the opacity of selected or
-unselected samples, as well as show histograms representing the number
-of samples that intersect an axis over small bins.
+This view shows a histogram of each axis for the current selection (or
+for all the data, if nothing is selected). 
 
 The user may select ranges on any axis by clicking and dragging
 vertically on an axis, as well as rearrange axes by dragging the name
