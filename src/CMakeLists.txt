@@ -12,28 +12,42 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 qt5_wrap_ui(ui_form.h form.ui)
 
 # Sources and UI Files
-set(MemAxes_SOURCES
+set(SOURCES
   codeeditor.cpp
-  codeviz.cpp
+  codevizwidget.cpp
   console.cpp
   dataobject.cpp
   hardwaretopology.cpp
   main.cpp
   mainwindow.cpp
-  memtopoviz.cpp
-  parallelcoordinatesviz.cpp
+  hwtopovizwidget.cpp
+  pcvizwidget.cpp
   parseUtil.cpp
   util.cpp
-  varviz.cpp
+  varvizwidget.cpp
   vizwidget.cpp)
-  #volumevizwidget.cpp)
 
-set(MemAxes_UIC
+set(HEADERS
+  codeeditor.h
+  codevizwidget.h
+  console.h
+  dataobject.h
+  hardwaretopology.h
+  mainwindow.h
+  hwtopovizwidget.h
+  pcvizwidget.h
+  parseUtil.h
+  util.h
+  varvizwidget.h
+  vizwidget.h)
+  #volumevizwidget.h)
+
+set(UIC
   ui_form.h)
 
 # Build Target
-add_executable(MemAxes MACOSX_BUNDLE ${MemAxes_SOURCES} ${MemAxes_UIC})
-# add_executable(MemAxes ${MemAxes_SOURCES} ${MemAxes_UIC})
+add_executable(MemAxes MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIC})
+# add_executable(MemAxes ${SOURCES} ${HEADERS} ${UIC})
 
 qt5_use_modules(MemAxes Widgets OpenGL)
 

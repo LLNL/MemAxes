@@ -35,7 +35,8 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
-#include "varviz.h"
+
+#include "varvizwidget.h"
 
 #include <QFile>
 #include <QMouseEvent>

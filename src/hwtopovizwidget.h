@@ -67,6 +67,7 @@ struct NodeBox
 
     hardwareResourceNode* node;
     QRectF box;
+    qreal val;
 };
 
 struct LinkBox
@@ -80,6 +81,7 @@ struct LinkBox
     hardwareResourceNode* parent;
     hardwareResourceNode* child;
     QRectF box;
+    qreal val;
 };
 
 struct ColoredRect
@@ -93,16 +95,18 @@ struct ColoredRect
     QRectF box;
 };
 
-class MemTopoViz : public VizWidget
+class HWTopoVizWidget : public VizWidget
 {
     Q_OBJECT
 public:
-    MemTopoViz(QWidget *parent = 0);
+    HWTopoVizWidget(QWidget *parent = 0);
 
 protected:
+    void frameUpdate();
     void processData();
     void selectionChangedSlot();
     void visibilityChangedSlot();
+    void drawTopo(QPainter *painter, QRectF rect, ColorMap &cm, QVector<NodeBox> &nb, QVector<LinkBox> &lb);
     void drawQtPainter(QPainter *painter);
 
 signals:
@@ -119,15 +123,22 @@ public slots:
 
 private:
     void calcMinMaxes();
-    void resizeNodeBoxes();
-    hardwareResourceNode* nodeAtPosition(QPoint p);
+    void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
+                                    hardwareTopology *topo,
+                                    QVector<RealRange> &valRanges,
+                                    QVector<RealRange> &transRanges, DataMode m,
+                                    QVector<NodeBox> &nbout,
+                                    QVector<LinkBox> &lbout);
+hardwareResourceNode* nodeAtPosition(QPoint p);
     void selectSamplesWithinNode(hardwareResourceNode *lvl);
 
 private:
 
+    bool needsConstructNodeBoxes;
+    bool needsCalcMinMaxes;
+
     QVector<NodeBox> nodeBoxes;
     QVector<LinkBox> linkBoxes;
-    QVector<ColoredRect> nodeDataBoxes;
     QVector<RealRange> depthValRanges;
     QVector<RealRange> depthTransRanges;
 

@@ -45,13 +45,16 @@
 #include <QVector>
 
 #include "vizwidget.h"
-//#include "volumevizwidget.h"
-#include "codeviz.h"
-#include "varviz.h"
-#include "memtopoviz.h"
-#include "codeeditor.h"
+#include "codevizwidget.h"
+#include "varvizwidget.h"
+#include "pcvizwidget.h"
+#include "hwtopovizwidget.h"
+
 #include "hardwaretopology.h"
+#include "codeeditor.h"
 #include "console.h"
+
+//#include "volumevizwidget.h"
 
 namespace Ui {
 class MainWindow;
@@ -93,7 +96,7 @@ private:
 
     CodeEditor *codeEditor;
     CodeViz *codeViz;
-    MemTopoViz *memViz;
+    HWTopoVizWidget *memViz;
     VarViz *varViz;
 
     QVector<VizWidget*> vizWidgets;

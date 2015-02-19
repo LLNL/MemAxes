@@ -74,8 +74,7 @@ console::console(QWidget *parent) :
     dataSet = NULL;
     sb = this->verticalScrollBar();
 
-    QFont font("Consolas");
-    this->setCurrentFont(font);
+    this->setFont(QFont("Consolas"));
     this->setReadOnly(true);
 
     log(titleText);

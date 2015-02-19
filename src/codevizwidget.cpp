@@ -36,7 +36,7 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "codeviz.h"
+#include "codevizwidget.h"
 
 #include <QFile>
 #include <QMouseEvent>

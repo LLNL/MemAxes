@@ -35,7 +35,7 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
-#include "parallelcoordinatesviz.h"
+#include "pcvizwidget.h"
 
 #include <QPaintEvent>
 #include <QMenu>
@@ -45,7 +45,7 @@
 
 #include "util.h"
 
-ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
+PCVizWidget::PCVizWidget(QWidget *parent)
     : VizWidget(parent)
 {
     colorMap.push_back(QColor(166,206,227));
@@ -93,7 +93,7 @@ ParallelCoordinatesVizWidget::ParallelCoordinatesVizWidget(QWidget *parent)
 #define FLOATS_PER_POINT    2
 #define FLOATS_PER_COLOR    4
 
-void ParallelCoordinatesVizWidget::processData()
+void PCVizWidget::processData()
 {
     processed = false;
 
@@ -140,13 +140,13 @@ void ParallelCoordinatesVizWidget::processData()
     needsRecalcLines = true;
 }
 
-void ParallelCoordinatesVizWidget::leaveEvent(QEvent *e)
+void PCVizWidget::leaveEvent(QEvent *e)
 {
     VizWidget::leaveEvent(e);
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
+void PCVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
 {
     if(!processed)
         return;
@@ -166,7 +166,7 @@ void ParallelCoordinatesVizWidget::mousePressEvent(QMouseEvent *mouseEvent)
     }
 }
 
-void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
+void PCVizWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     Q_UNUSED(event);
 
@@ -189,7 +189,7 @@ void ParallelCoordinatesVizWidget::mouseReleaseEvent(QMouseEvent *event)
         endAnimation();
 }
 
-bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
+bool PCVizWidget::eventFilter(QObject *obj, QEvent *event)
 {
     Q_UNUSED(obj);
 
@@ -259,7 +259,7 @@ bool ParallelCoordinatesVizWidget::eventFilter(QObject *obj, QEvent *event)
     return false;
 }
 
-int ParallelCoordinatesVizWidget::getClosestAxis(int xval)
+int PCVizWidget::getClosestAxis(int xval)
 {
     qreal dist;
     int closestDistance = plotBBox.width();
@@ -276,7 +276,7 @@ int ParallelCoordinatesVizWidget::getClosestAxis(int xval)
     return closestAxis;
 }
 
-void ParallelCoordinatesVizWidget::processSelection()
+void PCVizWidget::processSelection()
 {
     QVector<int> selDims;
     QVector<qreal> dataSelMins;
@@ -330,7 +330,7 @@ void ParallelCoordinatesVizWidget::processSelection()
     emit selectionChangedSig();
 }
 
-void ParallelCoordinatesVizWidget::calcMinMaxes()
+void PCVizWidget::calcMinMaxes()
 {
     if(!processed)
         return;
@@ -353,7 +353,7 @@ void ParallelCoordinatesVizWidget::calcMinMaxes()
     }
 }
 
-void ParallelCoordinatesVizWidget::calcHistBins()
+void PCVizWidget::calcHistBins()
 {
     if(!processed)
         return;
@@ -387,7 +387,7 @@ void ParallelCoordinatesVizWidget::calcHistBins()
             histVals[i][j] = scale(histVals[i][j],0,histMaxVals[i],0,1);
 }
 
-void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
+void PCVizWidget::recalcLines(int dirtyAxis)
 {
     QVector4D col;
     QVector2D a, b;
@@ -457,7 +457,7 @@ void ParallelCoordinatesVizWidget::recalcLines(int dirtyAxis)
     }
 }
 
-void ParallelCoordinatesVizWidget::showContextMenu(const QPoint &pos)
+void PCVizWidget::showContextMenu(const QPoint &pos)
 {
     contextMenuMousePos = pos;
 
@@ -470,41 +470,41 @@ void ParallelCoordinatesVizWidget::showContextMenu(const QPoint &pos)
     contextMenu.exec(mapToGlobal(pos));
 }
 
-void ParallelCoordinatesVizWidget::selectionChangedSlot()
+void PCVizWidget::selectionChangedSlot()
 {
     needsCalcHistBins = true;
     needsRecalcLines = true;
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::visibilityChangedSlot()
+void PCVizWidget::visibilityChangedSlot()
 {
     needsProcessData = true;
     needsCalcMinMaxes = true;
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::setSelOpacity(int val)
+void PCVizWidget::setSelOpacity(int val)
 {
     selOpacity = (qreal)val/1000.0;
     needsRecalcLines = true;
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::setUnselOpacity(int val)
+void PCVizWidget::setUnselOpacity(int val)
 {
     unselOpacity = (qreal)val/1000.0;
     needsRecalcLines = true;
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::setShowHistograms(bool checked)
+void PCVizWidget::setShowHistograms(bool checked)
 {
     showHistograms = checked;
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::frameUpdate()
+void PCVizWidget::frameUpdate()
 {
     // Animate
     if(animationAxis != -1)
@@ -555,7 +555,7 @@ void ParallelCoordinatesVizWidget::frameUpdate()
     }
 }
 
-void ParallelCoordinatesVizWidget::beginAnimation()
+void PCVizWidget::beginAnimation()
 {
     animSet.clear();
 
@@ -590,7 +590,7 @@ void ParallelCoordinatesVizWidget::beginAnimation()
     needsRepaint = true;
 }
 
-void ParallelCoordinatesVizWidget::endAnimation()
+void PCVizWidget::endAnimation()
 {
     animationAxis = -1;
 
@@ -610,7 +610,7 @@ void ParallelCoordinatesVizWidget::endAnimation()
     animSet.clear();
 }
 
-void ParallelCoordinatesVizWidget::paintGL()
+void PCVizWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -650,7 +650,7 @@ void ParallelCoordinatesVizWidget::paintGL()
     glDisableClientState(GL_COLOR_ARRAY);
 }
 
-void ParallelCoordinatesVizWidget::drawQtPainter(QPainter *painter)
+void PCVizWidget::drawQtPainter(QPainter *painter)
 {
     if(!processed)
         return;

@@ -36,14 +36,14 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "memtopoviz.h"
+#include "hwtopovizwidget.h"
 
 #include <iostream>
 #include <cmath>
 
 using namespace std;
 
-MemTopoViz::MemTopoViz(QWidget *parent) :
+HWTopoVizWidget::HWTopoVizWidget(QWidget *parent) :
     VizWidget(parent)
 {
     dataMode = COLORBY_CYCLES;
@@ -51,13 +51,40 @@ MemTopoViz::MemTopoViz(QWidget *parent) :
 
     colorMap = gradientColorMap(QColor(255,237,160),
                                 QColor(240,59 ,32 ),
-                                128);
+                                256);
 
     this->installEventFilter(this);
     setMouseTracking(true);
 }
 
-void MemTopoViz::processData()
+void HWTopoVizWidget::frameUpdate()
+{
+    QRectF drawBox = this->rect();
+    drawBox.adjust(margin,margin,-margin,-margin);
+
+    if(needsCalcMinMaxes)
+    {
+        calcMinMaxes();
+        needsCalcMinMaxes = false;
+    }
+    if(needsConstructNodeBoxes)
+    {
+        constructNodeBoxes(drawBox,
+                           dataSet->getTopo(),
+                           depthValRanges,
+                           depthTransRanges,
+                           dataMode,
+                           nodeBoxes,linkBoxes);
+        needsConstructNodeBoxes = false;
+    }
+    if(needsRepaint)
+    {
+        repaint();
+        needsRepaint = false;
+    }
+}
+
+void HWTopoVizWidget::processData()
 {
     processed = false;
 
@@ -73,69 +100,43 @@ void MemTopoViz::processData()
 
     processed = true;
 
-    calcMinMaxes();
-    resizeNodeBoxes();
-    needsRepaint = true;
+    needsCalcMinMaxes = true;
 }
 
-void MemTopoViz::selectionChangedSlot()
+void HWTopoVizWidget::selectionChangedSlot()
 {
     if(!processed)
         return;
 
-    calcMinMaxes();
-    resizeNodeBoxes();
-    needsRepaint = true;
+    needsCalcMinMaxes = true;
 }
 
-void MemTopoViz::visibilityChangedSlot()
+void HWTopoVizWidget::visibilityChangedSlot()
 {
     if(!processed)
         return;
 
-    calcMinMaxes();
-    resizeNodeBoxes();
-    needsRepaint = true;
+    needsCalcMinMaxes = true;
 }
 
-void MemTopoViz::drawQtPainter(QPainter *painter)
+void HWTopoVizWidget::drawTopo(QPainter *painter, QRectF rect, ColorMap &cm, QVector<NodeBox> &nb, QVector<LinkBox> &lb)
 {
-    if(!processed)
-        return;
-
-    QRectF drawBox = this->rect();
-    drawBox.adjust(margin,margin,-margin,-margin);
-
     // Draw node outlines
     painter->setPen(QPen(Qt::black));
-    for(int b=0; b<nodeBoxes.size(); b++)
+    for(int b=0; b<nb.size(); b++)
     {
-        hardwareResourceNode *node = nodeBoxes[b].node;
-        QRectF box = nodeBoxes[b].box;
+        hardwareResourceNode *node = nb.at(b).node;
+        QRectF box = nb.at(b).box;
         QString text = QString::number(node->id);
 
-        // Get value by cycles or samples
-        int numCycles = 0;
-        int numSamples = 0;
-        numSamples += node->sampleSets[dataSet].selSamples.size();
-        numCycles += node->sampleSets[dataSet].selCycles;
-
-        qreal val = (dataMode == COLORBY_CYCLES) ? numCycles : numSamples;
-
-        // Scale by depth
-        int depth = node->depth;
-        QColor vcolor = valToColor(val,
-                                   depthValRanges[depth].first,
-                                   depthValRanges[depth].second,
-                                   colorMap);
-
         // Color by value
-        painter->setBrush(vcolor);
+        QColor col = valToColor(nb.at(b).val,cm);
+        painter->setBrush(col);
 
         // Draw rect (radial or regular)
         if(vizMode == SUNBURST)
         {
-            QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
+            QVector<QPointF> segmentPoly = rectToRadialSegment(box,rect);
             painter->drawPolygon(segmentPoly.constData(),segmentPoly.size());
         }
         else if(vizMode == ICICLE)
@@ -149,13 +150,13 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
     // Draw links
     painter->setBrush(Qt::black);
     painter->setPen(Qt::NoPen);
-    for(int b=0; b<linkBoxes.size(); b++)
+    for(int b=0; b<lb.size(); b++)
     {
-        QRectF box = linkBoxes[b].box;
+        QRectF box = lb[b].box;
 
         if(vizMode == SUNBURST)
         {
-            QVector<QPointF> segmentPoly = rectToRadialSegment(box,drawBox);
+            QVector<QPointF> segmentPoly = rectToRadialSegment(box,rect);
             painter->drawPolygon(segmentPoly.constData(),segmentPoly.size());
         }
         else if(vizMode == ICICLE)
@@ -165,7 +166,19 @@ void MemTopoViz::drawQtPainter(QPainter *painter)
     }
 }
 
-void MemTopoViz::mousePressEvent(QMouseEvent *e)
+void HWTopoVizWidget::drawQtPainter(QPainter *painter)
+{
+    if(!processed)
+        return;
+
+    QRectF drawBox = this->rect();
+    drawBox.adjust(margin,margin,-margin,-margin);
+
+    drawTopo(painter,drawBox,colorMap,nodeBoxes,linkBoxes);
+
+}
+
+void HWTopoVizWidget::mousePressEvent(QMouseEvent *e)
 {
     if(!processed)
         return;
@@ -179,7 +192,7 @@ void MemTopoViz::mousePressEvent(QMouseEvent *e)
 
 }
 
-void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
+void HWTopoVizWidget::mouseMoveEvent(QMouseEvent* e)
 {
     if(!processed)
         return;
@@ -223,18 +236,18 @@ void MemTopoViz::mouseMoveEvent(QMouseEvent* e)
     }
 }
 
-void MemTopoViz::resizeEvent(QResizeEvent *e)
+void HWTopoVizWidget::resizeEvent(QResizeEvent *e)
 {
     VizWidget::resizeEvent(e);
 
     if(!processed)
         return;
 
-    resizeNodeBoxes();
-    needsRepaint = true;
+    needsConstructNodeBoxes = true;
+    frameUpdate();
 }
 
-void MemTopoViz::calcMinMaxes()
+void HWTopoVizWidget::calcMinMaxes()
 {
     RealRange limits;
     limits.first = 99999999;
@@ -270,74 +283,97 @@ void MemTopoViz::calcMinMaxes()
             depthTransRanges[i].second=max(depthTransRanges[i].second,trans);
         }
     }
+
+    needsConstructNodeBoxes = true;
+    needsRepaint = true;
 }
 
-void MemTopoViz::resizeNodeBoxes()
+void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
+                                    hardwareTopology *topo,
+                                    QVector<RealRange> &valRanges,
+                                    QVector<RealRange> &transRanges,
+                                    DataMode m,
+                                    QVector<NodeBox> &nbout,
+                                    QVector<LinkBox> &lbout)
 {
-    QRectF drawBox = this->rect();
-    drawBox.adjust(margin,margin,-margin,-margin);
+    nbout.clear();
+    lbout.clear();
 
-    nodeBoxes.clear();
-    linkBoxes.clear();
-    nodeDataBoxes.clear();
+    if(topo == NULL)
+        return;
 
     float nodeMarginX = 2.0f;
     float nodeMarginY = 10.0f;
 
     float deltaX = 0;
-    float deltaY = drawBox.height() / dataSet->getTopo()->hardwareResourceMatrix.size();
+    float deltaY = rect.height() / topo->hardwareResourceMatrix.size();
 
-    // Adjust boxes to fill the drawBox space
-    for(int i=0; i<dataSet->getTopo()->hardwareResourceMatrix.size(); i++)
+    // Adjust boxes to fill the rect space
+    for(int i=0; i<topo->hardwareResourceMatrix.size(); i++)
     {
-        deltaX = drawBox.width() / (float)dataSet->getTopo()->hardwareResourceMatrix[i].size();
-        for(int j=0; j<dataSet->getTopo()->hardwareResourceMatrix[i].size(); j++)
+        deltaX = rect.width() / (float)topo->hardwareResourceMatrix[i].size();
+        for(int j=0; j<topo->hardwareResourceMatrix[i].size(); j++)
         {
-            hardwareResourceNode *node = dataSet->getTopo()->hardwareResourceMatrix[i][j];
-            int depth = node->depth;
-
             // Create Node Box
-            QRectF nodeBox;
-            nodeBox.setRect(drawBox.left()+j*deltaX,
-                            drawBox.top()+i*deltaY,
-                            deltaX,
-                            deltaY);
+            NodeBox nb;
+            nb.node = topo->hardwareResourceMatrix[i][j];
+            nb.box.setRect(rect.left()+j*deltaX,
+                           rect.top()+i*deltaY,
+                           deltaX,
+                           deltaY);
+
+            // Get value by cycles or samples
+            int numCycles = 0;
+            int numSamples = 0;
+            numSamples += nb.node->sampleSets[dataSet].selSamples.size();
+            numCycles += nb.node->sampleSets[dataSet].selCycles;
+
+            qreal unscaledval = (m == COLORBY_CYCLES) ? numCycles : numSamples;
+            nb.val = scale(unscaledval,
+                           valRanges.at(i).first,
+                           valRanges.at(i).second,
+                           0, 1);
 
             if(i==0)
-                nodeBox.adjust(0,0,0,-nodeMarginY);
+                nb.box.adjust(0,0,0,-nodeMarginY);
             else
-                nodeBox.adjust(nodeMarginX,nodeMarginY,-nodeMarginX,-nodeMarginY);
+                nb.box.adjust(nodeMarginX,nodeMarginY,-nodeMarginX,-nodeMarginY);
 
-            nodeBoxes.push_back(NodeBox(node,nodeBox));
+            nbout.push_back(nb);
 
             // Create Link Box
             if(i-1 >= 0)
             {
-                QRectF linkBox;
-                linkBox.setRect(drawBox.left()+j*deltaX,
-                                drawBox.top()+i*deltaY,
-                                deltaX,
-                                nodeMarginY);
+                LinkBox lb;
+                lb.parent = nb.node->parent;
+                lb.child = nb.node;
 
-                linkBox.adjust(nodeMarginX,-nodeMarginY,-nodeMarginX,0);
-                
                 // scale width by transactions
-                float linkWidth = scale(node->transactions,
-                                        depthTransRanges[depth].first,
-                                        depthTransRanges[depth].second,
+                lb.box.setRect(rect.left()+j*deltaX,
+                               rect.top()+i*deltaY,
+                               deltaX,
+                               nodeMarginY);
+
+                lb.box.adjust(nodeMarginX,-nodeMarginY,-nodeMarginX,0);
+                
+                float linkWidth = scale(nb.node->transactions,
+                                        transRanges.at(i).first,
+                                        transRanges.at(i).second,
                                         1.0f,
-                                        linkBox.width());
-                float deltaWidth = (linkBox.width()-linkWidth)/2.0f;
+                                        lb.box.width());
+                float deltaWidth = (lb.box.width()-linkWidth)/2.0f;
 
-                linkBox.adjust(deltaWidth,0,-deltaWidth,0);
+                lb.box.adjust(deltaWidth,0,-deltaWidth,0);
 
-                linkBoxes.push_back(LinkBox(node->parent,node,linkBox));
+                lbout.push_back(lb);
             }
         }
     }
+
+    needsRepaint = true;
 }
 
-hardwareResourceNode *MemTopoViz::nodeAtPosition(QPoint p)
+hardwareResourceNode *HWTopoVizWidget::nodeAtPosition(QPoint p)
 {
     QRectF drawBox = this->rect();
     drawBox.adjust(margin,margin,-margin,-margin);
@@ -365,7 +401,7 @@ hardwareResourceNode *MemTopoViz::nodeAtPosition(QPoint p)
     return NULL;
 }
 
-void MemTopoViz::selectSamplesWithinNode(hardwareResourceNode *node)
+void HWTopoVizWidget::selectSamplesWithinNode(hardwareResourceNode *node)
 {
     dataSet->selectByResource(node);
     emit selectionChangedSig();

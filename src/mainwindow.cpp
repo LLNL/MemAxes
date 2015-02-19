@@ -45,8 +45,6 @@ using namespace std;
 #include <QTimer>
 #include <QFileDialog>
 
-#include "parallelcoordinatesviz.h"
-
 // NEW FEATURES
 // Mem topo 1d memory range
 // Multiple selections, selection groups (classification)
@@ -155,7 +153,7 @@ MainWindow::MainWindow(QWidget *parent) :
      * Memory Topology Viz
      */
 
-    memViz = new MemTopoViz(this);
+    memViz = new HWTopoVizWidget(this);
     ui->memoryLayout->addWidget(memViz);
 
     connect(ui->memTopoColorByCycles,SIGNAL(toggled(bool)),memViz,SLOT(setColorByCycles(bool)));
@@ -169,7 +167,7 @@ MainWindow::MainWindow(QWidget *parent) :
      * Parallel Coords Viz
      */
 
-    ParallelCoordinatesVizWidget *parallelCoordinatesViz = new ParallelCoordinatesVizWidget(this);
+    PCVizWidget *parallelCoordinatesViz = new PCVizWidget(this);
     ui->parallelCoordinatesLayout->addWidget(parallelCoordinatesViz);
 
     connect(ui->selOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setSelOpacity(int)));

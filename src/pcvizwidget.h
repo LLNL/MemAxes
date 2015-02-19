@@ -35,21 +35,22 @@
 // process disclosed, or represents that its use would not infringe
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
-#ifndef PARALLELCOORDINATESVIZ_H
-#define PARALLELCOORDINATESVIZ_H
+
+#ifndef PCVIZWIDGET_H
+#define PCVIZWIDGET_H
 
 #include "vizwidget.h"
 
 #include <QVector2D>
 #include <QVector4D>
 
-class ParallelCoordinatesVizWidget
+class PCVizWidget
         : public VizWidget
 {
     Q_OBJECT
 
 public:
-    ParallelCoordinatesVizWidget(QWidget *parent = 0);
+    PCVizWidget(QWidget *parent = 0);
 
 public:
     void recalcLines(int dirtyAxis = -1);
