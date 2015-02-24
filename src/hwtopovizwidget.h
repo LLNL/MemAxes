@@ -123,12 +123,12 @@ public slots:
 
 private:
     void calcMinMaxes();
-    void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
-                                    hwTopo *topo,
-                                    QVector<RealRange> &valRanges,
-                                    QVector<RealRange> &transRanges, DataMode m,
-                                    QVector<NodeBox> &nbout,
-                                    QVector<LinkBox> &lbout);
+    void constructNodeBoxes(QRectF rect,
+                            hwTopo *topo,
+                            QVector<RealRange> &valRanges,
+                            QVector<RealRange> &transRanges, DataMode m,
+                            QVector<NodeBox> &nbout,
+                            QVector<LinkBox> &lbout);
 hwNode* nodeAtPosition(QPoint p);
     void selectSamplesWithinNode(hwNode *lvl);
 
