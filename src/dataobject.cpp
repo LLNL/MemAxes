@@ -242,7 +242,7 @@ void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax, int group)
                              indexedValueLtFunctor(ivMaxQuery));
     }
 
-    for(itMin; itMin != itMax; itMin++)
+    for(/*itMin*/; itMin != itMax; itMin++)
     {
         selSet.insert(itMin->idx);
     }
@@ -287,7 +287,7 @@ void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, Q
                                  indexedValueLtFunctor(ivMaxQuery));
         }
 
-        for(itMin; itMin != itMax; itMin++)
+        for(/*itMin*/; itMin != itMax; itMin++)
         {
             selSet.insert(itMin->idx);
         }
@@ -381,10 +381,8 @@ void DataObject::selectSet(ElemSet &s, int group)
     }
 }
 
-void DataObject::collectTopoSamples(hwTopo *hw)
+void DataObject::collectTopoSamples()
 {
-    topo = hw;
-
     // Reset info
     for(int i=0; i<topo->allHardwareResourceNodes.size(); i++)
     {
@@ -658,37 +656,80 @@ void DataObject::constructSortedLists()
     }
 }
 
-qreal DataObject::distanceHardware(DataObject *dso)
+qreal distanceHardware(DataObject *d, ElemSet *s1, ElemSet *s2)
 {
-    // dso must have same hardware topology
-    if(topo != dso->topo)
-        return -1;
-    if(this == dso)
-        return 0;
+    int cpuDepth = d->getTopo()->totalDepth;
+    int dseDepth;
 
-    // Get difference of cycles for each level
-    QVector<qreal> depthDistances;
-    int depth = topo->hardwareResourceMatrix.size();
-    for(int d=0; d<depth; d++)
+    // Vars
+    std::vector<qreal> t1,t2;
+    std::vector<qreal> t1means,t2means;
+    std::vector<qreal> t1stddev,t2stddev;
+
+    t1.resize(cpuDepth,0);
+    t2.resize(cpuDepth,0);
+    t1means.resize(cpuDepth,0);
+    t1stddev.resize(cpuDepth,0);
+    t2means.resize(cpuDepth,0);
+    t2stddev.resize(cpuDepth,0);
+
+    qreal n1 = s1->size();
+    qreal n2 = s2->size();
+
+    ElemSet::iterator it;
+    qreal lat;
+
+    // Collect s1 topo data
+    for(it = s1->begin(); it != s1->end(); it++)
     {
-        qreal ddist = 0;
-        int width = topo->hardwareResourceMatrix[d].size();
-        for(int w=0; w<width; w++)
-        {
-            hwNode *node = topo->hardwareResourceMatrix[d][w];
-            struct SampleSet ss1 = node->sampleSets[this];
-            struct SampleSet ss2 = node->sampleSets[dso];
-            ddist += abs(ss1.totCycles - ss2.totCycles);
-        }
-        depthDistances.push_back(ddist);
+        lat = d->at(*it,d->latencyDim);
+        dseDepth = d->at(*it,d->dataSourceDim);
+        t1[cpuDepth] += lat;
+        t1[dseDepth] += lat;
     }
 
-    // Total distance is some weighted sum of depth distances
+    // Collect s2 topo data
+    for(it = s2->begin(); it != s2->end(); it++)
+    {
+        lat = d->at(*it,d->latencyDim);
+        dseDepth = d->at(*it,d->dataSourceDim);
+        t2[cpuDepth] += lat;
+        t2[dseDepth] += lat;
+    }
+
+    // Compute means
+    for(int i=0; i<cpuDepth; i++)
+    {
+        t1means[i] = t1.at(i) / n1;
+        t2means[i] = t2.at(i) / n2;
+    }
+
+    // Compute standard deviations
+    for(it = s1->begin(); it != s1->end(); it++)
+    {
+        lat = d->at(*it,d->latencyDim);
+        dseDepth = d->at(*it,d->dataSourceDim);
+        t1stddev[dseDepth] += (lat-t1means.at(dseDepth))*(lat-t1means.at(dseDepth));
+    }
+    for(it = s2->begin(); it != s2->end(); it++)
+    {
+        lat = d->at(*it,d->latencyDim);
+        dseDepth = d->at(*it,d->dataSourceDim);
+        t2stddev[dseDepth] += (lat-t2means.at(dseDepth))*(lat-t2means.at(dseDepth));
+    }
+    for(int i=0; i<cpuDepth; i++)
+    {
+        t1stddev[i] /= n1;
+        t2stddev[i] /= n2;
+    }
+
+    // Euclidean length of means vector
     qreal dist = 0;
-    for(int d=0; d<depth; d++)
+    for(int i=0; i<cpuDepth; i++)
     {
-        dist += depthDistances[d];
+        dist += (t1means[i]+t2means[i])*(t1means[i]+t2means[i]);
     }
+    dist = sqrt(dist);
 
     return dist;
 }
