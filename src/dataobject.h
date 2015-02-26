@@ -54,7 +54,6 @@
 #define INVISIBLE false
 #define VISIBLE true
 
-class DataSetObject;
 class hwTopo;
 class hwNode;
 class console;
@@ -82,28 +81,30 @@ struct indexedValue
 
 typedef std::vector<indexedValue> IndexList;
 
+// Distance Functions (for clustering)
+typedef qreal (*distance_metric_fn_t)(DataObject *d, ElemSet *s1, ElemSet *s2);
+qreal distanceHardware(DataObject *d, ElemSet *s1, ElemSet *s2);
+
 class DataObject
 {
-    friend class DataSetObject;
-
 public:
     DataObject();
 
-public:
+
     hwTopo *getTopo() { return topo; }
     int loadHardwareTopology(QString filename);
     bool empty() { return numElements == 0; }
 
     // Initialization
     int loadData(QString filename);
-    void selectionChanged() { collectTopoSamples(topo); }
-    void visibilityChanged() { collectTopoSamples(topo); }
+    void selectionChanged() { collectTopoSamples(); }
+    void visibilityChanged() { collectTopoSamples(); }
 
     void setConsole(console *c) { con = c; }
 
 private:
     void allocate();
-    void collectTopoSamples(hwTopo *hw);
+    void collectTopoSamples();
     int parseCSVFile(QString dataFileName);
 
 public:
@@ -150,8 +151,8 @@ public:
     qreal correlationBtwn(int d1,int d2) const 
         { return correlationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
 
-    // Distance Functions (for clustering)
-    qreal distanceHardware(DataObject *dso);
+    // Hierarchical clustering
+    void cluster(distance_metric_fn_t dfn);
 
 public:
     QStringList meta;

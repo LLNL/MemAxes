@@ -204,7 +204,7 @@ bool PCVizWidget::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::MouseMove)
     {
         // Dragging to create a selection
-        if(selectionAxis != -1)
+        if(mouseEvent->buttons() && selectionAxis != -1)
         {
             lastSel = clamp((qreal)mousePos.y(),plotBBox.top(),plotBBox.bottom());
 
