@@ -152,7 +152,8 @@ void VarViz::mouseReleaseEvent(QMouseEvent *e)
                               varBlocks[i].block.height());
         if(varSelectionBox.contains(e->pos()))
         {
-            dataSet->selectByVarName(varBlocks[i].name);
+            ElemSet es = dataSet->createVarNameQuery(varBlocks[i].name);
+            dataSet->selectSet(es);
 
             emit variableSelected(i);
             emit selectionChangedSig();

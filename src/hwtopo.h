@@ -49,8 +49,8 @@
 
 class DataObject;
 
-typedef unsigned long long ElemIndex;
-typedef std::set<ElemIndex> ElemSet;
+//typedef unsigned long long ElemIndex;
+//typedef std::set<ElemIndex> ElemSet;
 
 struct SampleSet
 {
@@ -85,6 +85,7 @@ public:
 
     hwNode *hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *parent);
     int loadHardwareTopologyFromXML(QString fileName);
+    void collectSamples(DataObject *d);
 
     QString hardwareName;
 

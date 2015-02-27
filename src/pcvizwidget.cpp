@@ -308,15 +308,18 @@ void PCVizWidget::processSelection()
         if(animationAxis != -1)
         {
             selection_mode s = dataSet->selectionMode();
+            ElemSet es = dataSet->createMultiDimRangeQuery(selDims,dataSelMins,dataSelMaxes);
+
             dataSet->setSelectionMode(MODE_NEW,true);
             dataSet->selectSet(animSet);
             dataSet->setSelectionMode(MODE_FILTER,true);
-            dataSet->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
+            dataSet->selectSet(es);
             dataSet->setSelectionMode(s,true);
         }
         else
         {
-            dataSet->selectByMultiDimRange(selDims,dataSelMins,dataSelMaxes);
+            ElemSet es = dataSet->createMultiDimRangeQuery(selDims,dataSelMins,dataSelMaxes);
+            dataSet->selectSet(es);
         }
     }
 

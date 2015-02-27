@@ -225,7 +225,8 @@ void CodeViz::mouseReleaseEvent(QMouseEvent *e)
                     int dim = dataSet->lineDim;
                     qreal lineval = sourceBlocks[i].lineBlocks[j].line;
 
-                    dataSet->selectByDimRange(dim,lineval-1,lineval);
+                    ElemSet es = dataSet->createDimRangeQuery(dim,lineval-1,lineval);
+                    dataSet->selectSet(es);
 
                     emit sourceFileSelected(sourceBlocks[i].file);
                     emit sourceLineSelected(sourceBlocks[i].lineBlocks[j].line);

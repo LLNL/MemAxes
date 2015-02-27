@@ -403,6 +403,7 @@ hwNode *HWTopoVizWidget::nodeAtPosition(QPoint p)
 
 void HWTopoVizWidget::selectSamplesWithinNode(hwNode *node)
 {
-    dataSet->selectByResource(node);
+    ElemSet es = dataSet->createResourceQuery(node);
+    dataSet->selectSet(es);
     emit selectionChangedSig();
 }

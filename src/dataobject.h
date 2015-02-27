@@ -36,9 +36,6 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef DATAOBJECT_H
-#define DATAOBJECT_H
-
 #include <QWidget>
 #include <QBitArray>
 
@@ -50,16 +47,28 @@
 #include "hwtopo.h"
 #include "util.h"
 #include "console.h"
+#include "datacluster.h"
 
 #define INVISIBLE false
 #define VISIBLE true
+
+enum selection_mode;
+
+struct indexedValue;
 
 class hwTopo;
 class hwNode;
 class console;
 
+class DataObject;
+
 typedef unsigned long long ElemIndex;
 typedef std::set<ElemIndex> ElemSet;
+typedef qreal (*distance_metric_fn_t)(DataObject *d, ElemSet *s1, ElemSet *s2);
+typedef std::vector<indexedValue> IndexList;
+
+#ifndef DATAOBJECT_H
+#define DATAOBJECT_H
 
 enum selection_mode
 {
@@ -79,17 +88,10 @@ struct indexedValue
         { return val > other.val; }
 };
 
-typedef std::vector<indexedValue> IndexList;
-
-// Distance Functions (for clustering)
-typedef qreal (*distance_metric_fn_t)(DataObject *d, ElemSet *s1, ElemSet *s2);
-qreal distanceHardware(DataObject *d, ElemSet *s1, ElemSet *s2);
-
 class DataObject
 {
 public:
     DataObject();
-
 
     hwTopo *getTopo() { return topo; }
     int loadHardwareTopology(QString filename);
@@ -127,12 +129,13 @@ public:
     void hideSelected();
     void hideUnselected();
 
-    void selectSet(ElemSet &s, int group = 1);
-    void selectByDimRange(int dim, qreal vmin, qreal vmax, int group = 1);
-    void selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes, int group = 1);
-    void selectBySourceFileName(QString str, int group = 1);
-    void selectByVarName(QString str, int group = 1);
-    void selectByResource(hwNode *node, int group = 1);
+    void selectSet(ElemSet &query, int group = 1);
+
+    ElemSet& createDimRangeQuery(int dim, qreal vmin, qreal vmax);
+    ElemSet& createMultiDimRangeQuery(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
+    ElemSet& createSourceFileQuery(QString str);
+    ElemSet& createVarNameQuery(QString str);
+    ElemSet& createResourceQuery(hwNode *node);
 
     ElemSet& getSelectionSet(int group = 1) { return selectionSets.at(group); }
 
@@ -150,9 +153,6 @@ public:
         { return covarianceMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
     qreal correlationBtwn(int d1,int d2) const 
         { return correlationMatrix[ROWMAJOR_2D(d1,d2,numDimensions)]; }
-
-    // Hierarchical clustering
-    void cluster(distance_metric_fn_t dfn);
 
 public:
     QStringList meta;

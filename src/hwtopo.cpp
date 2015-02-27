@@ -169,3 +169,63 @@ void hwTopo::constructHardwareResourceMatrix()
    hardwareResourceMatrix.resize(totalDepth+1);
    addToMatrix(hardwareResourceRoot);
 }
+
+void hwTopo::collectSamples(DataObject *d)
+{
+    // Reset info
+    for(int i=0; i<allHardwareResourceNodes.size(); i++)
+    {
+        allHardwareResourceNodes[i]->sampleSets[d].totCycles = 0;
+        allHardwareResourceNodes[i]->sampleSets[d].selCycles = 0;
+        allHardwareResourceNodes[i]->sampleSets[d].totSamples.clear();
+        allHardwareResourceNodes[i]->sampleSets[d].selSamples.clear();
+        allHardwareResourceNodes[i]->transactions = 0;
+    }
+
+    // Go through each sample and add it to the right topo node
+    ElemIndex elem;
+    QVector<qreal>::Iterator p;
+    for(elem=0, p=d->begin; p!=d->end; elem++, p+=d->numDimensions)
+    {
+        // Get vars
+        int dse = *(p+d->dataSourceDim);
+        int cpu = *(p+d->cpuDim);
+        int cycles = *(p+d->latencyDim);
+
+        // Search for nodes
+        hwNode *cpuNode = CPUIDMap[cpu];
+        hwNode *node = cpuNode;
+
+        // Update data for serving resource
+        node->sampleSets[d].totSamples.insert(elem);
+        node->sampleSets[d].totCycles += cycles;
+
+        if(!d->selectionDefined() || d->selected(elem))
+        {
+            node->sampleSets[d].selSamples.insert(elem);
+            node->sampleSets[d].selCycles += cycles;
+        }
+
+        if(dse == -1)
+            continue;
+
+        // Go up to data source
+        for( /*init*/; dse>0 && node->parent; dse--, node=node->parent)
+        {
+            if(!d->selectionDefined() || d->selected(elem))
+            {
+                node->transactions++;
+            }
+        }
+
+        // Update data for core
+        node->sampleSets[d].totSamples.insert(elem);
+        node->sampleSets[d].totCycles += cycles;
+
+        if(!d->selectionDefined() || d->selected(elem))
+        {
+            node->sampleSets[d].selSamples.insert(elem);
+            node->sampleSets[d].selCycles += cycles;
+        }
+    }
+}

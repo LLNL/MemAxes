@@ -183,9 +183,11 @@ void DataObject::hideAll()
     numVisible = 0;
 }
 
-void DataObject::selectBySourceFileName(QString str, int group)
+// TODO: use a range query instead of checking everything
+ElemSet& DataObject::createSourceFileQuery(QString str)
 {
-    ElemSet selSet;
+    ElemSet& selSet = *(new ElemSet);
+
     ElemIndex elem;
     QVector<qreal>::Iterator p;
     for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
@@ -193,7 +195,7 @@ void DataObject::selectBySourceFileName(QString str, int group)
         if(fileNames[elem] == str)
             selSet.insert(elem);
     }
-    selectSet(selSet, group);
+    return selSet;
 }
 
 struct indexedValueLtFunctor
@@ -208,9 +210,10 @@ struct indexedValueLtFunctor
     }
 };
 
-void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax, int group)
+ElemSet& DataObject::createDimRangeQuery(int dim, qreal vmin, qreal vmax)
 {
-    ElemSet selSet;
+    ElemSet& selSet = *(new ElemSet);
+
     std::vector<indexedValue>::iterator itMin;
     std::vector<indexedValue>::iterator itMax;
 
@@ -247,58 +250,29 @@ void DataObject::selectByDimRange(int dim, qreal vmin, qreal vmax, int group)
         selSet.insert(itMin->idx);
     }
 
-    selectSet(selSet,group);
+    return selSet;
 }
 
-void DataObject::selectByMultiDimRange(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes, int group)
+ElemSet& DataObject::createMultiDimRangeQuery(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes)
 {
-    ElemSet selSet;
+    ElemSet& selSet = *(new ElemSet);
+
     for(int d=0; d<dims.size(); d++)
     {
-        int dim = dims[d];
-        std::vector<indexedValue>::iterator itMin;
-        std::vector<indexedValue>::iterator itMax;
+        ElemSet tmp = createDimRangeQuery(dims[d],mins[d],maxes[d]);
+        ElemSet tmpunion;
 
-        struct indexedValue ivMinQuery;
-        ivMinQuery.val = mins[d];
+        std::set_union(selSet.begin(),selSet.end(),tmp.begin(),tmp.end(),std::inserter(tmpunion,tmpunion.begin()));
 
-        struct indexedValue ivMaxQuery;
-        ivMaxQuery.val = maxes[d];
-
-        if(ivMinQuery.val <= this->minimumValues[dim])
-        {
-            itMin = dimSortedLists.at(dim).begin();
-        }
-        else
-        {
-            itMin = std::find_if(dimSortedLists.at(dim).begin(),
-                                 dimSortedLists.at(dim).end(),
-                                 indexedValueLtFunctor(ivMinQuery));
-        }
-
-        if(ivMaxQuery.val >= this->maximumValues[dim])
-        {
-            itMax = dimSortedLists.at(dim).end();
-        }
-        else
-        {
-            itMax = std::find_if(dimSortedLists.at(dim).begin(),
-                                 dimSortedLists.at(dim).end(),
-                                 indexedValueLtFunctor(ivMaxQuery));
-        }
-
-        for(/*itMin*/; itMin != itMax; itMin++)
-        {
-            selSet.insert(itMin->idx);
-        }
+        std::copy(tmpunion.begin(),tmpunion.end(),std::inserter(selSet,selSet.begin()));
     }
 
-    selectSet(selSet,group);
+    return selSet;
 }
 
-void DataObject::selectByVarName(QString str, int group)
+ElemSet& DataObject::createVarNameQuery(QString str)
 {
-    ElemSet selSet;
+    ElemSet& selSet = *(new ElemSet);
 
     ElemIndex elem;
     QVector<qreal>::Iterator p;
@@ -308,12 +282,12 @@ void DataObject::selectByVarName(QString str, int group)
             selSet.insert(elem);
     }
 
-    selectSet(selSet,group);
+    return selSet;
 }
 
-void DataObject::selectByResource(hwNode *node, int group)
+ElemSet& DataObject::createResourceQuery(hwNode *node)
 {
-    selectSet(node->sampleSets[this].totSamples,group);
+    return node->sampleSets[this].totSamples;
 }
 
 void DataObject::hideSelected()
@@ -336,20 +310,20 @@ void DataObject::hideUnselected()
     }
 }
 
-void DataObject::selectSet(ElemSet &s, int group)
+void DataObject::selectSet(ElemSet &query, int group)
 {
     ElemSet *newSel = NULL;
     if(selMode == MODE_NEW)
     {
-        newSel = &s;
+        newSel = &query;
     }
     else if(selMode == MODE_APPEND)
     {
         newSel = new ElemSet();
         std::set_union(selectionSets.at(group).begin(),
                        selectionSets.at(group).end(),
-                       s.begin(),
-                       s.end(),
+                       query.begin(),
+                       query.end(),
                        std::inserter(*newSel,
                                      newSel->begin()));
     }
@@ -358,8 +332,8 @@ void DataObject::selectSet(ElemSet &s, int group)
         newSel = new ElemSet();
         std::set_intersection(selectionSets.at(group).begin(),
                               selectionSets.at(group).end(),
-                              s.begin(),
-                              s.end(),
+                              query.begin(),
+                              query.end(),
                               std::inserter(*newSel,
                                             newSel->begin()));
     }
@@ -383,62 +357,7 @@ void DataObject::selectSet(ElemSet &s, int group)
 
 void DataObject::collectTopoSamples()
 {
-    // Reset info
-    for(int i=0; i<topo->allHardwareResourceNodes.size(); i++)
-    {
-        topo->allHardwareResourceNodes[i]->sampleSets[this].totCycles = 0;
-        topo->allHardwareResourceNodes[i]->sampleSets[this].selCycles = 0;
-        topo->allHardwareResourceNodes[i]->sampleSets[this].totSamples.clear();
-        topo->allHardwareResourceNodes[i]->sampleSets[this].selSamples.clear();
-        topo->allHardwareResourceNodes[i]->transactions = 0;
-    }
-
-    // Go through each sample and add it to the right topo node
-    ElemIndex elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
-    {
-        // Get vars
-        int dse = *(p+dataSourceDim);
-        int cpu = *(p+cpuDim);
-        int cycles = *(p+latencyDim);
-
-        // Search for nodes
-        hwNode *cpuNode = topo->CPUIDMap[cpu];
-        hwNode *node = cpuNode;
-
-        // Update data for serving resource
-        node->sampleSets[this].totSamples.insert(elem);
-        node->sampleSets[this].totCycles += cycles;
-
-        if(!selectionDefined() || selected(elem))
-        {
-            node->sampleSets[this].selSamples.insert(elem);
-            node->sampleSets[this].selCycles += cycles;
-        }
-
-        if(dse == -1)
-            continue;
-
-        // Go up to data source
-        for( /*init*/; dse>0 && node->parent; dse--, node=node->parent)
-        {
-            if(!selectionDefined() || selected(elem))
-            {
-                node->transactions++;
-            }
-        }
-
-        // Update data for core
-        node->sampleSets[this].totSamples.insert(elem);
-        node->sampleSets[this].totCycles += cycles;
-
-        if(!selectionDefined() || selected(elem))
-        {
-            node->sampleSets[this].selSamples.insert(elem);
-            node->sampleSets[this].selCycles += cycles;
-        }
-    }
+    topo->collectSamples(this);
 }
 
 int DataObject::parseCSVFile(QString dataFileName)
@@ -656,80 +575,5 @@ void DataObject::constructSortedLists()
     }
 }
 
-qreal distanceHardware(DataObject *d, ElemSet *s1, ElemSet *s2)
-{
-    int cpuDepth = d->getTopo()->totalDepth;
-    int dseDepth;
 
-    // Vars
-    std::vector<qreal> t1,t2;
-    std::vector<qreal> t1means,t2means;
-    std::vector<qreal> t1stddev,t2stddev;
 
-    t1.resize(cpuDepth,0);
-    t2.resize(cpuDepth,0);
-    t1means.resize(cpuDepth,0);
-    t1stddev.resize(cpuDepth,0);
-    t2means.resize(cpuDepth,0);
-    t2stddev.resize(cpuDepth,0);
-
-    qreal n1 = s1->size();
-    qreal n2 = s2->size();
-
-    ElemSet::iterator it;
-    qreal lat;
-
-    // Collect s1 topo data
-    for(it = s1->begin(); it != s1->end(); it++)
-    {
-        lat = d->at(*it,d->latencyDim);
-        dseDepth = d->at(*it,d->dataSourceDim);
-        t1[cpuDepth] += lat;
-        t1[dseDepth] += lat;
-    }
-
-    // Collect s2 topo data
-    for(it = s2->begin(); it != s2->end(); it++)
-    {
-        lat = d->at(*it,d->latencyDim);
-        dseDepth = d->at(*it,d->dataSourceDim);
-        t2[cpuDepth] += lat;
-        t2[dseDepth] += lat;
-    }
-
-    // Compute means
-    for(int i=0; i<cpuDepth; i++)
-    {
-        t1means[i] = t1.at(i) / n1;
-        t2means[i] = t2.at(i) / n2;
-    }
-
-    // Compute standard deviations
-    for(it = s1->begin(); it != s1->end(); it++)
-    {
-        lat = d->at(*it,d->latencyDim);
-        dseDepth = d->at(*it,d->dataSourceDim);
-        t1stddev[dseDepth] += (lat-t1means.at(dseDepth))*(lat-t1means.at(dseDepth));
-    }
-    for(it = s2->begin(); it != s2->end(); it++)
-    {
-        lat = d->at(*it,d->latencyDim);
-        dseDepth = d->at(*it,d->dataSourceDim);
-        t2stddev[dseDepth] += (lat-t2means.at(dseDepth))*(lat-t2means.at(dseDepth));
-    }
-    for(int i=0; i<cpuDepth; i++)
-    {
-        t1stddev[i] /= n1;
-        t2stddev[i] /= n2;
-    }
-
-    // Euclidean length of means vector
-    qreal dist = 0;
-    for(int i=0; i<cpuDepth; i++)
-    {
-        dist += (t1means[i]+t2means[i])*(t1means[i]+t2means[i]);
-    }
-    dist = sqrt(dist);
-
-    return dist;
-}
