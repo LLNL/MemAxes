@@ -45,6 +45,18 @@ hwNode::hwNode()
 {
 }
 
+hwNode::hwNode(hwNode *other)
+{
+    name = other->name;
+    id = other->id;
+    depth = other->depth;
+    size = other->size;
+    numTransactions = other->numTransactions;
+
+    // NOT COPIED
+    parent = NULL;
+}
+
 hwTopo::hwTopo()
 {
     numCPUs = 0;
@@ -52,6 +64,40 @@ hwTopo::hwTopo()
     totalDepth = 0;
 
     hardwareResourceRoot = NULL;
+}
+
+hwTopo::hwTopo(hwTopo *other)
+{
+    numCPUs = other->numCPUs;
+    numNUMADomains = other->numNUMADomains;
+    totalDepth = other->totalDepth;
+
+    // BFS copy
+    hwNode *thattmp;
+    hwNode *thistmp = hardwareResourceRoot;
+
+    std::vector<hwNode*> thattoadd;
+    thattoadd.push_back(other->hardwareResourceRoot);
+
+    while(1)
+    {
+        thattmp = thattoadd.front();
+
+        thistmp = new hwNode(thattmp);
+
+        for(int i=0; i<thattmp->children.size(); i++)
+        {
+            hwNode *thatch = thattmp->children.at(i);
+            hwNode *thisch = new hwNode(thatch);
+
+            thisch->parent = thistmp;
+            thistmp->children.push_back(thisch);
+            
+            thattoadd.push_back(thatch);
+        }
+    }
+
+    processLoadedTopology();
 }
 
 hwNode *hwTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *parent)
@@ -170,40 +216,42 @@ void hwTopo::constructHardwareResourceMatrix()
    addToMatrix(hardwareResourceRoot);
 }
 
-void hwTopo::collectSamples(DataObject *d)
+void hwTopo::collectSamples(DataObject *d, ElemSet *s)
 {
     // Reset info
     for(int i=0; i<allHardwareResourceNodes.size(); i++)
     {
-        allHardwareResourceNodes[i]->sampleSets[d].totCycles = 0;
-        allHardwareResourceNodes[i]->sampleSets[d].selCycles = 0;
-        allHardwareResourceNodes[i]->sampleSets[d].totSamples.clear();
-        allHardwareResourceNodes[i]->sampleSets[d].selSamples.clear();
-        allHardwareResourceNodes[i]->transactions = 0;
+        allHardwareResourceNodes[i]->numTransactions = 0;
+        allHardwareResourceNodes[i]->numAllCycles = 0;
+        allHardwareResourceNodes[i]->numSelectedCycles = 0;
+        allHardwareResourceNodes[i]->allSamples.clear();
+        allHardwareResourceNodes[i]->selectedSamples.clear();
     }
 
     // Go through each sample and add it to the right topo node
-    ElemIndex elem;
-    QVector<qreal>::Iterator p;
-    for(elem=0, p=d->begin; p!=d->end; elem++, p+=d->numDimensions)
+    bool selDef = d->selectionDefined();
+    ElemSet::iterator it;
+    for(it = s->begin(); it != s->end(); it++)
     {
+        ElemIndex elem = *it;
+        bool tsel = !selDef || d->selected(elem);
+
         // Get vars
-        int dse = *(p+d->dataSourceDim);
-        int cpu = *(p+d->cpuDim);
-        int cycles = *(p+d->latencyDim);
+        int dse = (int)d->at(elem,d->dataSourceDim);
+        int cpu = (int)d->at(elem,d->cpuDim);
+        int lat = (int)d->at(elem,d->latencyDim);
 
         // Search for nodes
         hwNode *cpuNode = CPUIDMap[cpu];
         hwNode *node = cpuNode;
 
         // Update data for serving resource
-        node->sampleSets[d].totSamples.insert(elem);
-        node->sampleSets[d].totCycles += cycles;
-
-        if(!d->selectionDefined() || d->selected(elem))
+        node->allSamples.insert(elem);
+        node->numAllCycles += lat;
+        if(tsel)
         {
-            node->sampleSets[d].selSamples.insert(elem);
-            node->sampleSets[d].selCycles += cycles;
+            node->selectedSamples.insert(elem);
+            node->numSelectedCycles += lat;
         }
 
         if(dse == -1)
@@ -212,20 +260,19 @@ void hwTopo::collectSamples(DataObject *d)
         // Go up to data source
         for( /*init*/; dse>0 && node->parent; dse--, node=node->parent)
         {
-            if(!d->selectionDefined() || d->selected(elem))
+            if(tsel)
             {
-                node->transactions++;
+                node->numTransactions++;
             }
         }
 
         // Update data for core
-        node->sampleSets[d].totSamples.insert(elem);
-        node->sampleSets[d].totCycles += cycles;
-
-        if(!d->selectionDefined() || d->selected(elem))
+        node->allSamples.insert(elem);
+        node->numAllCycles += lat;
+        if(tsel)
         {
-            node->sampleSets[d].selSamples.insert(elem);
-            node->sampleSets[d].selCycles += cycles;
+            node->selectedSamples.insert(elem);
+            node->numSelectedCycles += lat;
         }
     }
 }

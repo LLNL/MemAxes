@@ -217,10 +217,8 @@ void HWTopoVizWidget::mouseMoveEvent(QMouseEvent* e)
 
         label += "\n";
 
-        int numCycles = 0;
-        int numSamples = 0;
-        numSamples += node->sampleSets[dataSet].selSamples.size();
-        numCycles += node->sampleSets[dataSet].selCycles;
+        int numCycles = node->numSelectedCycles;
+        int numSamples = node->selectedSamples.size();
 
         label += "Samples: " + QString::number(numSamples) + "\n";
         label += "Cycles: " + QString::number(numCycles) + "\n";
@@ -266,19 +264,16 @@ void HWTopoVizWidget::calcMinMaxes()
         {
             hwNode *node = dataSet->getTopo()->hardwareResourceMatrix[i][j];
 
-            if(!node->sampleSets.contains(dataSet))
-                continue;
+            qreal val = (dataMode == COLORBY_CYCLES) ?
+                        node->numSelectedCycles
+                        : node->selectedSamples.size();
 
-            ElemSet &samples = node->sampleSets[dataSet].selSamples;
-            int *numCycles = &node->sampleSets[dataSet].selCycles;
-
-            qreal val = (dataMode == COLORBY_CYCLES) ? *numCycles : samples.size();
             //val = (qreal)(*numCycles) / (qreal)samples->size();
 
             depthValRanges[i].first=0;//min(depthValRanges[i].first,val);
             depthValRanges[i].second=max(depthValRanges[i].second,val);
 
-            qreal trans = node->transactions;
+            qreal trans = node->numTransactions;
             depthTransRanges[i].first=0;//min(depthTransRanges[i].first,trans);
             depthTransRanges[i].second=max(depthTransRanges[i].second,trans);
         }
@@ -323,10 +318,8 @@ void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
                            deltaY);
 
             // Get value by cycles or samples
-            int numCycles = 0;
-            int numSamples = 0;
-            numSamples += nb.node->sampleSets[dataSet].selSamples.size();
-            numCycles += nb.node->sampleSets[dataSet].selCycles;
+            int numCycles = nb.node->numSelectedCycles;
+            int numSamples = nb.node->selectedSamples.size();
 
             qreal unscaledval = (m == COLORBY_CYCLES) ? numCycles : numSamples;
             nb.val = scale(unscaledval,
@@ -356,7 +349,7 @@ void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
 
                 lb.box.adjust(nodeMarginX,-nodeMarginY,-nodeMarginX,0);
                 
-                float linkWidth = scale(nb.node->transactions,
+                float linkWidth = scale(nb.node->numTransactions,
                                         transRanges.at(i).first,
                                         transRanges.at(i).second,
                                         1.0f,

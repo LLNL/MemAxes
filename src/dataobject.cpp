@@ -53,7 +53,7 @@ DataObject::DataObject()
     numSelected = 0;
     numVisible = 0;
 
-    topo = NULL;
+    allTopo = NULL;
 
     selMode = MODE_NEW;
     selGroup = 1;
@@ -61,8 +61,8 @@ DataObject::DataObject()
 
 int DataObject::loadHardwareTopology(QString filename)
 {
-    topo = new hwTopo();
-    int err = topo->loadHardwareTopologyFromXML(filename);
+    allTopo = new hwTopo();
+    int err = allTopo->loadHardwareTopologyFromXML(filename);
     return err;
 }
 
@@ -287,7 +287,7 @@ ElemSet& DataObject::createVarNameQuery(QString str)
 
 ElemSet& DataObject::createResourceQuery(hwNode *node)
 {
-    return node->sampleSets[this].totSamples;
+    return node->allSamples;
 }
 
 void DataObject::hideSelected()
@@ -357,7 +357,7 @@ void DataObject::selectSet(ElemSet &query, int group)
 
 void DataObject::collectTopoSamples()
 {
-    topo->collectSamples(this);
+    allTopo->collectSamples(this,&allElems);
 }
 
 int DataObject::parseCSVFile(QString dataFileName)
@@ -372,7 +372,6 @@ int DataObject::parseCSVFile(QString dataFileName)
     QTextStream dataStream(&dataFile);
     QString line;
     QStringList lineValues;
-    qint64 elemid = 0;
 
     // Get metadata from first line
     line = dataStream.readLine();
@@ -396,6 +395,7 @@ int DataObject::parseCSVFile(QString dataFileName)
     QVector<QString> sourceVec;
 
     // Get data
+    ElemIndex elem = 0;
     while(!dataStream.atEnd())
     {
         line = dataStream.readLine();
@@ -404,7 +404,7 @@ int DataObject::parseCSVFile(QString dataFileName)
         if(lineValues.size() != this->numDimensions)
         {
             std::cerr << "ERROR: element dimensions do not match metadata!" << std::endl;
-            std::cerr << "At element " << elemid << std::endl;
+            std::cerr << "At element " << elem << std::endl;
             return -1;
         }
 
@@ -435,7 +435,8 @@ int DataObject::parseCSVFile(QString dataFileName)
             }
         }
 
-        elemid++;
+        allElems.insert(elem);
+        elem++;
     }
 
     // Close and return

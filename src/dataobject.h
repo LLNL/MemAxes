@@ -64,7 +64,6 @@ class DataObject;
 
 typedef unsigned long long ElemIndex;
 typedef std::set<ElemIndex> ElemSet;
-typedef qreal (*distance_metric_fn_t)(DataObject *d, ElemSet *s1, ElemSet *s2);
 typedef std::vector<indexedValue> IndexList;
 
 #ifndef DATAOBJECT_H
@@ -93,7 +92,7 @@ class DataObject
 public:
     DataObject();
 
-    hwTopo *getTopo() { return topo; }
+    hwTopo *getTopo() { return allTopo; }
     int loadHardwareTopology(QString filename);
     bool empty() { return numElements == 0; }
 
@@ -156,7 +155,7 @@ public:
 
 public:
     QStringList meta;
-    hwTopo *topo;
+    hwTopo *allTopo;
 
     // Counts
     ElemIndex numDimensions;
@@ -186,6 +185,8 @@ public:
 private:
     QBitArray visibility;
     QVector<int> selectionGroup;
+
+    ElemSet allElems;
     std::vector<ElemSet> selectionSets;
 
     std::vector<IndexList> dimSortedLists;

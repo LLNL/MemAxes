@@ -49,43 +49,37 @@
 
 class DataObject;
 
-//typedef unsigned long long ElemIndex;
-//typedef std::set<ElemIndex> ElemSet;
-
-struct SampleSet
-{
-    int totCycles;
-    int selCycles;
-    ElemSet totSamples;
-    ElemSet selSamples;
-};
-
 class hwNode
 {
 public:
     hwNode();
+    hwNode(hwNode *other);
 
     QString name;
 
     int id;
     int depth;
     long long size;
-    long long transactions;
+    long long numTransactions;
+    long long numAllCycles;
+    long long numSelectedCycles;
 
     hwNode *parent;
     QVector<hwNode*> children;
 
-    QMap<DataObject*,SampleSet> sampleSets;
+    ElemSet allSamples;
+    ElemSet selectedSamples;
 };
 
 class hwTopo
 {
 public:
     hwTopo();
+    hwTopo(hwTopo* other);
 
     hwNode *hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *parent);
     int loadHardwareTopologyFromXML(QString fileName);
-    void collectSamples(DataObject *d);
+    void collectSamples(DataObject *d, ElemSet *s);
 
     QString hardwareName;
 
