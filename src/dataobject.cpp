@@ -53,7 +53,7 @@ DataObject::DataObject()
     numSelected = 0;
     numVisible = 0;
 
-    allTopo = NULL;
+    topo = NULL;
 
     selMode = MODE_NEW;
     selGroup = 1;
@@ -61,8 +61,8 @@ DataObject::DataObject()
 
 int DataObject::loadHardwareTopology(QString filename)
 {
-    allTopo = new hwTopo();
-    int err = allTopo->loadHardwareTopologyFromXML(filename);
+    topo = new hwTopo();
+    int err = topo->loadHardwareTopologyFromXML(filename);
     return err;
 }
 
@@ -357,7 +357,7 @@ void DataObject::selectSet(ElemSet &query, int group)
 
 void DataObject::collectTopoSamples()
 {
-    allTopo->collectSamples(this,&allElems);
+    topo->collectSamples(this,&allElems);
 }
 
 int DataObject::parseCSVFile(QString dataFileName)

@@ -92,7 +92,7 @@ class DataObject
 public:
     DataObject();
 
-    hwTopo *getTopo() { return allTopo; }
+    hwTopo *getTopo() { return topo; }
     int loadHardwareTopology(QString filename);
     bool empty() { return numElements == 0; }
 
@@ -155,7 +155,7 @@ public:
 
 public:
     QStringList meta;
-    hwTopo *allTopo;
+    hwTopo *topo;
 
     // Counts
     ElemIndex numDimensions;
