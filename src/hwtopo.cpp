@@ -45,16 +45,21 @@ hwNode::hwNode()
 {
 }
 
-hwNode::hwNode(hwNode *other)
+hwNode::hwNode(hwNode *other, hwNode *p)
 {
     name = other->name;
     id = other->id;
     depth = other->depth;
     size = other->size;
-    numTransactions = other->numTransactions;
 
-    // NOT COPIED
-    parent = NULL;
+    numTransactions = 0;
+    parent = p;
+
+    for(int i=0; i<other->children.size(); i++)
+    {
+        hwNode *newChild = new hwNode(other->children.at(i),this);
+        children.push_back(newChild);
+    }
 }
 
 hwTopo::hwTopo()
@@ -72,30 +77,8 @@ hwTopo::hwTopo(hwTopo *other)
     numNUMADomains = other->numNUMADomains;
     totalDepth = other->totalDepth;
 
-    // BFS copy
-    hwNode *thattmp;
-    hwNode *thistmp = hardwareResourceRoot;
-
-    std::vector<hwNode*> thattoadd;
-    thattoadd.push_back(other->hardwareResourceRoot);
-
-    while(1)
-    {
-        thattmp = thattoadd.front();
-
-        thistmp = new hwNode(thattmp);
-
-        for(int i=0; i<thattmp->children.size(); i++)
-        {
-            hwNode *thatch = thattmp->children.at(i);
-            hwNode *thisch = new hwNode(thatch);
-
-            thisch->parent = thistmp;
-            thistmp->children.push_back(thisch);
-            
-            thattoadd.push_back(thatch);
-        }
-    }
+    // Copy using hwNode copy
+    hardwareResourceRoot = new hwNode(other->hardwareResourceRoot,NULL);
 
     processLoadedTopology();
 }

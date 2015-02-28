@@ -53,7 +53,7 @@ class hwNode
 {
 public:
     hwNode();
-    hwNode(hwNode *other);
+    hwNode(hwNode *other, hwNode *p);
 
     QString name;
 

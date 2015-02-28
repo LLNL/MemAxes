@@ -56,7 +56,6 @@ DataObject::DataObject()
     topo = NULL;
 
     selMode = MODE_NEW;
-    selGroup = 1;
 }
 
 int DataObject::loadHardwareTopology(QString filename)
@@ -212,6 +211,10 @@ struct indexedValueLtFunctor
 
 ElemSet& DataObject::createDimRangeQuery(int dim, qreal vmin, qreal vmax)
 {
+    con->log("DIMRANGE"+QString::number(dim)
+             +"="+ QString::number(vmin)
+             +":"+QString::number(vmax));
+
     ElemSet& selSet = *(new ElemSet);
 
     std::vector<indexedValue>::iterator itMin;
@@ -574,6 +577,13 @@ void DataObject::constructSortedLists()
         }
         std::sort(dimSortedLists.at(d).begin(),dimSortedLists.at(d).end());
     }
+}
+
+void DataObject::createClusterTree(int dim)
+{
+    DataClusterTree *newTree = new DataClusterTree();
+    newTree->build(this,dim);
+    clusterTrees.push_back(newTree);
 }
 
 

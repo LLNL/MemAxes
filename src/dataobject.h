@@ -49,9 +49,6 @@
 #include "console.h"
 #include "datacluster.h"
 
-#define INVISIBLE false
-#define VISIBLE true
-
 enum selection_mode;
 
 struct indexedValue;
@@ -61,10 +58,19 @@ class hwNode;
 class console;
 
 class DataObject;
+class DataClusterTree;
 
 typedef unsigned long long ElemIndex;
 typedef std::set<ElemIndex> ElemSet;
 typedef std::vector<indexedValue> IndexList;
+
+#ifndef INVISIBLE
+    #define INVISIBLE false
+#endif
+
+#ifndef VISIBLE
+    #define VISIBLE true
+#endif
 
 #ifndef DATAOBJECT_H
 #define DATAOBJECT_H
@@ -142,6 +148,8 @@ public:
     void calcStatistics();
     void constructSortedLists();
 
+    void createClusterTree(int dim);
+
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
     qreal minAt(int d) const { return minimumValues[d]; }
@@ -182,6 +190,8 @@ public:
     QVector<qreal>::Iterator begin;
     QVector<qreal>::Iterator end;
 
+    std::vector<DataClusterTree*> clusterTrees;
+
 private:
     QBitArray visibility;
     QVector<int> selectionGroup;
@@ -201,9 +211,6 @@ private:
 
 private:
     console *con;
-    QVector<DataObject*> dataObjects;
-
-    int selGroup;
     selection_mode selMode;
 };
 

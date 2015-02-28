@@ -69,6 +69,7 @@ public slots:
     void setShowHistograms(bool checked);
     void beginAnimation();
     void endAnimation();
+    void requestCluster();
 
 protected:
     void processData();
