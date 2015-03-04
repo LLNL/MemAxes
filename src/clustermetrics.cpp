@@ -121,12 +121,10 @@ qreal HardwareClusterMetric::distance(HardwareClusterMetric *other)
     return dist;
 }
 
-void HardwareClusterMetric::createAggregateFromNodes(HardwareClusterMetric *hcm1, HardwareClusterMetric *hcm2)
+void HardwareClusterMetric::initFrom(HardwareClusterMetric *hcm)
 {
-    setTopo(hcm1->getTopo());
-
-    combineAggregate(hcm1);
-    combineAggregate(hcm2);
+    // Copy topo and set this to it
+    this->setTopo(new HWTopo(hcm->getTopo()));
 }
 
 void HardwareClusterMetric::combineAggregate(HardwareClusterMetric *hcm)

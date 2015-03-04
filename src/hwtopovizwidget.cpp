@@ -180,6 +180,8 @@ void HWTopoVizWidget::resizeEvent(QResizeEvent *e)
 
     hwPainter->resize(drawBox);
 
+    needsRepaint = true;
+
     frameUpdate();
 }
 

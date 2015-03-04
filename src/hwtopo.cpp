@@ -47,16 +47,27 @@ HWNode::HWNode()
 
 HWNode::HWNode(HWNode *other, HWNode *p)
 {
+    // new root
+    parent = p;
+
+    // copy everything else
     name = other->name;
     id = other->id;
     depth = other->depth;
     size = other->size;
 
-    numTransactions = 0;
-    parent = p;
+    numSelectedCycles = other->numSelectedCycles;
+    numAllCycles = other->numAllCycles;
+    numTransactions = other->numTransactions;
+
+    std::copy(other->allSamples.begin(),other->allSamples.end(),
+              std::inserter(allSamples,allSamples.begin()));
+    std::copy(other->selectedSamples.begin(),other->selectedSamples.end(),
+              std::inserter(selectedSamples,selectedSamples.begin()));
 
     for(unsigned int i=0; i<other->children.size(); i++)
     {
+        // children root to this
         HWNode *newChild = new HWNode(other->children.at(i),this);
         children.push_back(newChild);
     }

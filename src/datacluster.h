@@ -53,6 +53,7 @@ public:
 
     void build(DataObject *d, int dim);
     DataClusterNode* getRoot() { return root; }
+    std::vector<DataClusterNode*> getNodesAtDepth(int depth);
     
 private:
     DataClusterNode *root;
@@ -66,6 +67,8 @@ public:
 
     virtual bool isInternal() = 0;
     virtual bool isLeaf() = 0;
+
+    std::vector<DataClusterNode*> getNodesAtDepth(int depth);
 
     DataClusterNode *parent;
     std::vector<DataClusterNode*> children;

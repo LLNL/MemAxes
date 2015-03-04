@@ -53,7 +53,7 @@ public:
     virtual void createAggregateFromSamples(DataObject *d, ElemSet *s);
 
     qreal distance(HardwareClusterMetric *other);
-    void createAggregateFromNodes(HardwareClusterMetric *hcm1, HardwareClusterMetric *hcm2);
+    void initFrom(HardwareClusterMetric *hcm);
     void combineAggregate(HardwareClusterMetric *hcm);
 
     HWTopo *getTopo() {return topo;}

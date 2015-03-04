@@ -48,8 +48,10 @@ DataClusterTree::~DataClusterTree()
 
 void DataClusterTree::build(DataObject *d, int dim)
 {
-    qreal winSize = 100; // TODO
-    qreal winDelta = 50; // TODO
+    qreal targetNumberOfLeaves = 100;
+
+    qreal winDelta = (d->maxAt(dim) - d->minAt(dim)) / targetNumberOfLeaves;
+    qreal winSize = 3*winDelta;
     qreal threshold = 1; // TODO
 
     // Create leaf node for every window
@@ -102,8 +104,8 @@ void DataClusterTree::build(DataObject *d, int dim)
                     newNode->metric = new HardwareClusterMetric();
 
                     HardwareClusterMetric *newMetric = (HardwareClusterMetric*)newNode->metric;
-                    newMetric->setTopo(new HWTopo(m1->getTopo())); // copy topo from m1
-                    newMetric->createAggregateFromNodes(m1,m2); // create aggregate
+                    newMetric->initFrom(m1); // copy topo from m1
+                    newMetric->combineAggregate(m2); // add info from m2
 
                     n1->parent = newNode;
                     n2->parent = newNode;
@@ -118,13 +120,12 @@ void DataClusterTree::build(DataObject *d, int dim)
                     // Continuing previous merge group
                     DataClusterInternalNode *mergeNode = nextLevelNodes.back();
 
-                    //n1->parent = mergeNode; //already done
                     n2->parent = mergeNode;
 
-                    // BIG TODO:
                     // add aggregate of n2 into mergeNode's aggregate
+                    HardwareClusterMetric *mergeMetric = (HardwareClusterMetric*)mergeNode->metric;
+                    mergeMetric->combineAggregate(m2);
 
-                    //mergeNode->children.push_back(n1); // already done
                     mergeNode->children.push_back(n2);
                 }
             }
@@ -140,16 +141,22 @@ void DataClusterTree::build(DataObject *d, int dim)
         // If nothing merged, increase threshold
         if(numMerges == 0)
         {
-            threshold *= 2.0;
+            threshold *= 1.5;
         }
         else
         {
             std::swap(levelNodes,nextLevelNodes);
+            threshold = 1; // reset threshold on next level
         }
         nextLevelNodes.clear();
     }
 
     root = levelNodes.back();
+}
+
+std::vector<DataClusterNode *> DataClusterTree::getNodesAtDepth(int depth)
+{
+    return root->getNodesAtDepth(depth);
 }
 
 DataClusterNode::DataClusterNode()
@@ -158,6 +165,35 @@ DataClusterNode::DataClusterNode()
 
 DataClusterNode::~DataClusterNode()
 {
+}
+
+std::vector<DataClusterNode *> DataClusterNode::getNodesAtDepth(int depth)
+{
+    std::vector<DataClusterNode*> nodes;
+    if(isLeaf())
+    {
+        // add last parent before this
+        nodes.push_back(this->parent);
+        return nodes;
+    }
+
+    if(depth == 0)
+    {
+        nodes.push_back(this);
+        return nodes;
+    }
+
+    // root is internal, we can cast
+    DataClusterInternalNode *inode = (DataClusterInternalNode*)this;
+    for(unsigned int i=0; i<inode->children.size(); i++)
+    {
+        std::vector<DataClusterNode*> chnodes;
+        chnodes = inode->children.at(i)->getNodesAtDepth(depth-1);
+
+        nodes.insert(nodes.end(),chnodes.begin(),chnodes.end());
+    }
+
+    return nodes;
 }
 
 DataClusterInternalNode::DataClusterInternalNode()

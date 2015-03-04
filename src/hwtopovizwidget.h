@@ -62,11 +62,12 @@ protected:
 
 signals:
 
-public slots:
+protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void resizeEvent(QResizeEvent *e);
 
+public slots:
     void setColorByCycles(bool on) { if(on) { hwPainter->setDataMode(COLORBY_CYCLES); selectionChangedSlot(); } }
     void setColorBySamples(bool on) { if(on) { hwPainter->setDataMode(COLORBY_SAMPLES); selectionChangedSlot(); } }
     void setVizModeIcicle(bool on) { if(on) { hwPainter->setVizMode(ICICLE); selectionChangedSlot(); } }

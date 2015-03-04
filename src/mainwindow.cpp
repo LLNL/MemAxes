@@ -177,6 +177,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->clusterTreeLayout->addWidget(clusterTreeViz);
 
     connect(parallelCoordinatesViz, SIGNAL(clusterCreated()), clusterTreeViz, SLOT(activate()));
+    connect(ui->treeIndexBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterIndex(int)));
+    connect(ui->treeDepthBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterDepth(int)));
 
     vizWidgets.push_back(clusterTreeViz);
 

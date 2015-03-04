@@ -391,6 +391,11 @@ void PCVizWidget::calcHistBins()
             histVals[i][j] = scale(histVals[i][j],0,histMaxVals[i],0,1);
 }
 
+void PCVizWidget::createTopoPainters()
+{
+
+}
+
 void PCVizWidget::recalcLines(int dirtyAxis)
 {
     QVector4D col;

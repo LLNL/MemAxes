@@ -41,6 +41,9 @@
 
 #include "vizwidget.h"
 
+#include "hwtopodrawable.h"
+
+#include <vector>
 #include <QVector2D>
 #include <QVector4D>
 
@@ -87,6 +90,7 @@ private:
     void processSelection();
     void calcMinMaxes();
     void calcHistBins();
+    void createTopoPainters();
 
 private:
     bool needsRecalcLines;
@@ -137,6 +141,9 @@ private:
     // OpenGL
     QVector<GLfloat> verts;
     QVector<GLfloat> colors;
+
+    // Hw topo markers
+    std::vector<HWTopoPainter> topoPainters;
 };
 
 #endif // PARALLELCOORDINATESVIZ_H

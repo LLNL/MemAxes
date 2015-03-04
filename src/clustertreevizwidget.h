@@ -61,6 +61,7 @@ private:
     void gatherPainters();
 
 protected:
+    void resizeEvent(QResizeEvent *e);
     void frameUpdate();
     void drawQtPainter(QPainter *painter);
 

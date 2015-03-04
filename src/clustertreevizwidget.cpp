@@ -44,35 +44,7 @@ ClusterTreeVizWidget::ClusterTreeVizWidget(QWidget *parent)
     needsRepaint = false;
     needsGatherPainters = false;
     clusterIndex = 0;
-    clusterDepth = 3;
-}
-
-std::vector<DataClusterNode*>
-ClusterTreeVizWidget::getNodesAtDepth(DataClusterNode *root, int depth)
-{
-    std::vector<DataClusterNode*> nodes;
-    if(root->isLeaf())
-    {
-        return nodes; // don't add leaves
-    }
-
-    if(depth == 0)
-    {
-        nodes.push_back(root);
-        return nodes;
-    }
-
-    // root is internal, we can cast
-    DataClusterInternalNode *inode = (DataClusterInternalNode*)root;
-    for(unsigned int i=0; i<inode->children.size(); i++)
-    {
-        std::vector<DataClusterNode*> chnodes;
-        chnodes = getNodesAtDepth(inode->children.at(i),depth-1);
-
-        nodes.insert(nodes.end(),chnodes.begin(),chnodes.end());
-    }
-
-    return nodes;
+    clusterDepth = 0;
 }
 
 void ClusterTreeVizWidget::gatherPainters()
@@ -81,7 +53,7 @@ void ClusterTreeVizWidget::gatherPainters()
 
     DataClusterTree *tree = dataSet->clusterTrees.at(clusterIndex);
 
-    std::vector<DataClusterNode*> depthNodes = getNodesAtDepth(tree->getRoot(),clusterDepth);
+    std::vector<DataClusterNode*> depthNodes = tree->getNodesAtDepth(clusterDepth);
 
     for(unsigned int i=0; i<depthNodes.size(); i++)
     {
@@ -98,6 +70,11 @@ void ClusterTreeVizWidget::gatherPainters()
     }
 }
 
+void ClusterTreeVizWidget::resizeEvent(QResizeEvent *e)
+{
+    needsResize = true;
+}
+
 void ClusterTreeVizWidget::frameUpdate()
 {
     if(needsGatherPainters)
@@ -108,7 +85,7 @@ void ClusterTreeVizWidget::frameUpdate()
     }
     if(needsResize)
     {
-        int topoSize = 250;
+        int topoSize = rect().width();
         int totalHeight = 0;
         QRectF topoBox(0,0,topoSize,topoSize);
         for(unsigned int i=0; i<currentHwTopoPainters.size(); i++)
