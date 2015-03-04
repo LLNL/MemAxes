@@ -621,9 +621,11 @@ void PCVizWidget::endAnimation()
 void PCVizWidget::requestCluster()
 {
     int clusterAxis = getClosestAxis(contextMenuMousePos.x());
-    con->log("Creating cluster tree along axis: " + QString::number(clusterAxis));
+    dataSet->con->log("Creating cluster tree along axis: " + QString::number(clusterAxis));
     dataSet->createClusterTree(clusterAxis);
-    con->log("Cluster tree created.");
+    dataSet->con->log("Cluster tree created.");
+
+    emit clusterCreated();
 }
 
 void PCVizWidget::paintGL()

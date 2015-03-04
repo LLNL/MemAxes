@@ -50,6 +50,7 @@
 #include "varvizwidget.h"
 #include "pcvizwidget.h"
 #include "hwtopovizwidget.h"
+#include "clustertreevizwidget.h"
 
 #include "hwtopo.h"
 #include "codeeditor.h"

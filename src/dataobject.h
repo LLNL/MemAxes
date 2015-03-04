@@ -53,8 +53,8 @@ enum selection_mode;
 
 struct indexedValue;
 
-class hwTopo;
-class hwNode;
+class HWTopo;
+class HWNode;
 class console;
 
 class DataObject;
@@ -98,7 +98,7 @@ class DataObject
 public:
     DataObject();
 
-    hwTopo *getTopo() { return topo; }
+    HWTopo *getTopo() { return topo; }
     int loadHardwareTopology(QString filename);
     bool empty() { return numElements == 0; }
 
@@ -140,7 +140,7 @@ public:
     ElemSet& createMultiDimRangeQuery(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
     ElemSet& createSourceFileQuery(QString str);
     ElemSet& createVarNameQuery(QString str);
-    ElemSet& createResourceQuery(hwNode *node);
+    ElemSet& createResourceQuery(HWNode *node);
 
     ElemSet& getSelectionSet(int group = 1) { return selectionSets.at(group); }
 
@@ -163,7 +163,7 @@ public:
 
 public:
     QStringList meta;
-    hwTopo *topo;
+    HWTopo *topo;
 
     // Counts
     ElemIndex numDimensions;
@@ -209,7 +209,7 @@ private:
     QVector<qreal> covarianceMatrix;
     QVector<qreal> correlationMatrix;
 
-private:
+public:
     console *con;
     selection_mode selMode;
 };

@@ -45,13 +45,6 @@ using namespace std;
 #include <QTimer>
 #include <QFileDialog>
 
-// NEW FEATURES
-// Mem topo 1d memory range
-// Multiple selections, selection groups (classification)
-
-// APPLICATIONS
-// LibNUMA (move_pages(x,x,NULL,...)
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -177,6 +170,17 @@ MainWindow::MainWindow(QWidget *parent) :
     vizWidgets.push_back(parallelCoordinatesViz);
 
     /*
+     * Cluster Tree Viz
+     */
+
+    ClusterTreeVizWidget *clusterTreeViz = new ClusterTreeVizWidget(this);
+    ui->clusterTreeLayout->addWidget(clusterTreeViz);
+
+    connect(parallelCoordinatesViz, SIGNAL(clusterCreated()), clusterTreeViz, SLOT(activate()));
+
+    vizWidgets.push_back(clusterTreeViz);
+
+    /*
      * All VizWidgets
      */
 
@@ -184,7 +188,6 @@ MainWindow::MainWindow(QWidget *parent) :
     for(int i=0; i<vizWidgets.size(); i++)
     {
         vizWidgets[i]->setDataSet(dataSet);
-        vizWidgets[i]->setConsole(con);
     }
     //volumeVizWidget->setDataSet(dataSet);
 

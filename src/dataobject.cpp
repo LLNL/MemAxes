@@ -60,7 +60,7 @@ DataObject::DataObject()
 
 int DataObject::loadHardwareTopology(QString filename)
 {
-    topo = new hwTopo();
+    topo = new HWTopo();
     int err = topo->loadHardwareTopologyFromXML(filename);
     return err;
 }
@@ -288,7 +288,7 @@ ElemSet& DataObject::createVarNameQuery(QString str)
     return selSet;
 }
 
-ElemSet& DataObject::createResourceQuery(hwNode *node)
+ElemSet& DataObject::createResourceQuery(HWNode *node)
 {
     return node->allSamples;
 }

@@ -41,11 +41,11 @@
 #include <iostream>
 using namespace std;
 
-hwNode::hwNode()
+HWNode::HWNode()
 {
 }
 
-hwNode::hwNode(hwNode *other, hwNode *p)
+HWNode::HWNode(HWNode *other, HWNode *p)
 {
     name = other->name;
     id = other->id;
@@ -55,14 +55,14 @@ hwNode::hwNode(hwNode *other, hwNode *p)
     numTransactions = 0;
     parent = p;
 
-    for(int i=0; i<other->children.size(); i++)
+    for(unsigned int i=0; i<other->children.size(); i++)
     {
-        hwNode *newChild = new hwNode(other->children.at(i),this);
+        HWNode *newChild = new HWNode(other->children.at(i),this);
         children.push_back(newChild);
     }
 }
 
-hwTopo::hwTopo()
+HWTopo::HWTopo()
 {
     numCPUs = 0;
     numNUMADomains = 0;
@@ -71,21 +71,31 @@ hwTopo::hwTopo()
     hardwareResourceRoot = NULL;
 }
 
-hwTopo::hwTopo(hwTopo *other)
+HWTopo::HWTopo(HWTopo *other)
 {
     numCPUs = other->numCPUs;
     numNUMADomains = other->numNUMADomains;
     totalDepth = other->totalDepth;
 
     // Copy using hwNode copy
-    hardwareResourceRoot = new hwNode(other->hardwareResourceRoot,NULL);
+    hardwareResourceRoot = new HWNode(other->hardwareResourceRoot,NULL);
 
     processLoadedTopology();
 }
 
-hwNode *hwTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *parent)
+HWTopo::~HWTopo()
 {
-    hwNode *newLevel = new hwNode();
+    hardwareResourceRoot = NULL;
+
+    for(unsigned int i=0; i<allHardwareResourceNodes.size(); i++)
+    {
+        delete allHardwareResourceNodes.at(i);
+    }
+}
+
+HWNode *HWTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, HWNode *parent)
+{
+    HWNode *newLevel = new HWNode();
 
     newLevel->parent = parent;
     newLevel->name = xml->name().toString(); // Hardware, NUMA, Cache, CPU
@@ -106,7 +116,7 @@ hwNode *hwTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *p
     {
         if(xml->isStartElement())
         {
-            hwNode *child = hardwareResourceNodeFromXMLNode(xml, newLevel);
+            HWNode *child = hardwareResourceNodeFromXMLNode(xml, newLevel);
             newLevel->children.push_back(child);
         }
 
@@ -116,7 +126,7 @@ hwNode *hwTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, hwNode *p
     return newLevel;
 }
 
-int hwTopo::loadHardwareTopologyFromXML(QString fileName)
+int HWTopo::loadHardwareTopologyFromXML(QString fileName)
 {
     QFile* file = new QFile(fileName);
 
@@ -149,7 +159,7 @@ int hwTopo::loadHardwareTopologyFromXML(QString fileName)
     return 0;
 }
 
-void hwTopo::processLoadedTopology()
+void HWTopo::processLoadedTopology()
 {
     allHardwareResourceNodes.clear();
     hardwareResourceMatrix.clear();
@@ -169,16 +179,16 @@ void hwTopo::processLoadedTopology()
     numCPUs = CPUNodes->size();
 
     // Map NUMA IDs to NUMA Nodes
-    for(int i=0; i<NUMANodes->size(); i++)
+    for(unsigned int i=0; i<NUMANodes->size(); i++)
         NUMAIDMap[NUMANodes->at(i)->id] = NUMANodes->at(i);
 
     // Map CPU IDs to CPU Nodes
-    for(int i=0; i<CPUNodes->size(); i++)
+    for(unsigned int i=0; i<CPUNodes->size(); i++)
         CPUIDMap[CPUNodes->at(i)->id] = CPUNodes->at(i);
 
 }
 
-void hwTopo::addToMatrix(hwNode *node)
+void HWTopo::addToMatrix(HWNode *node)
 {
     hardwareResourceMatrix[node->depth].push_back(node);
     allHardwareResourceNodes.push_back(node);
@@ -186,23 +196,23 @@ void hwTopo::addToMatrix(hwNode *node)
     if(node->children.empty())
         return;
 
-    for(int i=0; i<node->children.size(); i++)
+    for(unsigned int i=0; i<node->children.size(); i++)
     {
         addToMatrix(node->children[i]);
     }
 
 }
 
-void hwTopo::constructHardwareResourceMatrix()
+void HWTopo::constructHardwareResourceMatrix()
 {
    hardwareResourceMatrix.resize(totalDepth+1);
    addToMatrix(hardwareResourceRoot);
 }
 
-void hwTopo::collectSamples(DataObject *d, ElemSet *s)
+void HWTopo::collectSamples(DataObject *d, ElemSet *s)
 {
     // Reset info
-    for(int i=0; i<allHardwareResourceNodes.size(); i++)
+    for(unsigned int i=0; i<allHardwareResourceNodes.size(); i++)
     {
         allHardwareResourceNodes[i]->numTransactions = 0;
         allHardwareResourceNodes[i]->numAllCycles = 0;
@@ -225,8 +235,8 @@ void hwTopo::collectSamples(DataObject *d, ElemSet *s)
         int lat = (int)d->at(elem,d->latencyDim);
 
         // Search for nodes
-        hwNode *cpuNode = CPUIDMap[cpu];
-        hwNode *node = cpuNode;
+        HWNode *cpuNode = CPUIDMap[cpu];
+        HWNode *node = cpuNode;
 
         // Update data for serving resource
         node->allSamples.insert(elem);

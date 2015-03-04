@@ -57,6 +57,7 @@ public:
 
 signals:
     void lineSelected(int line);
+    void clusterCreated();
 
 public slots:
     void frameUpdate();

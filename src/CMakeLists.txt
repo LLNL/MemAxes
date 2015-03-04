@@ -14,15 +14,17 @@ qt5_wrap_ui(ui_form.h form.ui)
 # Sources and UI Files
 set(SOURCES
   clustermetrics.cpp
+  clustertreevizwidget.cpp
   codeeditor.cpp
   codevizwidget.cpp
   console.cpp
   dataobject.cpp
   datacluster.cpp
   hwtopo.cpp
+  hwtopodrawable.cpp
+  hwtopovizwidget.cpp
   main.cpp
   mainwindow.cpp
-  hwtopovizwidget.cpp
   pcvizwidget.cpp
   parseUtil.cpp
   util.cpp
@@ -31,14 +33,16 @@ set(SOURCES
 
 set(HEADERS
   clustermetrics.h
+  clustertreevizwidget.h
   codeeditor.h
   codevizwidget.h
   console.h
   dataobject.h
   datacluster.h
   hwtopo.h
-  mainwindow.h
+  hwtopodrawable.h
   hwtopovizwidget.h
+  mainwindow.h
   pcvizwidget.h
   parseUtil.h
   util.h

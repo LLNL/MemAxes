@@ -63,7 +63,6 @@ public slots:
 
 public:
     void setDataSet(DataObject *iDataSet);
-    void setConsole(console *iCon);
     virtual void processData();
 
 protected:
@@ -80,7 +79,6 @@ private:
 
 protected:
     bool processed;
-    console *con;
     DataObject *dataSet;
 
     int margin;

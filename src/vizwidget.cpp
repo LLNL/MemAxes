@@ -139,11 +139,6 @@ void VizWidget::setDataSet(DataObject *iDataSet)
     dataSet = iDataSet;
 }
 
-void VizWidget::setConsole(console *iCon)
-{
-    con = iCon;
-}
-
 void VizWidget::processData()
 {
 }

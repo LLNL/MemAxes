@@ -40,60 +40,12 @@
 #define MEMTOPOVIZ_H
 
 #include "vizwidget.h"
+#include "hwtopodrawable.h"
 
 #include <QMouseEvent>
 #include <QPair>
 #include <QXmlStreamReader>
 #include <QToolTip>
-
-enum VizMode
-{
-    ICICLE = 0,
-    SUNBURST
-};
-
-enum DataMode
-{
-    COLORBY_SAMPLES = 0,
-    COLORBY_CYCLES
-};
-
-struct NodeBox
-{
-    NodeBox() {memset(this,0,sizeof(*this));}
-    NodeBox(hwNode* n, 
-            QRectF b)
-            : node(n),box(b) {}
-
-    hwNode* node;
-    QRectF box;
-    qreal val;
-};
-
-struct LinkBox
-{
-    LinkBox() {memset(this,0,sizeof(*this));}
-    LinkBox(hwNode* p, 
-            hwNode* c, 
-            QRectF b) 
-            : parent(p),child(c),box(b) {}
-
-    hwNode* parent;
-    hwNode* child;
-    QRectF box;
-    qreal val;
-};
-
-struct ColoredRect
-{
-    ColoredRect() {memset(this,0,sizeof(*this));}
-    ColoredRect(QColor c, 
-            QRectF b)
-            : color(c),box(b) {}
-
-    QColor color;
-    QRectF box;
-};
 
 class HWTopoVizWidget : public VizWidget
 {
@@ -106,7 +58,6 @@ protected:
     void processData();
     void selectionChangedSlot();
     void visibilityChangedSlot();
-    void drawTopo(QPainter *painter, QRectF rect, ColorMap &cm, QVector<NodeBox> &nb, QVector<LinkBox> &lb);
     void drawQtPainter(QPainter *painter);
 
 signals:
@@ -116,38 +67,17 @@ public slots:
     void mouseMoveEvent(QMouseEvent *e);
     void resizeEvent(QResizeEvent *e);
 
-    void setColorByCycles(bool on) { if(on) { dataMode = COLORBY_CYCLES; selectionChangedSlot(); } }
-    void setColorBySamples(bool on) { if(on) { dataMode = COLORBY_SAMPLES; selectionChangedSlot(); } }
-    void setVizModeIcicle(bool on) { if(on) { vizMode = ICICLE; selectionChangedSlot(); } }
-    void setVizModeSunburst(bool on) { if(on) { vizMode = SUNBURST; selectionChangedSlot(); } }
+    void setColorByCycles(bool on) { if(on) { hwPainter->setDataMode(COLORBY_CYCLES); selectionChangedSlot(); } }
+    void setColorBySamples(bool on) { if(on) { hwPainter->setDataMode(COLORBY_SAMPLES); selectionChangedSlot(); } }
+    void setVizModeIcicle(bool on) { if(on) { hwPainter->setVizMode(ICICLE); selectionChangedSlot(); } }
+    void setVizModeSunburst(bool on) { if(on) { hwPainter->setVizMode(SUNBURST); selectionChangedSlot(); } }
 
 private:
-    void calcMinMaxes();
-    void HWTopoVizWidget::constructNodeBoxes(QRectF rect,
-                                    hwTopo *topo,
-                                    QVector<RealRange> &valRanges,
-                                    QVector<RealRange> &transRanges, DataMode m,
-                                    QVector<NodeBox> &nbout,
-                                    QVector<LinkBox> &lbout);
-hwNode* nodeAtPosition(QPoint p);
-    void selectSamplesWithinNode(hwNode *lvl);
+    void selectSamplesWithinNode(HWNode *lvl);
 
 private:
-
-    bool needsConstructNodeBoxes;
+    HWTopoPainter *hwPainter;
     bool needsCalcMinMaxes;
-
-    QVector<NodeBox> nodeBoxes;
-    QVector<LinkBox> linkBoxes;
-    QVector<RealRange> depthValRanges;
-    QVector<RealRange> depthTransRanges;
-
-    DataMode dataMode;
-    VizMode vizMode;
-    ColorMap colorMap;
-
-    IntRange depthRange;
-    QVector<IntRange> widthRange;
 };
 
 #endif // MEMTOPOVIZ_H
