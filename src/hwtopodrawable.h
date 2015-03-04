@@ -100,6 +100,7 @@ public:
 
     ~HWTopoPainter();
 
+    HWTopo* getTopo() {return topo;}
     void setTopo(HWTopo *t) {topo = t;}
     void setDataMode(DataMode m) {dataMode = m;}
     void setVizMode(VizMode m) {vizMode = m;}

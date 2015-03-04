@@ -61,6 +61,7 @@ private:
     void gatherPainters();
 
 protected:
+    void mouseReleaseEvent(QMouseEvent *e);
     void resizeEvent(QResizeEvent *e);
     void frameUpdate();
     void drawQtPainter(QPainter *painter);
@@ -71,6 +72,7 @@ private:
     bool needsGatherPainters;
     unsigned int clusterIndex; // which cluster tree
     unsigned int clusterDepth; // depth in cluster tree
+    int boxSize;
     std::vector<HWTopoPainter> currentHwTopoPainters;
 };
 

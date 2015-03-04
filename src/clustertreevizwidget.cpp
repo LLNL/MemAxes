@@ -45,6 +45,8 @@ ClusterTreeVizWidget::ClusterTreeVizWidget(QWidget *parent)
     needsGatherPainters = false;
     clusterIndex = 0;
     clusterDepth = 0;
+    boxSize = 40;
+    this->installEventFilter(this);
 }
 
 void ClusterTreeVizWidget::gatherPainters()
@@ -70,6 +72,18 @@ void ClusterTreeVizWidget::gatherPainters()
     }
 }
 
+void ClusterTreeVizWidget::mouseReleaseEvent(QMouseEvent *e)
+{
+    QPoint pos = e->pos();
+    int whichBox = std::floor((qreal)pos.y() / boxSize);
+    HWTopo *t = currentHwTopoPainters.at(whichBox).getTopo();
+    ElemSet topoSamples = t->getAllSamples();
+
+    dataSet->selectSet(topoSamples);
+
+    emit selectionChangedSig();
+}
+
 void ClusterTreeVizWidget::resizeEvent(QResizeEvent *e)
 {
     needsResize = true;
@@ -85,14 +99,14 @@ void ClusterTreeVizWidget::frameUpdate()
     }
     if(needsResize)
     {
-        int topoSize = rect().width();
+        boxSize = rect().width();
         int totalHeight = 0;
-        QRectF topoBox(0,0,topoSize,topoSize);
+        QRectF topoBox(0,0,boxSize,boxSize);
         for(unsigned int i=0; i<currentHwTopoPainters.size(); i++)
         {
             currentHwTopoPainters.at(i).resize(topoBox);
-            topoBox.moveCenter(topoBox.center()+QPointF(0,topoSize));
-            totalHeight += topoSize;
+            topoBox.moveCenter(topoBox.center()+QPointF(0,boxSize));
+            totalHeight += boxSize;
         }
         needsRepaint = true;
         needsResize = false;

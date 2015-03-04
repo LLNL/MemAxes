@@ -280,3 +280,16 @@ void HWTopo::collectSamples(DataObject *d, ElemSet *s)
         }
     }
 }
+
+ElemSet HWTopo::getAllSamples()
+{
+    ElemSet allSamples;
+
+    for(unsigned int i=0; i<allHardwareResourceNodes.size(); i++)
+    {
+        allSamples.insert(allHardwareResourceNodes.at(i)->allSamples.begin(),
+                          allHardwareResourceNodes.at(i)->allSamples.end());
+    }
+
+    return allSamples;
+}

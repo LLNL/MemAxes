@@ -211,8 +211,8 @@ bool PCVizWidget::eventFilter(QObject *obj, QEvent *event)
             qreal selmin = std::min(firstSel,lastSel);
             qreal selmax = std::max(firstSel,lastSel);
 
-            selMins[selectionAxis] = 1.0-scale(selmax,plotBBox.top(),plotBBox.bottom(),0,1);
-            selMaxes[selectionAxis] = 1.0-scale(selmin,plotBBox.top(),plotBBox.bottom(),0,1);
+            selMins[selectionAxis] = scale(selmax,plotBBox.top(),plotBBox.bottom(),0,1);
+            selMaxes[selectionAxis] = scale(selmin,plotBBox.top(),plotBBox.bottom(),0,1);
 
             needsRepaint = true;
         }
@@ -291,8 +291,8 @@ void PCVizWidget::processSelection()
         if(selMins[i] != -1)
         {
             selDims.push_back(i);
-            dataSelMins.push_back(lerp(selMins[i],dimMins[i],dimMaxes[i]));
-            dataSelMaxes.push_back(lerp(selMaxes[i],dimMins[i],dimMaxes[i]));
+            dataSelMins.push_back(lerp(selMaxes[i],dimMins[i],dimMaxes[i]));
+            dataSelMaxes.push_back(lerp(selMins[i],dimMins[i],dimMaxes[i]));
         }
     }
 
@@ -441,10 +441,10 @@ void PCVizWidget::recalcLines(int dirtyAxis)
             axis = axesOrder[i];
             nextAxis = axesOrder[i+1];
 
-            float aVal = scale(*(p+axis),dimMins[axis],dimMaxes[axis],0,1);
+            float aVal = 1-scale(*(p+axis),dimMins[axis],dimMaxes[axis],0,1);
             a = QVector2D(axesPositions[axis],aVal);
 
-            float bVal = scale(*(p+nextAxis),dimMins[nextAxis],dimMaxes[nextAxis],0,1);
+            float bVal = 1-scale(*(p+nextAxis),dimMins[nextAxis],dimMaxes[nextAxis],0,1);
             b = QVector2D(axesPositions[nextAxis],bVal);
 
             verts.push_back(a.x());
@@ -702,11 +702,11 @@ void PCVizWidget::drawQtPainter(QPainter *painter)
         QPointF center = b - QPointF(fm.width(text)/2,15);
         painter->drawText(center,text);
 
-        text = QString::number(dimMins[i],'g',2);
+        text = QString::number(dimMaxes[i],'g',2);
         center = a - QPointF(fm.width(text)/2,-10);
         painter->drawText(center,text);
 
-        text = QString::number(dimMaxes[i],'g',2);
+        text = QString::number(dimMins[i],'g',2);
         center = b - QPointF(fm.width(text)/2,0);
         painter->drawText(center,text);
     }
@@ -735,9 +735,9 @@ void PCVizWidget::drawQtPainter(QPainter *painter)
         //if(selMins[i] != -1)
         {
             a = QPointF(plotBBox.left() + axesPositions[i]*plotBBox.width() - halfCursorWidth,
-                        plotBBox.top() + plotBBox.height()*(1.0-selMins[i]));
+                        plotBBox.top() + plotBBox.height()*(selMins[i]));
             b = QPointF(a.x() + cursorWidth,
-                        plotBBox.top() + plotBBox.height()*(1.0-selMaxes[i]));
+                        plotBBox.top() + plotBBox.height()*(selMaxes[i]));
 
             painter->drawRect(QRectF(a,b));
         }
@@ -760,14 +760,14 @@ void PCVizWidget::drawQtPainter(QPainter *painter)
 
             for(int j=0; j<numHistBins; j++)
             {
-                qreal histTop = a.y()-(j+1)*(plotBBox.height()/numHistBins);
+                qreal histTop = b.y()+(j+1)*(plotBBox.height()/numHistBins);
                 qreal histLeft = a.x();//-30*histVals[i][j];
-                qreal histBottom = a.y()-(j)*(plotBBox.height()/numHistBins);
+                qreal histBottom = b.y()+(j)*(plotBBox.height()/numHistBins);
                 qreal histRight = a.x()+60*histVals[i][j];
                 painter->drawRect(QRectF(QPointF(histLeft,histTop),QPointF(histRight,histBottom)));
             }
 
-            painter->drawLine(a,b);
+            //painter->drawLine(a,b);
         }
     }
 }

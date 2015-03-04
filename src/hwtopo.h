@@ -82,6 +82,7 @@ public:
     HWNode *hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, HWNode *parent);
     int loadHardwareTopologyFromXML(QString fileName);
     void collectSamples(DataObject *d, ElemSet *s);
+    ElemSet getAllSamples();
 
     QString hardwareName;
 
