@@ -485,6 +485,7 @@ void PCVizWidget::showContextMenu(const QPoint &pos)
 
 void PCVizWidget::selectionChangedSlot()
 {
+    needsCalcMinMaxes = true;
     needsCalcHistBins = true;
     needsRecalcLines = true;
     needsRepaint = true;
