@@ -72,6 +72,20 @@ void ClusterTreeVizWidget::gatherPainters()
     }
 }
 
+void ClusterTreeVizWidget::resizeTopoPainters()
+{
+    boxSize = rect().width();
+    int totalHeight = 0;
+    QRectF topoBox(0,0,boxSize,boxSize);
+    for(unsigned int i=0; i<currentHwTopoPainters.size(); i++)
+    {
+        currentHwTopoPainters.at(i).resize(topoBox);
+        topoBox.moveCenter(topoBox.center()+QPointF(0,boxSize));
+        totalHeight += boxSize;
+    }
+    this->setFixedHeight(totalHeight);
+}
+
 void ClusterTreeVizWidget::mouseReleaseEvent(QMouseEvent *e)
 {
     QPoint pos = e->pos();
@@ -99,18 +113,9 @@ void ClusterTreeVizWidget::frameUpdate()
     }
     if(needsResize)
     {
-        boxSize = rect().width();
-        int totalHeight = 0;
-        QRectF topoBox(0,0,boxSize,boxSize);
-        for(unsigned int i=0; i<currentHwTopoPainters.size(); i++)
-        {
-            currentHwTopoPainters.at(i).resize(topoBox);
-            topoBox.moveCenter(topoBox.center()+QPointF(0,boxSize));
-            totalHeight += boxSize;
-        }
+        resizeTopoPainters();
         needsRepaint = true;
         needsResize = false;
-        this->setFixedHeight(totalHeight);
     }
     if(needsRepaint)
     {

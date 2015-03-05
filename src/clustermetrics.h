@@ -54,7 +54,7 @@ public:
 
     qreal distance(HardwareClusterMetric *other);
     void initFrom(HardwareClusterMetric *hcm);
-    void combineAggregate(HardwareClusterMetric *hcm);
+    void combineAggregate(DataObject *d, HardwareClusterMetric *hcm);
 
     HWTopo *getTopo() {return topo;}
     void setTopo(HWTopo *t);

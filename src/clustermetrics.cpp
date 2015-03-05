@@ -41,9 +41,9 @@
 void HardwareClusterMetric::createAggregateFromSamples(DataObject *d, ElemSet *s)
 {
     // Copy topology from current dataset
-    topo = new HWTopo(d->topo);
+    setTopo(new HWTopo(d->topo));
 
-    // Collect samples
+    // Set samples to provided ElemSet s
     topo->collectSamples(d,s);
 
     // Compute means
@@ -127,47 +127,14 @@ void HardwareClusterMetric::initFrom(HardwareClusterMetric *hcm)
     this->setTopo(new HWTopo(hcm->getTopo()));
 }
 
-void HardwareClusterMetric::combineAggregate(HardwareClusterMetric *hcm)
+void HardwareClusterMetric::combineAggregate(DataObject *d, HardwareClusterMetric *hcm)
 {
-    for(unsigned int i=0; i<topo->hardwareResourceMatrix.size(); i++)
-    {
-        for(unsigned int j=0; j<topo->hardwareResourceMatrix.at(i).size(); j++)
-        {
-            ElemSet tmpSet;
+    ElemSet thisSamples = topo->getAllSamples();
+    ElemSet hcmSamples = hcm->getTopo()->getAllSamples();
 
-            HWNode *n = topo->hardwareResourceMatrix.at(i).at(j);
-            HWNode *n1 = hcm->topo->hardwareResourceMatrix.at(i).at(j);
+    thisSamples.insert(hcmSamples.begin(),hcmSamples.end());
 
-            std::set_union(n->allSamples.begin(),n->allSamples.end(),
-                           n1->allSamples.begin(),n1->allSamples.end(),
-                           std::inserter(tmpSet,tmpSet.begin()));
-
-            std::swap(n->allSamples, tmpSet);
-            tmpSet.clear();
-
-            std::set_union(n->selectedSamples.begin(),n->selectedSamples.end(),
-                           n1->selectedSamples.begin(),n1->selectedSamples.end(),
-                           std::inserter(tmpSet,tmpSet.begin()));
-
-            std::swap(n->selectedSamples, tmpSet);
-
-            n->numAllCycles = n->numAllCycles + n1->numAllCycles;
-            n->numSelectedCycles = n->numSelectedCycles + n1->numSelectedCycles;
-            n->numTransactions = n->numTransactions + n1->numTransactions;
-        }
-    }
-
-    for(unsigned int i=0; i<depthSamples.size(); i++)
-    {
-        int allDepthSamples = depthSamples.at(i) + hcm->depthSamples.at(i);
-        depthMeans[i] = (depthSamples.at(i)*depthMeans.at(i)
-                         + hcm->depthSamples.at(i)*hcm->depthMeans.at(i))
-                         / std::max(allDepthSamples,1); // div by zero
-        depthStddevs[i] = (hcm->depthSamples.at(i)*hcm->depthStddevs.at(i)
-                         + hcm->depthSamples.at(i)*hcm->depthStddevs.at(i))
-                         / std::max(allDepthSamples,1); // div by zero
-        depthSamples[i] = allDepthSamples;
-    }
+    createAggregateFromSamples(d,&thisSamples);
 }
 
 void HardwareClusterMetric::setTopo(HWTopo *t)

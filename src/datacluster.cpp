@@ -48,17 +48,21 @@ DataClusterTree::~DataClusterTree()
 
 void DataClusterTree::build(DataObject *d, int dim)
 {
-    qreal targetNumberOfLeaves = 100;
+    qreal targetNumberOfLeaves = 20.0;
 
-    qreal winDelta = (d->maxAt(dim) - d->minAt(dim)) / targetNumberOfLeaves;
-    qreal winSize = 3*winDelta;
-    qreal threshold = 1; // TODO
+    qreal overlap = 3.0; // (1-1/overlap) samples will overlap in a window
+
+    qreal winSize = (d->maxAt(dim) - d->minAt(dim)) / targetNumberOfLeaves;
+    qreal winDelta = winSize / overlap;
+    qreal threshold = 2;
 
     // Create leaf node for every window
     // and an internal node above each leaf
     qreal winMin, winMax;
     std::vector<DataClusterInternalNode*> levelNodes;
-    for(winMin=0, winMax=winSize; winMax<d->maxAt(dim); winMin+=winDelta, winMax+=winDelta)
+    for(winMin=d->minAt(dim), winMax=winMin+winSize;
+        winMax<=d->maxAt(dim);
+        winMin+=winDelta, winMax+=winDelta)
     {
         DataClusterLeafNode *newLeaf = new DataClusterLeafNode();
         newLeaf->samples = d->createDimRangeQuery(dim, winMin, winMax);
@@ -69,7 +73,6 @@ void DataClusterTree::build(DataObject *d, int dim)
 
         newLeaf->parent = newNode;
         newNode->children.push_back(newLeaf);
-
         levelNodes.push_back(newNode);
     }
 
@@ -79,7 +82,7 @@ void DataClusterTree::build(DataObject *d, int dim)
     {
         int numMerges = 0;
         bool merging = false;
-        for(size_t i=0; i<levelNodes.size()-1; i++)
+        for(unsigned int i=0; i<levelNodes.size()-1; i++)
         {
             // Merge nodes if below threshold
             DataClusterInternalNode *n1 = levelNodes.at(i);
@@ -95,46 +98,32 @@ void DataClusterTree::build(DataObject *d, int dim)
             {
                 numMerges++;
 
-                if(!merging)
-                {
-                    // New merged group
-                    merging = true;
-                    DataClusterInternalNode *newNode = new DataClusterInternalNode();
+                // New merged group
+                merging = true;
+                DataClusterInternalNode *newNode = new DataClusterInternalNode();
 
-                    newNode->metric = new HardwareClusterMetric();
+                newNode->metric = new HardwareClusterMetric();
 
-                    HardwareClusterMetric *newMetric = (HardwareClusterMetric*)newNode->metric;
-                    newMetric->initFrom(m1); // copy topo from m1
-                    newMetric->combineAggregate(m2); // add info from m2
+                HardwareClusterMetric *newMetric = (HardwareClusterMetric*)newNode->metric;
+                newMetric->initFrom(m1); // copy topo from m1
+                newMetric->combineAggregate(d,m2); // add info from m2
 
-                    n1->parent = newNode;
-                    n2->parent = newNode;
+                n1->parent = newNode;
+                n2->parent = newNode;
 
-                    newNode->children.push_back(n1);
-                    newNode->children.push_back(n2);
+                newNode->children.push_back(n1);
+                newNode->children.push_back(n2);
 
-                    nextLevelNodes.push_back(newNode);
-                }
-                else
-                {
-                    // Continuing previous merge group
-                    DataClusterInternalNode *mergeNode = nextLevelNodes.back();
+                nextLevelNodes.push_back(newNode);
 
-                    n2->parent = mergeNode;
-
-                    // add aggregate of n2 into mergeNode's aggregate
-                    HardwareClusterMetric *mergeMetric = (HardwareClusterMetric*)mergeNode->metric;
-                    mergeMetric->combineAggregate(m2);
-
-                    mergeNode->children.push_back(n2);
-                }
+                i++;
             }
             else
             {
-                if(!merging)
-                    nextLevelNodes.push_back(n1);
-                else
-                    merging = false;
+                nextLevelNodes.push_back(n1);
+
+                if(i+1 >= levelNodes.size()-1)
+                    nextLevelNodes.push_back(n2);
             }
         }
 

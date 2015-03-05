@@ -59,6 +59,7 @@ public slots:
 private:
     std::vector<DataClusterNode*> getNodesAtDepth(DataClusterNode *root, int depth);
     void gatherPainters();
+    void resizeTopoPainters();
 
 protected:
     void mouseReleaseEvent(QMouseEvent *e);
