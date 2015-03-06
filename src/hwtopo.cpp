@@ -223,6 +223,7 @@ void HWTopo::constructHardwareResourceMatrix()
 void HWTopo::collectSamples(DataObject *d, ElemSet *s)
 {
     // Reset info
+    allSamples.clear();
     for(unsigned int i=0; i<allHardwareResourceNodes.size(); i++)
     {
         allHardwareResourceNodes[i]->numTransactions = 0;
@@ -238,6 +239,9 @@ void HWTopo::collectSamples(DataObject *d, ElemSet *s)
     for(it = s->begin(); it != s->end(); it++)
     {
         ElemIndex elem = *it;
+
+        allSamples.insert(elem);
+
         bool tsel = !selDef || d->selected(elem);
 
         // Get vars
@@ -281,15 +285,7 @@ void HWTopo::collectSamples(DataObject *d, ElemSet *s)
     }
 }
 
-ElemSet HWTopo::getAllSamples()
+ElemSet& HWTopo::getAllSamples()
 {
-    ElemSet allSamples;
-
-    for(unsigned int i=0; i<allHardwareResourceNodes.size(); i++)
-    {
-        allSamples.insert(allHardwareResourceNodes.at(i)->allSamples.begin(),
-                          allHardwareResourceNodes.at(i)->allSamples.end());
-    }
-
     return allSamples;
 }

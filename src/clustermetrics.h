@@ -41,20 +41,20 @@
 #ifndef CLUSTERMETRICS_H
 #define CLUSTERMETRICS_H
 
-class ClusterMetric
+class ClusterAggregate
 {
 public:
     virtual void createAggregateFromSamples(DataObject *d, ElemSet *s) = 0;
 };
 
-class HardwareClusterMetric : public ClusterMetric
+class HardwareClusterAggregate : public ClusterAggregate
 {
 public:
     virtual void createAggregateFromSamples(DataObject *d, ElemSet *s);
 
-    qreal distance(HardwareClusterMetric *other);
-    void initFrom(HardwareClusterMetric *hcm);
-    void combineAggregate(DataObject *d, HardwareClusterMetric *hcm);
+    qreal distance(HardwareClusterAggregate *other);
+    void initFrom(DataObject *d, HardwareClusterAggregate *hcm);
+    void combineAggregate(DataObject *d, HardwareClusterAggregate *hcm);
 
     HWTopo *getTopo() {return topo;}
     void setTopo(HWTopo *t);

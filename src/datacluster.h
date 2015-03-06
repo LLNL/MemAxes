@@ -44,6 +44,8 @@
 
 class DataClusterTree;
 class DataClusterNode;
+class DataClusterInternalNode;
+class DataClusterLeafNode;
 
 class DataClusterTree
 {
@@ -54,6 +56,13 @@ public:
     void build(DataObject *d, int dim);
     DataClusterNode* getRoot() { return root; }
     std::vector<DataClusterNode*> getNodesAtDepth(int depth);
+
+private:
+    std::vector<DataClusterLeafNode*> createUniformWindowLeaves(DataObject *d, int dim, int overlap, int targetLeaves);
+    std::vector<DataClusterLeafNode*> createEqualSizedLeaves(DataObject *d, int dim, int targetLeaves);
+    std::vector<DataClusterInternalNode *> createInternalFromLeaves(DataObject *d, std::vector<DataClusterLeafNode *> &leafNodes);
+
+    void hierarchicalCluster(DataObject *d, std::vector<DataClusterLeafNode*> &leafNodes);
     
 private:
     DataClusterNode *root;
@@ -82,7 +91,7 @@ public:
     virtual bool isLeaf() { return false; }
     virtual bool isInternal() { return true; }
 
-    ClusterMetric *metric;
+    ClusterAggregate *aggregate;
 };
 class DataClusterLeafNode : public DataClusterNode
 {

@@ -82,7 +82,7 @@ public:
     HWNode *hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, HWNode *parent);
     int loadHardwareTopologyFromXML(QString fileName);
     void collectSamples(DataObject *d, ElemSet *s);
-    ElemSet getAllSamples();
+    ElemSet &getAllSamples();
 
     QString hardwareName;
 
@@ -100,6 +100,9 @@ public:
 
     QMap<int,HWNode*> CPUIDMap;
     QMap<int,HWNode*> NUMAIDMap;
+
+private:
+    ElemSet allSamples;
 
 private:
     void processLoadedTopology();

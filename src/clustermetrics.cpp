@@ -38,7 +38,7 @@
 
 #include "clustermetrics.h"
 
-void HardwareClusterMetric::createAggregateFromSamples(DataObject *d, ElemSet *s)
+void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet *s)
 {
     // Copy topology from current dataset
     setTopo(new HWTopo(d->topo));
@@ -104,7 +104,7 @@ void HardwareClusterMetric::createAggregateFromSamples(DataObject *d, ElemSet *s
 
 }
 
-qreal HardwareClusterMetric::distance(HardwareClusterMetric *other)
+qreal HardwareClusterAggregate::distance(HardwareClusterAggregate *other)
 {
     // Assume same topology (for now)
 
@@ -121,13 +121,13 @@ qreal HardwareClusterMetric::distance(HardwareClusterMetric *other)
     return dist;
 }
 
-void HardwareClusterMetric::initFrom(HardwareClusterMetric *hcm)
+void HardwareClusterAggregate::initFrom(DataObject *d, HardwareClusterAggregate *hcm)
 {
     // Copy topo and set this to it
     this->setTopo(new HWTopo(hcm->getTopo()));
 }
 
-void HardwareClusterMetric::combineAggregate(DataObject *d, HardwareClusterMetric *hcm)
+void HardwareClusterAggregate::combineAggregate(DataObject *d, HardwareClusterAggregate *hcm)
 {
     ElemSet thisSamples = topo->getAllSamples();
     ElemSet hcmSamples = hcm->getTopo()->getAllSamples();
@@ -137,7 +137,7 @@ void HardwareClusterMetric::combineAggregate(DataObject *d, HardwareClusterMetri
     createAggregateFromSamples(d,&thisSamples);
 }
 
-void HardwareClusterMetric::setTopo(HWTopo *t)
+void HardwareClusterAggregate::setTopo(HWTopo *t)
 {
     topo = t;
     depthSamples.resize(topo->totalDepth+1, 0);

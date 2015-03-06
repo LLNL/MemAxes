@@ -63,7 +63,7 @@ void ClusterTreeVizWidget::gatherPainters()
         DataClusterInternalNode *inode = (DataClusterInternalNode*)depthNodes.at(i);
 
         // we're assuming hardware cluster metrics (for drawing aggregates)
-        HardwareClusterMetric *met = (HardwareClusterMetric*)inode->metric;
+        HardwareClusterAggregate *met = (HardwareClusterAggregate*)inode->aggregate;
         HWTopoPainter htp(met->getTopo());
 
         // prepare

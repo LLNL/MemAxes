@@ -38,6 +38,8 @@
 
 #include "datacluster.h"
 
+#include <vector>
+
 DataClusterTree::DataClusterTree()
 {
 }
@@ -48,104 +50,144 @@ DataClusterTree::~DataClusterTree()
 
 void DataClusterTree::build(DataObject *d, int dim)
 {
-    qreal targetNumberOfLeaves = 20.0;
+    std::vector<DataClusterLeafNode*> leafNodes;
+    leafNodes = createUniformWindowLeaves(d,dim,3,20);
 
-    qreal overlap = 3.0; // (1-1/overlap) samples will overlap in a window
+    hierarchicalCluster(d,leafNodes);
+}
 
-    qreal winSize = (d->maxAt(dim) - d->minAt(dim)) / targetNumberOfLeaves;
-    qreal winDelta = winSize / overlap;
-    qreal threshold = 2;
+std::vector<DataClusterLeafNode*> DataClusterTree::createUniformWindowLeaves(DataObject *d, int dim, int overlap, int targetLeaves)
+{
+    std::vector<DataClusterLeafNode*> leafNodes;
+
+    qreal winSize = (d->maxAt(dim) - d->minAt(dim)) / targetLeaves;
+    qreal winDelta = winSize / (qreal)overlap;
 
     // Create leaf node for every window
-    // and an internal node above each leaf
     qreal winMin, winMax;
-    std::vector<DataClusterInternalNode*> levelNodes;
     for(winMin=d->minAt(dim), winMax=winMin+winSize;
         winMax<=d->maxAt(dim);
         winMin+=winDelta, winMax+=winDelta)
     {
         DataClusterLeafNode *newLeaf = new DataClusterLeafNode();
         newLeaf->samples = d->createDimRangeQuery(dim, winMin, winMax);
+        leafNodes.push_back(newLeaf);
+    }
 
+    // Add last (partial) window
+    DataClusterLeafNode *newLeaf = new DataClusterLeafNode();
+    newLeaf->samples = d->createDimRangeQuery(dim, winMin, d->maxAt(dim));
+    leafNodes.push_back(newLeaf);
+
+    return leafNodes;
+}
+
+std::vector<DataClusterLeafNode *> DataClusterTree::createEqualSizedLeaves(DataObject *d, int dim, int targetLeaves)
+{
+    std::vector<DataClusterLeafNode*> leafNodes;
+
+    return leafNodes;
+}
+
+std::vector<DataClusterInternalNode *> DataClusterTree::createInternalFromLeaves(DataObject *d, std::vector<DataClusterLeafNode*> &leafNodes)
+{
+    std::vector<DataClusterInternalNode*> levelNodes;
+    for(unsigned int i=0; i<leafNodes.size(); i++)
+    {
         DataClusterInternalNode *newNode = new DataClusterInternalNode();
-        newNode->metric = new HardwareClusterMetric();
-        newNode->metric->createAggregateFromSamples(d,&newLeaf->samples);
+        newNode->aggregate = new HardwareClusterAggregate();
+        newNode->aggregate->createAggregateFromSamples(d,&leafNodes.at(i)->samples);
 
-        newLeaf->parent = newNode;
-        newNode->children.push_back(newLeaf);
+        leafNodes.at(i)->parent = newNode;
+        newNode->children.push_back(leafNodes.at(i));
+
         levelNodes.push_back(newNode);
     }
-
-    // Merge up from internal nodes created
-    std::vector<DataClusterInternalNode*> nextLevelNodes;
-    while(levelNodes.size() > 1)
-    {
-        int numMerges = 0;
-        bool merging = false;
-        for(unsigned int i=0; i<levelNodes.size()-1; i++)
-        {
-            // Merge nodes if below threshold
-            DataClusterInternalNode *n1 = levelNodes.at(i);
-            DataClusterInternalNode *n2 = levelNodes.at(i+1);
-
-            HardwareClusterMetric* m1 = (HardwareClusterMetric*)n1->metric;
-            HardwareClusterMetric* m2 = (HardwareClusterMetric*)n2->metric;
-
-            // Run distance metric
-            qreal dist = m1->distance(m2);
-
-            if(dist < threshold)
-            {
-                numMerges++;
-
-                // New merged group
-                merging = true;
-                DataClusterInternalNode *newNode = new DataClusterInternalNode();
-
-                newNode->metric = new HardwareClusterMetric();
-
-                HardwareClusterMetric *newMetric = (HardwareClusterMetric*)newNode->metric;
-                newMetric->initFrom(m1); // copy topo from m1
-                newMetric->combineAggregate(d,m2); // add info from m2
-
-                n1->parent = newNode;
-                n2->parent = newNode;
-
-                newNode->children.push_back(n1);
-                newNode->children.push_back(n2);
-
-                nextLevelNodes.push_back(newNode);
-
-                i++;
-            }
-            else
-            {
-                nextLevelNodes.push_back(n1);
-
-                if(i+1 >= levelNodes.size()-1)
-                    nextLevelNodes.push_back(n2);
-            }
-        }
-
-        // If nothing merged, increase threshold
-        if(numMerges == 0)
-        {
-            threshold *= 1.5;
-        }
-        else
-        {
-            std::swap(levelNodes,nextLevelNodes);
-            threshold = 1; // reset threshold on next level
-        }
-        nextLevelNodes.clear();
-    }
-
-    root = levelNodes.back();
+    return levelNodes;
 }
 
 std::vector<DataClusterNode *> DataClusterTree::getNodesAtDepth(int depth)
 {
     return root->getNodesAtDepth(depth);
+}
+
+void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataClusterLeafNode *> &leafNodes)
+{
+    // Create an internal node for each leaf
+    std::vector<DataClusterInternalNode*> levelNodes;
+    levelNodes = createInternalFromLeaves(d,leafNodes);
+
+    // Store distances between nodes
+    std::vector<qreal> nodeDistances;
+    nodeDistances.resize(levelNodes.size()-1);
+    for(unsigned int i=0; i<levelNodes.size()-1; i++)
+    {
+        HardwareClusterAggregate *agg1 = (HardwareClusterAggregate*)levelNodes.at(i)->aggregate;
+        HardwareClusterAggregate *agg2 = (HardwareClusterAggregate*)levelNodes.at(i+1)->aggregate;
+        qreal dist = agg1->distance(agg2);
+        nodeDistances[i] = dist;
+    }
+
+    // Merge up from internal nodes created
+    while(levelNodes.size() > 1)
+    {
+        // Get smallest distance
+        std::vector<qreal>::iterator minDistIt;
+        minDistIt = std::min_element(nodeDistances.begin(),nodeDistances.end());
+
+        // Get node with smallest distance
+        int n1NodeIndex = std::distance(nodeDistances.begin(),minDistIt);
+        int n2NodeIndex = n1NodeIndex + 1;
+
+        // merge minDistIndex , minDistIndex+1
+        DataClusterInternalNode *n1 = levelNodes.at(n1NodeIndex);
+        DataClusterInternalNode *n2 = levelNodes.at(n2NodeIndex);
+
+        // into new node
+        DataClusterInternalNode *newNode = new DataClusterInternalNode();
+        n1->parent = newNode;
+        n2->parent = newNode;
+        newNode->children.push_back(n1);
+        newNode->children.push_back(n2);
+
+        // with combined aggregate
+        HardwareClusterAggregate *newAgg = new HardwareClusterAggregate();
+        newAgg->initFrom(d,(HardwareClusterAggregate*)n1->aggregate);
+        newAgg->combineAggregate(d,(HardwareClusterAggregate*)n1->aggregate);
+        newAgg->combineAggregate(d,(HardwareClusterAggregate*)n2->aggregate);
+        newNode->aggregate = newAgg;
+
+        // recalculate new distances
+        if(n1NodeIndex > 0)
+        {
+            // replace distance (before n1) to (n1)
+            // with (before n1) to (newNode)
+            DataClusterInternalNode *beforen1 = levelNodes.at(n1NodeIndex-1);
+            HardwareClusterAggregate *beforen1agg = (HardwareClusterAggregate*) beforen1->aggregate;
+            qreal newDist = beforen1agg->distance(newAgg);
+
+            nodeDistances[n1NodeIndex] = newDist;
+        }
+        if(n2NodeIndex < (int)levelNodes.size()-1)
+        {
+            // replace distance (n2) to (after n2)
+            // with (newNode) to (after n2)
+            DataClusterInternalNode *aftern1 = levelNodes.at(n2NodeIndex+1);
+            HardwareClusterAggregate *aftern1agg = (HardwareClusterAggregate*) aftern1->aggregate;
+            qreal newDist = newAgg->distance(aftern1agg);
+
+            nodeDistances[n2NodeIndex] = newDist;
+        }
+
+        // remove n1 and n2 from levelNodes
+        nodeDistances.erase(minDistIt);
+
+        // replace n1, n2 with newNode
+        levelNodes.erase(levelNodes.begin()+n1NodeIndex,levelNodes.begin()+n1NodeIndex+2);
+        levelNodes.insert(levelNodes.begin()+n1NodeIndex,newNode);
+    }
+
+    root = levelNodes.front();
 }
 
 DataClusterNode::DataClusterNode()
