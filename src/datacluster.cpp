@@ -71,6 +71,7 @@ std::vector<DataClusterLeafNode*> DataClusterTree::createUniformWindowLeaves(Dat
     {
         DataClusterLeafNode *newLeaf = new DataClusterLeafNode();
         newLeaf->samples = d->createDimRangeQuery(dim, winMin, winMax);
+        newLeaf->setRange(winMin,winMax);
         leafNodes.push_back(newLeaf);
     }
 
@@ -97,6 +98,7 @@ std::vector<DataClusterInternalNode *> DataClusterTree::createInternalFromLeaves
         DataClusterInternalNode *newNode = new DataClusterInternalNode();
         newNode->aggregate = new HardwareClusterAggregate();
         newNode->aggregate->createAggregateFromSamples(d,&leafNodes.at(i)->samples);
+        newNode->setRange(leafNodes.at(i)->rangeMin,leafNodes.at(i)->rangeMax);
 
         leafNodes.at(i)->parent = newNode;
         newNode->children.push_back(leafNodes.at(i));
@@ -149,6 +151,8 @@ void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataCluster
         n2->parent = newNode;
         newNode->children.push_back(n1);
         newNode->children.push_back(n2);
+        newNode->setRange(std::min(n1->rangeMin,n2->rangeMin),
+                          std::max(n1->rangeMax,n2->rangeMax));
 
         // with combined aggregate
         HardwareClusterAggregate *newAgg = new HardwareClusterAggregate();

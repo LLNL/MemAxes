@@ -36,10 +36,13 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "dataobject.h"
-
 #ifndef CLUSTERMETRICS_H
 #define CLUSTERMETRICS_H
+
+#include "dataobject.h"
+#include "hwtopo.h"
+
+class HWTopo;
 
 class ClusterAggregate
 {
@@ -50,6 +53,7 @@ public:
 class HardwareClusterAggregate : public ClusterAggregate
 {
 public:
+    HardwareClusterAggregate();
     virtual void createAggregateFromSamples(DataObject *d, ElemSet *s);
 
     qreal distance(HardwareClusterAggregate *other);

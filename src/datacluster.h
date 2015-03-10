@@ -42,6 +42,8 @@
 #include "dataobject.h"
 #include "clustermetrics.h"
 
+class ClusterAggregate;
+
 class DataClusterTree;
 class DataClusterNode;
 class DataClusterInternalNode;
@@ -77,7 +79,12 @@ public:
     virtual bool isInternal() = 0;
     virtual bool isLeaf() = 0;
 
+    void setRange(qreal mi, qreal ma) { rangeMin = mi; rangeMax = ma; }
+
     std::vector<DataClusterNode*> getNodesAtDepth(int depth);
+
+    qreal rangeMin;
+    qreal rangeMax;
 
     DataClusterNode *parent;
     std::vector<DataClusterNode*> children;

@@ -129,6 +129,7 @@ private:
     int selectionAxis;
     int animationAxis;
     int movingAxis;
+    int clusterAxis;
 
     bool showHistograms;
 

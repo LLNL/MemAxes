@@ -46,6 +46,7 @@
 #include <vector>
 
 #include "dataobject.h"
+#include "typedefs.h"
 
 class DataObject;
 

@@ -38,6 +38,12 @@
 
 #include "clustermetrics.h"
 
+#include <limits>
+
+HardwareClusterAggregate::HardwareClusterAggregate()
+{
+}
+
 void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet *s)
 {
     // Copy topology from current dataset

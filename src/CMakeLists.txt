@@ -45,6 +45,7 @@ set(HEADERS
   mainwindow.h
   pcvizwidget.h
   parseUtil.h
+  typedefs.h
   util.h
   varvizwidget.h
   vizwidget.h)

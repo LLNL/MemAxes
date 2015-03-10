@@ -36,6 +36,9 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
+#ifndef DATAOBJECT_H
+#define DATAOBJECT_H
+
 #include <QWidget>
 #include <QBitArray>
 
@@ -48,6 +51,7 @@
 #include "util.h"
 #include "console.h"
 #include "datacluster.h"
+#include "typedefs.h"
 
 enum selection_mode;
 
@@ -60,20 +64,8 @@ class console;
 class DataObject;
 class DataClusterTree;
 
-typedef unsigned long long ElemIndex;
-typedef std::set<ElemIndex> ElemSet;
-typedef std::vector<indexedValue> IndexList;
-
-#ifndef INVISIBLE
-    #define INVISIBLE false
-#endif
-
-#ifndef VISIBLE
-    #define VISIBLE true
-#endif
-
-#ifndef DATAOBJECT_H
-#define DATAOBJECT_H
+const bool INVISIBLE = false;
+const bool VISIBLE = true;
 
 enum selection_mode
 {

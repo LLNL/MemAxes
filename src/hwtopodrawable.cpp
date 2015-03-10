@@ -104,8 +104,8 @@ void HWTopoPainter::resize(QRectF r)
     if(topo == NULL)
         return;
 
-    float nodeMarginX = 2.0f;
-    float nodeMarginY = 10.0f;
+    float nodeMarginX = rect.width() / 140.0f;
+    float nodeMarginY = rect.height() / 40.0f;
 
     float deltaX = 0;
     float deltaY = rect.height() / topo->hardwareResourceMatrix.size();
@@ -119,8 +119,8 @@ void HWTopoPainter::resize(QRectF r)
             // Create Node Box
             NodeBox nb;
             nb.node = topo->hardwareResourceMatrix[i][j];
-            nb.box.setRect(rect.left()+j*deltaX,
-                           rect.top()+i*deltaY,
+            nb.box.setRect(rect.left()+(float)j*deltaX,
+                           rect.top()+(float)i*deltaY,
                            deltaX,
                            deltaY);
 

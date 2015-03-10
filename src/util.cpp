@@ -190,7 +190,7 @@ QVector<QPointF> rectToRadialSegment(QRectF rect, QRectF rectSpace)
 {
     QVector<QPointF> segmentPoly;
 
-    int xres = scale(rect.width(),0,rectSpace.width(),1,40);
+    int xres = scale(rect.width(),0,rectSpace.width(),1,200);
 
     QPointF p = rect.topLeft();
     QPointF q = rect.bottomRight();
