@@ -53,8 +53,6 @@
 #include "datacluster.h"
 #include "typedefs.h"
 
-enum selection_mode;
-
 struct indexedValue;
 
 class HWTopo;

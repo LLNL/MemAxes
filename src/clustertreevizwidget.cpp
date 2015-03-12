@@ -89,7 +89,7 @@ void ClusterTreeVizWidget::resizeTopoPainters()
 void ClusterTreeVizWidget::mouseReleaseEvent(QMouseEvent *e)
 {
     QPoint pos = e->pos();
-    int whichBox = std::floor((qreal)pos.y() / boxSize);
+    int whichBox = floor((qreal)pos.y() / boxSize);
     HWTopo *t = currentHwTopoPainters.at(whichBox).getTopo();
     ElemSet topoSamples = t->getAllSamples();
 

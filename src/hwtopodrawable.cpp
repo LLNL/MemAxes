@@ -142,7 +142,7 @@ void HWTopoPainter::resize(QRectF r)
             nodeBoxes.push_back(nb);
 
             // Create Link Box
-            if(i-1 >= 0)
+            if(i > 0)
             {
                 LinkBox lb;
                 lb.parent = nb.node->parent;

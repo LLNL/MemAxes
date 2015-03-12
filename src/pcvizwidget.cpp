@@ -175,7 +175,7 @@ void PCVizWidget::mouseReleaseEvent(QMouseEvent *event)
     if(!processed)
         return;
 
-    if(selectionAxis != -1 && event->button() == Qt::MouseButton::LeftButton && lastSel == -1)
+    if(selectionAxis != -1 && event->button() == Qt::LeftButton && lastSel == -1)
     {
         selMins[selectionAxis] = -1;
         selMaxes[selectionAxis] = -1;
