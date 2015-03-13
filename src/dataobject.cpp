@@ -461,7 +461,7 @@ void DataObject::setSelectionMode(selection_mode mode, bool silent)
     switch(mode)
     {
         case(MODE_NEW):
-            selcmd += "filter";
+            selcmd += "new";
             break;
         case(MODE_APPEND):
             selcmd += "append";
