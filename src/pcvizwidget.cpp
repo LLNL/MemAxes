@@ -310,7 +310,7 @@ void PCVizWidget::processSelection()
         if(animationAxis != -1)
         {
             selection_mode s = dataSet->selectionMode();
-            ElemSet es = dataSet->createMultiDimRangeQuery(selDims,dataSelMins,dataSelMaxes);
+            ElemSet es = dataSet->createMultiDimRangeQuery(selDims,dataSelMaxes,dataSelMins);
 
             dataSet->setSelectionMode(MODE_NEW,true);
             dataSet->selectSet(animSet);

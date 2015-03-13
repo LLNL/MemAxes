@@ -164,7 +164,7 @@
                <x>0</x>
                <y>0</y>
                <width>212</width>
-               <height>273</height>
+               <height>228</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -548,7 +548,7 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="parallelAxesTab">
         <attribute name="title">
