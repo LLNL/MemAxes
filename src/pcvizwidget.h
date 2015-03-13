@@ -41,8 +41,6 @@
 
 #include "vizwidget.h"
 
-#include "hwtopodrawable.h"
-
 #include <vector>
 #include <QVector2D>
 #include <QVector4D>
@@ -59,7 +57,6 @@ public:
     void recalcLines(int dirtyAxis = -1);
 
 signals:
-    void lineSelected(int line);
     void clusterCreated();
 
 public slots:
@@ -90,7 +87,6 @@ private:
     void processSelection();
     void calcMinMaxes();
     void calcHistBins();
-    void createTopoPainters();
 
 private:
     bool needsRecalcLines;
@@ -142,9 +138,6 @@ private:
     // OpenGL
     QVector<GLfloat> verts;
     QVector<GLfloat> colors;
-
-    // Hw topo markers
-    std::vector<HWTopoPainter> topoPainters;
 };
 
-#endif // PARALLELCOORDINATESVIZ_H
+#endif // PCVIZWIDGET_H

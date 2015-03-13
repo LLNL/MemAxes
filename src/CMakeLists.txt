@@ -13,6 +13,7 @@ qt5_wrap_ui(ui_form.h form.ui)
 
 # Sources and UI Files
 set(SOURCES
+  axisvizwidget.cpp
   clustermetrics.cpp
   clustertreevizwidget.cpp
   codeeditor.cpp
@@ -32,6 +33,7 @@ set(SOURCES
   vizwidget.cpp)
 
 set(HEADERS
+  axisvizwidget.h
   clustermetrics.h
   clustertreevizwidget.h
   codeeditor.h

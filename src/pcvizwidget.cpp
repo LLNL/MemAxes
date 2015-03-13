@@ -81,6 +81,7 @@ PCVizWidget::PCVizWidget(QWidget *parent)
     movingAxis = -1;
     clusterAxis = -1;
 
+
     // Event Filters
     this->installEventFilter(this);
     this->setMouseTracking(true);
@@ -392,80 +393,6 @@ void PCVizWidget::calcHistBins()
             histVals[i][j] = scale(histVals[i][j],0,histMaxVals[i],0,1);
 }
 
-void PCVizWidget::createTopoPainters()
-{
-    if(clusterAxis == -1)
-        return;
-
-    int topoWidth = 100;
-
-    topoPainters.clear();
-
-    // get the root of the cluster
-    DataClusterTree *tree = dataSet->clusterTrees.at(0);
-
-    // while the current node has a range at least
-    // 2x the size of a topo, expand it
-    std::vector<DataClusterNode*> nodesToCheck;
-    std::vector<DataClusterNode*> nodesToDraw;
-
-    nodesToCheck.push_back(tree->getRoot());
-
-    do
-    {
-        // grab n' pop
-        DataClusterNode *n = nodesToCheck.back();
-        nodesToCheck.pop_back();
-
-        qreal realMin = scale(n->rangeMin, dataSet->minAt(clusterAxis), dataSet->maxAt(clusterAxis), 0, plotBBox.height());
-        qreal realMax = scale(n->rangeMax, dataSet->minAt(clusterAxis), dataSet->maxAt(clusterAxis), 0, plotBBox.height());
-        qreal realEstate = realMax - realMin;
-
-        if(realEstate > 2*topoWidth)
-        {
-            bool noGoodChild = true;
-            for(int i=0; i<n->children.size(); i++)
-            {
-                realMin = scale(n->children.at(i)->rangeMin, dataSet->minAt(clusterAxis), dataSet->maxAt(clusterAxis), 0, plotBBox.height());
-                realMax = scale(n->children.at(i)->rangeMax, dataSet->minAt(clusterAxis), dataSet->maxAt(clusterAxis), 0, plotBBox.height());
-                realEstate = realMax - realMin;
-
-                if(realEstate >= topoWidth)
-                {
-                    noGoodChild = false;
-                    nodesToCheck.push_back(n->children.at(i));
-                }
-            }
-            if(noGoodChild)
-                nodesToDraw.push_back(n);
-        }
-        else if(realEstate >= topoWidth)
-        { // juuuust right
-            nodesToDraw.push_back(n);
-        }
-        else
-        { // too small to draw
-
-        }
-    } while (!nodesToCheck.empty());
-
-    for(unsigned int i=0; i<nodesToDraw.size(); i++)
-    {
-        DataClusterNode *n = nodesToDraw.at(i);
-
-        qreal left = plotBBox.width()*axesPositions.at(clusterAxis) - topoWidth;
-        qreal top = scale(n->rangeMin, dataSet->minAt(clusterAxis), dataSet->maxAt(clusterAxis), 0, plotBBox.height());
-
-        DataClusterInternalNode *in = (DataClusterInternalNode*)n;
-        HardwareClusterAggregate *hca = (HardwareClusterAggregate*)in->aggregate;
-        HWTopoPainter htp(hca->getTopo());
-        htp.calcMinMaxes();
-        htp.resize(QRectF(left,top,topoWidth,topoWidth));
-
-        topoPainters.push_back(htp);
-    }
-}
-
 void PCVizWidget::recalcLines(int dirtyAxis)
 {
     QVector4D col;
@@ -634,7 +561,6 @@ void PCVizWidget::frameUpdate()
     }
     if(needsRepaint)
     {
-        createTopoPainters();
         repaint();
         needsRepaint = false;
     }
@@ -701,8 +627,6 @@ void PCVizWidget::requestCluster()
     dataSet->con->log("Creating cluster tree along axis: " + QString::number(clusterAxis));
     dataSet->createClusterTree(clusterAxis);
     dataSet->con->log("Cluster tree created.");
-
-    createTopoPainters();
 
     emit clusterCreated();
 }
@@ -843,10 +767,5 @@ void PCVizWidget::drawQtPainter(QPainter *painter)
 
             //painter->drawLine(a,b);
         }
-    }
-
-    for(unsigned int i=0; i<topoPainters.size(); i++)
-    {
-        topoPainters[i].draw(painter);
     }
 }
