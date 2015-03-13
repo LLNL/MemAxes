@@ -170,6 +170,17 @@ MainWindow::MainWindow(QWidget *parent) :
     vizWidgets.push_back(parallelCoordinatesViz);
 
     /*
+     * Axis Viz
+     */
+
+    AxisVizWidget *axisViz = new AxisVizWidget(this);
+    ui->singleAxisLayout->addWidget(axisViz);
+
+    connect(ui->selectAxis, SIGNAL(valueChanged(int)), axisViz, SLOT(setDimension(int)));
+
+    vizWidgets.push_back(axisViz);
+
+    /*
      * Cluster Tree Viz
      */
 

@@ -548,7 +548,7 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="parallelAxesTab">
         <attribute name="title">
@@ -760,7 +760,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBox_3"/>
+                   <widget class="QSpinBox" name="selectAxis"/>
                   </item>
                  </layout>
                 </item>

@@ -48,6 +48,7 @@
 #include "vizwidget.h"
 #include "codevizwidget.h"
 #include "varvizwidget.h"
+#include "axisvizwidget.h"
 #include "pcvizwidget.h"
 #include "hwtopovizwidget.h"
 #include "clustertreevizwidget.h"
