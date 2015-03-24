@@ -47,6 +47,16 @@
 #include <QVector2D>
 #include <QVector4D>
 
+struct topoBox
+{
+    QRectF box;
+    QColor color;
+    qreal minRange;
+    qreal maxRange;
+    bool drawGlyph;
+    HWTopoPainter htp;
+};
+
 class AxisVizWidget : public VizWidget
 {
     Q_OBJECT
@@ -60,7 +70,10 @@ public slots:
     void visibilityChangedSlot();
 
     void setDimension(int d);
+    void setNumBins(int d);
+    void setClusterDepth(int d);
     void setShowHistograms(bool checked);
+    void activateClusters();
     void beginAnimation();
     void endAnimation();
     void requestCluster();
@@ -78,25 +91,29 @@ protected:
 private:
     void calcMinMax();
     void calcHistBins();
+    void gatherClusters();
+    void resizeClusters();
 
 private:
     int dim;
+    int clusterDepth;
+    int numHistBins;
 
-    bool needsRecalcLines;
+    bool needsResizeClusters;
     bool needsCalcHistBins;
     bool needsCalcMinMaxes;
+    bool needsGatherClusters;
     bool needsProcessData;
 
     bool animating;
     ElemSet animSet;
 
-    int numDimensions;
-    int numHistBins;
-
     QRectF plotBBox;
 
     qreal histMax;
     std::vector<qreal> histVals;
+
+    std::vector<topoBox> clusterAggregates;
 
     qreal dimMin;
     qreal dimMax;

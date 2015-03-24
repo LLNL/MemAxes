@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1579</width>
+    <width>1749</width>
     <height>919</height>
    </rect>
   </property>
@@ -27,389 +27,166 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QTabWidget" name="codeDomainTabWidget">
-        <property name="currentIndex">
-         <number>1</number>
+       <widget class="QGroupBox" name="codeDomainGroupBox">
+        <property name="title">
+         <string>Code and Variables</string>
         </property>
-        <widget class="QWidget" name="codeDomainTabWidgetPage1">
-         <attribute name="title">
-          <string>Code</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="codeDomainParent">
-          <item>
-           <widget class="QSplitter" name="splitter">
+        <layout class="QVBoxLayout" name="codeDomainParent">
+         <item>
+          <widget class="QSplitter" name="splitter">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <widget class="QGroupBox" name="codeBox">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>200</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>Top Offenders</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="QSplitter" name="varCodeSplitter">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <widget class="QWidget" name="codeVizLayoutWidget">
+                <layout class="QVBoxLayout" name="codeVizLayout">
+                 <item>
+                  <widget class="QLabel" name="label_10">
+                   <property name="text">
+                    <string>Source Lines</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="varVizLayoutWidget">
+                <layout class="QVBoxLayout" name="varVizLayout">
+                 <item>
+                  <widget class="QLabel" name="label_11">
+                   <property name="text">
+                    <string>Data Objects</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QSplitter" name="splitter_3">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
-            <widget class="QGroupBox" name="codeBox">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>200</height>
-              </size>
+            <widget class="QSplitter" name="splitter_4">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
              </property>
+             <widget class="QWidget" name="verticalLayoutWidget">
+              <layout class="QVBoxLayout" name="codeEditorLayout">
+               <item>
+                <widget class="QLabel" name="codeLabel">
+                 <property name="text">
+                  <string>Source.cpp</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QGroupBox" name="centerGroupBox">
+        <property name="title">
+         <string>Hardware Topology</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QGroupBox" name="groupBox_2">
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>16777215</height>
+               <height>65</height>
               </size>
              </property>
              <property name="title">
-              <string>Top Offenders</string>
+              <string>Visualization Layout</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
-               <widget class="QSplitter" name="varCodeSplitter">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+               <widget class="QRadioButton" name="memTopoVizModeIcicle">
+                <property name="text">
+                 <string>Icicle</string>
                 </property>
-                <widget class="QWidget" name="codeVizLayoutWidget">
-                 <layout class="QVBoxLayout" name="codeVizLayout">
-                  <item>
-                   <widget class="QLabel" name="label_10">
-                    <property name="text">
-                     <string>Source Lines</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-                <widget class="QWidget" name="varVizLayoutWidget">
-                 <layout class="QVBoxLayout" name="varVizLayout">
-                  <item>
-                   <widget class="QLabel" name="label_11">
-                    <property name="text">
-                     <string>Data Objects</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="memTopoVizModeSunburst">
+                <property name="text">
+                 <string>Sunburst</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
                </widget>
               </item>
              </layout>
             </widget>
-            <widget class="QSplitter" name="splitter_3">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>65</height>
+              </size>
              </property>
-             <widget class="QSplitter" name="splitter_4">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <widget class="QWidget" name="verticalLayoutWidget">
-               <layout class="QVBoxLayout" name="codeEditorLayout">
-                <item>
-                 <widget class="QLabel" name="codeLabel">
-                  <property name="text">
-                   <string>Source.cpp</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </widget>
-            </widget>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="cluster">
-         <attribute name="title">
-          <string>Cluster Trees</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_9">
-            <property name="sizeConstraint">
-             <enum>QLayout::SetDefaultConstraint</enum>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Tree:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="treeIndexBox"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>Depth:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="treeDepthBox"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QScrollArea" name="scrollArea">
-            <property name="verticalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOn</enum>
-            </property>
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <widget class="QWidget" name="scrollAreaWidgetContents">
-             <property name="geometry">
-              <rect>
-               <x>0</x>
-               <y>0</y>
-               <width>212</width>
-               <height>228</height>
-              </rect>
+             <property name="title">
+              <string>Color by:</string>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_6">
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
-               <layout class="QVBoxLayout" name="clusterTreeLayout">
-                <property name="sizeConstraint">
-                 <enum>QLayout::SetDefaultConstraint</enum>
+               <widget class="QRadioButton" name="memTopoColorByCycles">
+                <property name="text">
+                 <string># of cycles</string>
                 </property>
-               </layout>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="memTopoColorBySamples">
+                <property name="text">
+                 <string># of samples</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </widget>
-       <widget class="QTabWidget" name="centerTabWidget">
-        <property name="currentIndex">
-         <number>1</number>
-        </property>
-        <widget class="QWidget" name="applicationTab">
-         <attribute name="title">
-          <string>Application Context</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="AppDomainLayout">
-          <item>
-           <widget class="QLabel" name="AppDomain_label">
-            <property name="text">
-             <string>Application Domain</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout">
-            <item>
-             <widget class="QLabel" name="label_9">
-              <property name="text">
-               <string>Transfer Function:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSlider" name="minAlpha">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="minVal">
-              <property name="minimum">
-               <double>-999999999.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>999999999.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QSlider" name="midAlpha">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="value">
-               <number>50</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="midVal">
-              <property name="minimum">
-               <double>-999999999.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>999999999.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QSlider" name="maxAlpha">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="value">
-               <number>99</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="maxVal">
-              <property name="minimum">
-               <double>-999999999.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>999999999.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="volVizLayout">
-            <item>
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="memoryTab">
-         <attribute name="title">
-          <string>Memory Topology</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
-            <item>
-             <widget class="QGroupBox" name="groupBox_2">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>65</height>
-               </size>
-              </property>
-              <property name="title">
-               <string>Visualization Layout</string>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_8">
-               <item>
-                <widget class="QRadioButton" name="memTopoVizModeIcicle">
-                 <property name="text">
-                  <string>Icicle</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="memTopoVizModeSunburst">
-                 <property name="text">
-                  <string>Sunburst</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="groupBox">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>65</height>
-               </size>
-              </property>
-              <property name="title">
-               <string>Color by:</string>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_5">
-               <item>
-                <widget class="QRadioButton" name="memTopoColorByCycles">
-                 <property name="text">
-                  <string># of cycles</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="memTopoColorBySamples">
-                 <property name="text">
-                  <string># of samples</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="memoryLayout"/>
-          </item>
-         </layout>
-        </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="memoryLayout"/>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="rightPaneLayoutWidget">
         <layout class="QVBoxLayout" name="rightPane">
@@ -740,7 +517,7 @@
             <widget class="QGroupBox" name="groupBox_3">
              <property name="maximumSize">
               <size>
-               <width>140</width>
+               <width>238</width>
                <height>16777215</height>
               </size>
              </property>
@@ -754,6 +531,12 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_13">
                   <item>
                    <widget class="QLabel" name="label_6">
+                    <property name="maximumSize">
+                     <size>
+                      <width>40</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
                     <property name="text">
                      <string>Axis:</string>
                     </property>
@@ -787,7 +570,7 @@
                    <widget class="QLabel" name="label_4">
                     <property name="maximumSize">
                      <size>
-                      <width>16777215</width>
+                      <width>36</width>
                       <height>16777215</height>
                      </size>
                     </property>
@@ -797,9 +580,18 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBox">
+                   <widget class="QSpinBox" name="setNumBins">
+                    <property name="prefix">
+                     <string/>
+                    </property>
+                    <property name="minimum">
+                     <number>2</number>
+                    </property>
                     <property name="maximum">
                      <number>1000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>5</number>
                     </property>
                     <property name="value">
                      <number>100</number>
@@ -818,7 +610,10 @@
                 <item>
                  <widget class="QCheckBox" name="checkBox">
                   <property name="text">
-                   <string>Clusters</string>
+                   <string>Cluster Aggregates</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -826,13 +621,19 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_12">
                   <item>
                    <widget class="QLabel" name="label_5">
+                    <property name="maximumSize">
+                     <size>
+                      <width>48</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
                     <property name="text">
                      <string>Depth:</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBox_2"/>
+                   <widget class="QSpinBox" name="setClusterDepth"/>
                   </item>
                  </layout>
                 </item>
@@ -844,17 +645,53 @@
                  </widget>
                 </item>
                 <item>
-                 <spacer name="verticalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
+                 <widget class="QCheckBox" name="checkBox_3">
+                  <property name="text">
+                   <string>Performance Metric</string>
                   </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>40</height>
-                   </size>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
-                 </spacer>
+                  <property name="tristate">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_14">
+                  <item>
+                   <widget class="QLabel" name="label_7">
+                    <property name="maximumSize">
+                     <size>
+                      <width>51</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="text">
+                     <string>Metric:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QComboBox" name="comboBox">
+                    <item>
+                     <property name="text">
+                      <string>Core Imbalance</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>Socket Imbalance</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>Idle Cores</string>
+                     </property>
+                    </item>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </item>
@@ -875,7 +712,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1579</width>
+     <width>1749</width>
      <height>31</height>
     </rect>
    </property>

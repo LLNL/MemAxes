@@ -106,6 +106,8 @@ public:
     void setVizMode(VizMode m) {vizMode = m;}
     void setColorMap(ColorMap m) {colorMap = m;}
 
+    ColorMap& getColorMap() { return colorMap; }
+
     void calcMinMaxes();
     void resize(QRectF r);
     void draw(QPainter *painter);

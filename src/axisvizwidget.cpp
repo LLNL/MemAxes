@@ -51,11 +51,16 @@ AxisVizWidget::AxisVizWidget(QWidget *parent)
 {
     // Defaults
     dim = 0;
+    clusterDepth = 0;
     numHistBins = 100;
 
     needsCalcMinMaxes = false;
     needsCalcHistBins = false;
     needsRepaint = false;
+    needsResizeClusters = false;
+
+    installEventFilter(this);
+    setMouseTracking(true);
 }
 
 void AxisVizWidget::frameUpdate()
@@ -72,6 +77,18 @@ void AxisVizWidget::frameUpdate()
         needsRepaint = true;
         needsCalcHistBins = false;
     }
+    if(needsGatherClusters)
+    {
+        gatherClusters();
+        needsResizeClusters = true;
+        needsGatherClusters = false;
+    }
+    if(needsResizeClusters)
+    {
+        resizeClusters();
+        needsRepaint = true;
+        needsResizeClusters = false;
+    }
     if(needsRepaint)
     {
         repaint();
@@ -81,12 +98,12 @@ void AxisVizWidget::frameUpdate()
 
 void AxisVizWidget::selectionChangedSlot()
 {
-
+    needsCalcHistBins = true;
 }
 
 void AxisVizWidget::visibilityChangedSlot()
 {
-
+    needsCalcMinMaxes = true;
 }
 
 void AxisVizWidget::setDimension(int d)
@@ -95,9 +112,26 @@ void AxisVizWidget::setDimension(int d)
     needsCalcMinMaxes = true;
 }
 
+void AxisVizWidget::setNumBins(int d)
+{
+    numHistBins = d;
+    needsCalcHistBins = true;
+}
+
+void AxisVizWidget::setClusterDepth(int d)
+{
+    clusterDepth = d;
+    needsGatherClusters = true;
+}
+
 void AxisVizWidget::setShowHistograms(bool checked)
 {
 
+}
+
+void AxisVizWidget::activateClusters()
+{
+    needsGatherClusters = true;
 }
 
 void AxisVizWidget::beginAnimation()
@@ -117,6 +151,14 @@ void AxisVizWidget::requestCluster()
 
 void AxisVizWidget::resizeEvent(QResizeEvent *e)
 {
+    int mx=40;
+    int my=30;
+
+    plotBBox = QRectF(mx,my,
+                      width()-mx-mx,
+                      height()-my-my);
+
+    needsResizeClusters = true;
     needsRepaint = true;
 }
 
@@ -130,13 +172,6 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
 {
     if(!processed)
         return;
-
-    int mx=40;
-    int my=30;
-
-    plotBBox = QRectF(mx,my,
-                      width()-mx-mx,
-                      height()-my-my);
 
     // Draw axes
     QPointF a = plotBBox.bottomLeft();
@@ -173,6 +208,22 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
 
         painter->drawRect(histRect);
     }
+
+    // Draw cluster aggregates
+    for(unsigned int i=0; i<clusterAggregates.size(); i++)
+    {
+        topoBox *t = &clusterAggregates.at(i);
+
+        painter->setPen(QColor(0,0,0));
+        painter->setBrush(t->color);
+        QRectF b = t->box;
+        painter->drawEllipse(b);
+
+        if(t->drawGlyph)
+        {
+            t->htp.draw(painter);
+        }
+    }
 }
 
 void AxisVizWidget::leaveEvent(QEvent *e)
@@ -187,12 +238,51 @@ void AxisVizWidget::mousePressEvent(QMouseEvent *e)
 
 void AxisVizWidget::mouseReleaseEvent(QMouseEvent *e)
 {
-
+    for(unsigned int b=0; b<clusterAggregates.size(); b++)
+    {
+        topoBox *t = &clusterAggregates.at(b);
+        if(t->box.contains(e->pos()))
+        {
+            ElemSet topoSamples = t->htp.getTopo()->getAllSamples();
+            dataSet->selectSet(topoSamples);
+            emit selectionChangedSig();
+            return;
+        }
+    }
 }
 
 bool AxisVizWidget::eventFilter(QObject *obj, QEvent *event)
 {
-    return true;
+    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    QPoint mousePos = mouseEvent->pos();
+
+    if(event->type() == QEvent::MouseMove)
+    {
+        for(unsigned int b=0; b<clusterAggregates.size(); b++)
+        {
+            int topoGlyphSize = 260;
+            topoBox *t = &clusterAggregates.at(b);
+            if(t->box.contains(mousePos))
+            {
+                qreal left = t->box.center().x()-topoGlyphSize/2;
+                left = std::max(left,plotBBox.left());
+                left = std::min(left,plotBBox.right()-topoGlyphSize);
+                qreal top = plotBBox.bottom()-topoGlyphSize-30;
+
+                QRectF topoGlyphBox(left,top,
+                                    topoGlyphSize,topoGlyphSize);
+                t->htp.resize(topoGlyphBox);
+                t->drawGlyph = true;
+            }
+            else
+            {
+                t->drawGlyph = false;
+            }
+        }
+        needsRepaint = true;
+    }
+
+    return false;
 }
 
 void AxisVizWidget::calcMinMax()
@@ -222,7 +312,7 @@ void AxisVizWidget::calcHistBins()
     // Select histogram bin and increment
     // Gather maximum sized bin along the way
     histMax = 0;
-    histVals.resize(100,0);
+    histVals.resize(numHistBins,0);
     for(int elem=0; elem<dataSet->numElements; elem++)
     {
         if(dataSet->selectionDefined() && !dataSet->selected(elem))
@@ -242,4 +332,50 @@ void AxisVizWidget::calcHistBins()
     // Scale hist values to [0,1]
     for(int j=0; j<numHistBins; j++)
         histVals[j] = scale(histVals.at(j),0,histMax,0,1);
+}
+
+void AxisVizWidget::gatherClusters()
+{
+    clusterAggregates.clear();
+
+    DataClusterTree *tree = dataSet->clusterTrees.at(0);
+
+    std::vector<DataClusterNode*> depthNodes = tree->getNodesAtDepth(clusterDepth);
+
+    for(unsigned int i=0; i<depthNodes.size(); i++)
+    {
+        // getNodesAtDepth only returns internal nodes
+        DataClusterInternalNode *inode = (DataClusterInternalNode*)depthNodes.at(i);
+
+        // we're assuming hardware cluster metrics (for drawing aggregates)
+        HardwareClusterAggregate *met = (HardwareClusterAggregate*)inode->aggregate;
+
+        // Create topo box
+        topoBox tb;
+        tb.htp = HWTopoPainter(met->getTopo());
+        tb.htp.calcMinMaxes();
+        tb.minRange = inode->rangeMin;
+        tb.maxRange = inode->rangeMax;
+        tb.drawGlyph = false;
+
+        long long totalCycles = tb.htp.getTopo()->getTotalNumAllCycles();
+        qreal val = scale(totalCycles,0,dataSet->sumAt(dataSet->latencyDim),0,1);
+        tb.color = valToColor(val,tb.htp.getColorMap());
+
+        clusterAggregates.push_back(tb);
+    }
+}
+
+void AxisVizWidget::resizeClusters()
+{
+    for(unsigned int i=0; i<clusterAggregates.size(); i++)
+    {
+        topoBox *tb = &clusterAggregates.at(i);
+
+        // Make box at center of range
+        qreal topoWidth = 20;
+        qreal drawLeft = scale(tb->minRange,dataSet->minAt(dim),dataSet->maxAt(dim),plotBBox.left(),plotBBox.right());
+        tb->box = QRect(drawLeft,plotBBox.bottom()-topoWidth/2,
+                        topoWidth,topoWidth);
+    }
 }

@@ -289,3 +289,33 @@ ElemSet& HWTopo::getAllSamples()
 {
     return allSamples;
 }
+
+long long HWTopo::getTotalNumAllCycles()
+{
+    long long totalCycles = 0;
+    for(unsigned int n=0; n<allHardwareResourceNodes.size(); n++)
+    {
+        totalCycles += allHardwareResourceNodes.at(n)->numAllCycles;
+    }
+    return totalCycles;
+}
+
+long long HWTopo::getTotalNumSelectedCycles()
+{
+    long long selectedCycles = 0;
+    for(unsigned int n=0; n<allHardwareResourceNodes.size(); n++)
+    {
+        selectedCycles += allHardwareResourceNodes.at(n)->numSelectedCycles;
+    }
+    return selectedCycles;
+}
+
+long long HWTopo::getTotalNumTransactions()
+{
+    long long transactions = 0;
+    for(unsigned int n=0; n<allHardwareResourceNodes.size(); n++)
+    {
+        transactions += allHardwareResourceNodes.at(n)->numTransactions;
+    }
+    return transactions;
+}
