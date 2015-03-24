@@ -64,16 +64,24 @@ class AxisVizWidget : public VizWidget
 public:
     AxisVizWidget(QWidget *parent = 0);
 
+signals:
+    void clusterCreated();
+
 public slots:
     void frameUpdate();
     void selectionChangedSlot();
     void visibilityChangedSlot();
+
+    void showContextMenu(const QPoint &pos);
 
     void setDimension(int d);
     void setNumBins(int d);
     void setClusterDepth(int d);
     void setShowHistograms(bool checked);
     void activateClusters();
+    void setDrawHists(int on);
+    void setDrawClusters(int on);
+    void setDrawMetrics(int on);
     void beginAnimation();
     void endAnimation();
     void requestCluster();
@@ -95,10 +103,18 @@ private:
     void resizeClusters();
 
 private:
+    // options
     int dim;
     int clusterDepth;
     int numHistBins;
 
+    int drawHists;
+    int drawClusters;
+    int drawMetrics;
+
+    int clusterIndex;
+
+    // frame updating
     bool needsResizeClusters;
     bool needsCalcHistBins;
     bool needsCalcMinMaxes;

@@ -28,6 +28,12 @@
         <enum>Qt::Horizontal</enum>
        </property>
        <widget class="QGroupBox" name="codeDomainGroupBox">
+        <property name="minimumSize">
+         <size>
+          <width>555</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="title">
          <string>Code and Variables</string>
         </property>
@@ -198,6 +204,12 @@
          </property>
          <item>
           <widget class="QGroupBox" name="console">
+           <property name="minimumSize">
+            <size>
+             <width>500</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="title">
             <string>Console</string>
            </property>
@@ -555,7 +567,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBox_2">
+                 <widget class="QCheckBox" name="axisDrawHists">
                   <property name="text">
                    <string>Histogram</string>
                   </property>
@@ -608,7 +620,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBox">
+                 <widget class="QCheckBox" name="axisDrawClusters">
                   <property name="text">
                    <string>Cluster Aggregates</string>
                   </property>
@@ -645,7 +657,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBox_3">
+                 <widget class="QCheckBox" name="axisDrawMetrics">
                   <property name="text">
                    <string>Performance Metric</string>
                   </property>

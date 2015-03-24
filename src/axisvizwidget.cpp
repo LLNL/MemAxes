@@ -54,6 +54,12 @@ AxisVizWidget::AxisVizWidget(QWidget *parent)
     clusterDepth = 0;
     numHistBins = 100;
 
+    drawHists = 1;
+    drawClusters = 1;
+    drawMetrics = 1;
+
+    clusterIndex = -1;
+
     needsCalcMinMaxes = false;
     needsCalcHistBins = false;
     needsRepaint = false;
@@ -61,6 +67,9 @@ AxisVizWidget::AxisVizWidget(QWidget *parent)
 
     installEventFilter(this);
     setMouseTracking(true);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(showContextMenu(const QPoint &)));
 }
 
 void AxisVizWidget::frameUpdate()
@@ -106,6 +115,22 @@ void AxisVizWidget::visibilityChangedSlot()
     needsCalcMinMaxes = true;
 }
 
+void AxisVizWidget::showContextMenu(const QPoint &pos)
+{
+    QMenu contextMenu(tr("Axis Menu"), this);
+
+    QAction actionAnimate("Animate", this);
+    connect(&actionAnimate, SIGNAL(triggered()), this, SLOT(beginAnimation()));
+    contextMenu.addAction(&actionAnimate);
+
+    QAction actionCluster("Cluster", this);
+    connect(&actionCluster, SIGNAL(triggered()), this, SLOT(requestCluster()));
+    contextMenu.addAction(&actionCluster);
+
+    contextMenu.exec(mapToGlobal(pos));
+
+}
+
 void AxisVizWidget::setDimension(int d)
 {
     dim = d;
@@ -134,6 +159,24 @@ void AxisVizWidget::activateClusters()
     needsGatherClusters = true;
 }
 
+void AxisVizWidget::setDrawHists(int on)
+{
+    drawHists = on;
+    needsRepaint = true;
+}
+
+void AxisVizWidget::setDrawClusters(int on)
+{
+    drawClusters = on;
+    needsRepaint = true;
+}
+
+void AxisVizWidget::setDrawMetrics(int on)
+{
+    drawMetrics = on;
+    needsRepaint = true;
+}
+
 void AxisVizWidget::beginAnimation()
 {
 
@@ -146,7 +189,14 @@ void AxisVizWidget::endAnimation()
 
 void AxisVizWidget::requestCluster()
 {
+    dataSet->con->log("Creating cluster tree along axis: " + QString::number(dim));
+    dataSet->createClusterTree(dim);
+    dataSet->con->log("Cluster tree created.");
 
+    clusterIndex = dataSet->clusterTrees.size()-1;
+    needsGatherClusters = true;
+
+    emit clusterCreated();
 }
 
 void AxisVizWidget::resizeEvent(QResizeEvent *e)
@@ -193,35 +243,41 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
     center = b;
     painter->drawText(center,text);
 
-    // Draw histograms
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(31,120,180));
-
-    qreal left = plotBBox.left();
-    qreal histWidth = plotBBox.width() / numHistBins;
-    for(int b=0; b<numHistBins; b++)
+    if(drawHists)
     {
-        qreal height = histVals.at(b)*plotBBox.height();
-        qreal top = plotBBox.top()+(plotBBox.height() - height);
-        QRectF histRect(left,top,histWidth,height);
-        left += histWidth;
+        // Draw histograms
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(QColor(31,120,180));
 
-        painter->drawRect(histRect);
+        qreal left = plotBBox.left();
+        qreal histWidth = plotBBox.width() / numHistBins;
+        for(int b=0; b<numHistBins; b++)
+        {
+            qreal height = histVals.at(b)*plotBBox.height();
+            qreal top = plotBBox.top()+(plotBBox.height() - height);
+            QRectF histRect(left,top,histWidth,height);
+            left += histWidth;
+
+            painter->drawRect(histRect);
+        }
     }
 
-    // Draw cluster aggregates
-    for(unsigned int i=0; i<clusterAggregates.size(); i++)
+    if(drawClusters)
     {
-        topoBox *t = &clusterAggregates.at(i);
-
-        painter->setPen(QColor(0,0,0));
-        painter->setBrush(t->color);
-        QRectF b = t->box;
-        painter->drawEllipse(b);
-
-        if(t->drawGlyph)
+        // Draw cluster aggregates
+        for(unsigned int i=0; i<clusterAggregates.size(); i++)
         {
-            t->htp.draw(painter);
+            topoBox *t = &clusterAggregates.at(i);
+
+            painter->setPen(QColor(0,0,0));
+            painter->setBrush(t->color);
+            QRectF b = t->box;
+            painter->drawEllipse(b);
+
+            if(t->drawGlyph)
+            {
+                t->htp.draw(painter);
+            }
         }
     }
 }
@@ -336,9 +392,12 @@ void AxisVizWidget::calcHistBins()
 
 void AxisVizWidget::gatherClusters()
 {
+    if(clusterIndex < 0)
+        return;
+
     clusterAggregates.clear();
 
-    DataClusterTree *tree = dataSet->clusterTrees.at(0);
+    DataClusterTree *tree = dataSet->clusterTrees.at(clusterIndex);
 
     std::vector<DataClusterNode*> depthNodes = tree->getNodesAtDepth(clusterDepth);
 

@@ -180,6 +180,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->selectAxis, SIGNAL(valueChanged(int)), axisViz, SLOT(setDimension(int)));
     connect(ui->setClusterDepth, SIGNAL(valueChanged(int)), axisViz, SLOT(setClusterDepth(int)));
     connect(ui->setNumBins, SIGNAL(valueChanged(int)), axisViz, SLOT(setNumBins(int)));
+    connect(ui->axisDrawHists, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawHists(int)));
+    connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
+    connect(ui->axisDrawMetrics, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawMetrics(int)));
 
     vizWidgets.push_back(axisViz);
 
