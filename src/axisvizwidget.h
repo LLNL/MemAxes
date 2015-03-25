@@ -83,6 +83,7 @@ public slots:
     void setDrawHists(int on);
     void setDrawClusters(int on);
     void setDrawMetrics(int on);
+    void setMetric(int type);
     void beginAnimation();
     void endAnimation();
     void requestCluster();
@@ -114,6 +115,7 @@ private:
     int drawMetrics;
 
     int clusterIndex;
+    METRIC_TYPE metric_type;
 
     // frame updating
     bool needsResizeClusters;

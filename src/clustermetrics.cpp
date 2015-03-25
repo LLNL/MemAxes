@@ -131,7 +131,7 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
         //stddev = sqrt(stddev/numres);
         //depthImbalances[i] = stddev;
 
-        depthImbalances[i] = (maxsam-minsam) / depthStddevs.at(i);
+        depthImbalances[i] = maxsam / depthStddevs.at(i);
     }
 
 }
@@ -179,7 +179,47 @@ void HardwareClusterAggregate::setTopo(HWTopo *t)
     depthImbalances.resize(topo->totalDepth+1, 0);
 }
 
+qreal HardwareClusterAggregate::getMetric(METRIC_TYPE t)
+{
+    switch(t)
+    {
+        case(CORE_IMBALANCE):
+            return getCoreImbalance();
+        case(L1_IMBALANCE):
+            return getL1Imbalance();
+        case(L2_IMBALANCE):
+            return getL2Imbalance();
+        case(L3_IMBALANCE):
+            return getL3Imbalance();
+        case(NUMA_IMBALANCE):
+            return getNUMAImbalance();
+        default:
+            return -1;
+    }
+}
+
 qreal HardwareClusterAggregate::getCoreImbalance()
 {
     return depthImbalances.back();
+}
+
+qreal HardwareClusterAggregate::getL1Imbalance()
+{
+    return depthImbalances.at(depthImbalances.size()-2);
+}
+
+qreal HardwareClusterAggregate::getL2Imbalance()
+{
+    return depthImbalances.at(depthImbalances.size()-3);
+}
+
+qreal HardwareClusterAggregate::getL3Imbalance()
+{
+
+    return depthImbalances.at(depthImbalances.size()-4);
+}
+
+qreal HardwareClusterAggregate::getNUMAImbalance()
+{
+    return depthImbalances.at(depthImbalances.size()-5);
 }

@@ -183,6 +183,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->axisDrawHists, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawHists(int)));
     connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
     connect(ui->axisDrawMetrics, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawMetrics(int)));
+    connect(ui->metricBox, SIGNAL(currentIndexChanged(int)), axisViz, SLOT(setMetric(int)));
 
     vizWidgets.push_back(axisViz);
 

@@ -44,6 +44,15 @@
 
 class HWTopo;
 
+enum METRIC_TYPE
+{
+    CORE_IMBALANCE = 0,
+    L1_IMBALANCE,
+    L2_IMBALANCE,
+    L3_IMBALANCE,
+    NUMA_IMBALANCE
+};
+
 class ClusterAggregate
 {
 public:
@@ -63,7 +72,13 @@ public:
     HWTopo *getTopo() {return topo;}
     void setTopo(HWTopo *t);
 
+    qreal getMetric(METRIC_TYPE t);
+
     qreal getCoreImbalance();
+    qreal getL1Imbalance();
+    qreal getL2Imbalance();
+    qreal getL3Imbalance();
+    qreal getNUMAImbalance();
 
 private:
     HWTopo *topo;

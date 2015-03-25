@@ -685,7 +685,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="comboBox">
+                   <widget class="QComboBox" name="metricBox">
                     <item>
                      <property name="text">
                       <string>Core Imbalance</string>
@@ -693,12 +693,22 @@
                     </item>
                     <item>
                      <property name="text">
-                      <string>Socket Imbalance</string>
+                      <string>L1 Imbalance</string>
                      </property>
                     </item>
                     <item>
                      <property name="text">
-                      <string>Idle Cores</string>
+                      <string>L2 Imbalance</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>L3 Imbalance</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>NUMA Imbalance</string>
                      </property>
                     </item>
                    </widget>

@@ -65,6 +65,8 @@ AxisVizWidget::AxisVizWidget(QWidget *parent)
     needsRepaint = false;
     needsResizeClusters = false;
 
+    metric_type = CORE_IMBALANCE;
+
     installEventFilter(this);
     setMouseTracking(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -175,6 +177,12 @@ void AxisVizWidget::setDrawMetrics(int on)
 {
     drawMetrics = on;
     needsRepaint = true;
+}
+
+void AxisVizWidget::setMetric(int type)
+{
+    metric_type = (METRIC_TYPE)type;
+    needsResizeClusters = true;
 }
 
 void AxisVizWidget::beginAnimation()
@@ -435,19 +443,19 @@ void AxisVizWidget::resizeClusters()
                         topoWidth,topoWidth);
 
         // Get metric
-        qreal coreImbalance = tb->agg->getCoreImbalance();
+        qreal metric = tb->agg->getMetric(metric_type);
 
         // Min and max for metric
-        minMetric = std::min(minMetric,coreImbalance);
-        maxMetric = std::max(maxMetric,coreImbalance);
+        minMetric = std::min(minMetric,metric);
+        maxMetric = std::max(maxMetric,metric);
     }
 
     for(unsigned int i=0; i<clusterAggregates.size(); i++)
     {
         // Color
         topoBox *tb = &clusterAggregates.at(i);
-        qreal coreImbalance = tb->agg->getCoreImbalance();
-        qreal val = scale(coreImbalance,minMetric,maxMetric,0,1);
+        qreal metric = tb->agg->getMetric(metric_type);
+        qreal val = scale(metric,minMetric,maxMetric,0,1);
         tb->color = valToColor(val,tb->htp.getColorMap());
     }
 }
