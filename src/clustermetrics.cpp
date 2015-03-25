@@ -54,8 +54,10 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
 
     // Compute means
     depthSamples.resize(topo->totalDepth+1, 0);
+    depthAvgSamples.resize(topo->totalDepth+1, 0);
     depthMeans.resize(topo->totalDepth+1, 0);
     depthStddevs.resize(topo->totalDepth+1, 0);
+    depthImbalances.resize(topo->totalDepth+1, 0);
 
     int cpuDepth = topo->totalDepth;
     ElemSet::iterator it;
@@ -105,7 +107,31 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
     for(int i=0; i<topo->totalDepth; i++)
     {
         // Divide to get standard deviation
-        depthStddevs[i] = depthStddevs.at(i) / (qreal)depthSamples.at(i);
+        depthStddevs[i] = sqrt(depthStddevs.at(i) / (qreal)depthSamples.at(i));
+    }
+
+    // Compute imbalance
+    for(unsigned int i=0; i<topo->hardwareResourceMatrix.size(); i++)
+    {
+        qreal minsam = 999999999;
+        qreal maxsam = 0;
+        //qreal stddev = 0;
+        qreal numres = topo->hardwareResourceMatrix.at(i).size();
+        depthAvgSamples[i] = depthSamples.at(i) / numres;
+        for(unsigned int r=0; r<numres; r++)
+        {
+            qreal rd_i = (qreal)topo->hardwareResourceMatrix.at(i).at(r)->allSamples.size();
+            qreal m_i = depthAvgSamples[i];
+            qreal sqddiff = (rd_i-m_i)*(rd_i-m_i);
+            //stddev += sqddiff;
+            maxsam = std::max(sqddiff,maxsam);
+            minsam = std::min(sqddiff,minsam);
+        }
+
+        //stddev = sqrt(stddev/numres);
+        //depthImbalances[i] = stddev;
+
+        depthImbalances[i] = (maxsam-minsam) / depthStddevs.at(i);
     }
 
 }
@@ -147,6 +173,13 @@ void HardwareClusterAggregate::setTopo(HWTopo *t)
 {
     topo = t;
     depthSamples.resize(topo->totalDepth+1, 0);
+    depthAvgSamples.resize(topo->totalDepth+1, 0);
     depthMeans.resize(topo->totalDepth+1, 0);
     depthStddevs.resize(topo->totalDepth+1, 0);
+    depthImbalances.resize(topo->totalDepth+1, 0);
+}
+
+qreal HardwareClusterAggregate::getCoreImbalance()
+{
+    return depthImbalances.back();
 }

@@ -89,12 +89,14 @@ public:
     long long getTotalNumSelectedCycles();
     long long getTotalNumTransactions();
 
+    // Meta
     QString hardwareName;
 
     int numCPUs;
     int numNUMADomains;
     int totalDepth;
 
+    // Topology infocmation
     HWNode *hardwareResourceRoot;
 
     std::vector<HWNode*> allHardwareResourceNodes;

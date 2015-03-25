@@ -63,12 +63,16 @@ public:
     HWTopo *getTopo() {return topo;}
     void setTopo(HWTopo *t);
 
+    qreal getCoreImbalance();
+
 private:
     HWTopo *topo;
 
     std::vector<int> depthSamples;
+    std::vector<qreal> depthAvgSamples;
     std::vector<qreal> depthMeans;
     std::vector<qreal> depthStddevs;
+    std::vector<qreal> depthImbalances;
 };
 
 #endif

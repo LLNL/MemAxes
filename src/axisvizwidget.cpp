@@ -406,20 +406,14 @@ void AxisVizWidget::gatherClusters()
         // getNodesAtDepth only returns internal nodes
         DataClusterInternalNode *inode = (DataClusterInternalNode*)depthNodes.at(i);
 
-        // we're assuming hardware cluster metrics (for drawing aggregates)
-        HardwareClusterAggregate *met = (HardwareClusterAggregate*)inode->aggregate;
-
         // Create topo box
         topoBox tb;
-        tb.htp = HWTopoPainter(met->getTopo());
+        tb.agg = (HardwareClusterAggregate*)inode->aggregate;
+        tb.htp = HWTopoPainter(tb.agg->getTopo());
         tb.htp.calcMinMaxes();
         tb.minRange = inode->rangeMin;
         tb.maxRange = inode->rangeMax;
         tb.drawGlyph = false;
-
-        long long totalCycles = tb.htp.getTopo()->getTotalNumAllCycles();
-        qreal val = scale(totalCycles,0,dataSet->sumAt(dataSet->latencyDim),0,1);
-        tb.color = valToColor(val,tb.htp.getColorMap());
 
         clusterAggregates.push_back(tb);
     }
@@ -427,6 +421,9 @@ void AxisVizWidget::gatherClusters()
 
 void AxisVizWidget::resizeClusters()
 {
+    qreal minMetric = std::numeric_limits<qreal>::max();
+    qreal maxMetric = std::numeric_limits<qreal>::min();
+
     for(unsigned int i=0; i<clusterAggregates.size(); i++)
     {
         topoBox *tb = &clusterAggregates.at(i);
@@ -436,5 +433,21 @@ void AxisVizWidget::resizeClusters()
         qreal drawLeft = scale(tb->minRange,dataSet->minAt(dim),dataSet->maxAt(dim),plotBBox.left(),plotBBox.right());
         tb->box = QRect(drawLeft,plotBBox.bottom()-topoWidth/2,
                         topoWidth,topoWidth);
+
+        // Get metric
+        qreal coreImbalance = tb->agg->getCoreImbalance();
+
+        // Min and max for metric
+        minMetric = std::min(minMetric,coreImbalance);
+        maxMetric = std::max(maxMetric,coreImbalance);
+    }
+
+    for(unsigned int i=0; i<clusterAggregates.size(); i++)
+    {
+        // Color
+        topoBox *tb = &clusterAggregates.at(i);
+        qreal coreImbalance = tb->agg->getCoreImbalance();
+        qreal val = scale(coreImbalance,minMetric,maxMetric,0,1);
+        tb->color = valToColor(val,tb->htp.getColorMap());
     }
 }

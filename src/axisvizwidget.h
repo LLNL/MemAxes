@@ -54,6 +54,7 @@ struct topoBox
     qreal minRange;
     qreal maxRange;
     bool drawGlyph;
+    HardwareClusterAggregate *agg;
     HWTopoPainter htp;
 };
 
