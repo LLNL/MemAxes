@@ -53,6 +53,7 @@ AxisVizWidget::AxisVizWidget(QWidget *parent)
     dim = 0;
     clusterDepth = 0;
     numHistBins = 100;
+    numMetricBins = 60;
 
     drawHists = 1;
     drawClusters = 1;
@@ -66,6 +67,7 @@ AxisVizWidget::AxisVizWidget(QWidget *parent)
     needsResizeClusters = false;
 
     metric_type = CORE_IMBALANCE;
+    metricColorMap = gradientColorMap(QColor(254,224,210),QColor(222,45,38),256);
 
     installEventFilter(this);
     setMouseTracking(true);
@@ -93,6 +95,13 @@ void AxisVizWidget::frameUpdate()
         gatherClusters();
         needsResizeClusters = true;
         needsGatherClusters = false;
+    }
+    if(needsCalcMetrics)
+    {
+        gatherMetricBins();
+        calcMetrics();
+        needsRepaint = true;
+        needsCalcMetrics = false;
     }
     if(needsResizeClusters)
     {
@@ -125,10 +134,6 @@ void AxisVizWidget::showContextMenu(const QPoint &pos)
     connect(&actionAnimate, SIGNAL(triggered()), this, SLOT(beginAnimation()));
     contextMenu.addAction(&actionAnimate);
 
-    QAction actionCluster("Cluster", this);
-    connect(&actionCluster, SIGNAL(triggered()), this, SLOT(requestCluster()));
-    contextMenu.addAction(&actionCluster);
-
     contextMenu.exec(mapToGlobal(pos));
 
 }
@@ -136,6 +141,7 @@ void AxisVizWidget::showContextMenu(const QPoint &pos)
 void AxisVizWidget::setDimension(int d)
 {
     dim = d;
+    needsCalcMetrics = true;
     needsCalcMinMaxes = true;
 }
 
@@ -182,6 +188,7 @@ void AxisVizWidget::setDrawMetrics(int on)
 void AxisVizWidget::setMetric(int type)
 {
     metric_type = (METRIC_TYPE)type;
+    needsCalcMetrics = true;
     needsResizeClusters = true;
 }
 
@@ -193,18 +200,6 @@ void AxisVizWidget::beginAnimation()
 void AxisVizWidget::endAnimation()
 {
 
-}
-
-void AxisVizWidget::requestCluster()
-{
-    dataSet->con->log("Creating cluster tree along axis: " + QString::number(dim));
-    dataSet->createClusterTree(dim);
-    dataSet->con->log("Cluster tree created.");
-
-    clusterIndex = dataSet->clusterTrees.size()-1;
-    needsGatherClusters = true;
-
-    emit clusterCreated();
 }
 
 void AxisVizWidget::resizeEvent(QResizeEvent *e)
@@ -223,6 +218,7 @@ void AxisVizWidget::resizeEvent(QResizeEvent *e)
 void AxisVizWidget::processData()
 {
     needsCalcMinMaxes = true;
+    needsCalcMetrics = true;
     processed = true;
 }
 
@@ -231,24 +227,33 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
     if(!processed)
         return;
 
+    qreal metric_height;
+
+    if(drawMetrics)
+        metric_height = 30;
+    else
+        metric_height = 0;
+
     // Draw axes
-    QPointF a = plotBBox.bottomLeft();
+    painter->setPen(Qt::black);
+    painter->setBrush(Qt::NoBrush);
+
+    QPointF a = plotBBox.bottomLeft()+QPoint(0,-metric_height);
     QPointF b = plotBBox.bottomRight();
 
     QFontMetrics fm = painter->fontMetrics();
-    painter->setBrush(QColor(0,0,0));
-    painter->drawLine(a,b);
+    painter->drawRect(QRectF(a,b));
 
     QString text = dataSet->meta.at(dim);
-    QPointF center = a + QPointF(-fm.width(text)/2,15);
+    QPointF center = plotBBox.topLeft();
     painter->drawText(center,text);
 
     text = QString::number(dimMin,'g',2);
-    center = a - QPointF(fm.width(text),0);
+    center = a + QPointF(0,metric_height+fm.height());
     painter->drawText(center,text);
 
     text = QString::number(dimMax,'g',2);
-    center = b;
+    center = b + QPointF(-fm.width(text),fm.height());
     painter->drawText(center,text);
 
     if(drawHists)
@@ -258,13 +263,35 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
         painter->setBrush(QColor(31,120,180));
 
         qreal left = plotBBox.left();
+        qreal histHeight = plotBBox.height() - metric_height;
         qreal histWidth = plotBBox.width() / numHistBins;
         for(int b=0; b<numHistBins; b++)
         {
-            qreal height = histVals.at(b)*plotBBox.height();
-            qreal top = plotBBox.top()+(plotBBox.height() - height);
+            qreal height = histVals.at(b)*histHeight;
+            qreal top = plotBBox.top()+(histHeight - height);
             QRectF histRect(left,top,histWidth,height);
             left += histWidth;
+
+            painter->drawRect(histRect);
+        }
+    }
+
+    if(drawMetrics)
+    {
+        // Draw metrics
+        painter->setPen(Qt::black);
+
+        qreal top = plotBBox.bottom()-metric_height;
+        qreal left = plotBBox.left();
+        qreal metricHeight = metric_height;
+        qreal metricWidth = plotBBox.width() / numMetricBins;
+        for(int b=0; b<numMetricBins; b++)
+        {
+            qreal val = scale(metricVals.at(b),0,metricMax,0,1);
+            painter->setBrush(valToColor(val,metricColorMap));
+
+            QRectF histRect(left,top,metricWidth,metricHeight);
+            left += metricWidth;
 
             painter->drawRect(histRect);
         }
@@ -382,12 +409,10 @@ void AxisVizWidget::calcHistBins()
         if(dataSet->selectionDefined() && !dataSet->selected(elem))
             continue;
 
-        int histBin = floor(scale(dataSet->at(elem,dim),dimMin,dimMax,0,numHistBins));
-
-        if(histBin >= numHistBins)
-            histBin = numHistBins-1;
-        if(histBin < 0)
-            histBin = 0;
+        int histBin = getHistBin(dataSet->at(elem,dim),
+                                 dataSet->minAt(dim),
+                                 dataSet->maxAt(dim),
+                                 numHistBins);
 
         histVals[histBin] += 1;
         histMax = std::max(histMax,histVals.at(histBin));
@@ -398,14 +423,55 @@ void AxisVizWidget::calcHistBins()
         histVals[j] = scale(histVals.at(j),0,histMax,0,1);
 }
 
+void AxisVizWidget::calcMetrics()
+{
+    if(!processed)
+        return;
+
+    metricMax = 0;
+    metricVals.resize(numMetricBins,0);
+    for(int b=0; b<numMetricBins; b++)
+    {
+        metricVals[b] = binAggs[b].getMetric(metric_type);
+        metricMax = std::max(metricMax,metricVals.at(b));
+    }
+}
+
+void AxisVizWidget::gatherMetricBins()
+{
+    if(!processed)
+        return;
+
+    bins.clear();
+    binAggs.clear();
+
+    bins.resize(numMetricBins);
+    binAggs.resize(numMetricBins);
+
+    for(int elem=0; elem<dataSet->numElements; elem++)
+    {
+        int metricBin = getHistBin(dataSet->at(elem,dim),
+                                   dataSet->minAt(dim),
+                                   dataSet->maxAt(dim),
+                                   numMetricBins);
+        bins[metricBin].insert(elem);
+    }
+
+
+    for(int b=0; b<numMetricBins; b++)
+    {
+        binAggs[b].createAggregateFromSamples(dataSet,&bins.at(b));
+    }
+}
+
 void AxisVizWidget::gatherClusters()
 {
-    if(clusterIndex < 0)
+    if(!processed)
         return;
 
     clusterAggregates.clear();
 
-    DataClusterTree *tree = dataSet->clusterTrees.at(clusterIndex);
+    DataClusterTree *tree = dataSet->clusterTrees.at(dim);
 
     std::vector<DataClusterNode*> depthNodes = tree->getNodesAtDepth(clusterDepth);
 

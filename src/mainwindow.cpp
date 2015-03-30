@@ -176,7 +176,6 @@ MainWindow::MainWindow(QWidget *parent) :
     AxisVizWidget *axisViz = new AxisVizWidget(this);
     ui->singleAxisLayout->addWidget(axisViz);
 
-    connect(parallelCoordinatesViz, SIGNAL(clusterCreated()), axisViz, SLOT(activateClusters()));
     connect(ui->selectAxis, SIGNAL(valueChanged(int)), axisViz, SLOT(setDimension(int)));
     connect(ui->setClusterDepth, SIGNAL(valueChanged(int)), axisViz, SLOT(setClusterDepth(int)));
     connect(ui->setNumBins, SIGNAL(valueChanged(int)), axisViz, SLOT(setNumBins(int)));
@@ -195,12 +194,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ClusterTreeVizWidget *clusterTreeViz = new ClusterTreeVizWidget(this);
     ui->clusterTreeLayout->addWidget(clusterTreeViz);
 
-    connect(parallelCoordinatesViz, SIGNAL(clusterCreated()), clusterTreeViz, SLOT(activate()));
     connect(ui->treeIndexBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterIndex(int)));
     connect(ui->treeDepthBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterDepth(int)));
 
     vizWidgets.push_back(clusterTreeViz);
-    */
+    *
 
     /*
      * All VizWidgets
@@ -290,6 +288,8 @@ int MainWindow::loadData()
         errdiag("Error loading dataset: "+dataSetDir);
         return err;
     }
+
+    dataSet->createClusterTrees();
 
     for(int i=0; i<vizWidgets.size(); i++)
     {

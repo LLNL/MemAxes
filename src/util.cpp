@@ -212,3 +212,16 @@ QVector<QPointF> rectToRadialSegment(QRectF rect, QRectF rectSpace)
 
     return segmentPoly;
 }
+
+
+int getHistBin(qreal val, qreal vmin, qreal vmax, int nbins)
+{
+    int histBin = floor(scale(val,vmin,vmax,0,nbins));
+
+    if(histBin >= nbins)
+        histBin = nbins-1;
+    if(histBin < 0)
+        histBin = 0;
+
+    return histBin;
+}

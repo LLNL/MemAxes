@@ -48,44 +48,48 @@ DataClusterTree::~DataClusterTree()
 {
 }
 
-void DataClusterTree::build(DataObject *d, int dim)
+void DataClusterTree::build(DataObject *d, int dim, METRIC_TYPE m)
 {
     std::vector<DataClusterLeafNode*> leafNodes;
-    leafNodes = createUniformWindowLeaves(d,dim,3,20);
-
-    hierarchicalCluster(d,leafNodes);
+    int delta = 600;
+    int w = 1000;
+    leafNodes = createWindows(d,dim,delta,w);
+    hierarchicalCluster(d,leafNodes,m);
 }
 
-std::vector<DataClusterLeafNode*> DataClusterTree::createUniformWindowLeaves(DataObject *d, int dim, int overlap, int targetLeaves)
+std::vector<DataClusterLeafNode*> DataClusterTree::createWindows(DataObject *d, int dim, int delta, int winSize)
 {
     std::vector<DataClusterLeafNode*> leafNodes;
 
-    qreal winSize = (d->maxAt(dim) - d->minAt(dim)) / targetLeaves;
-    qreal winDelta = winSize / (qreal)overlap;
+    IndexList *sortedSamples = d->getSortedList(dim);
 
     // Create leaf node for every window
-    qreal winMin, winMax;
-    for(winMin=d->minAt(dim), winMax=winMin+winSize;
-        winMax<=d->maxAt(dim);
-        winMin+=winDelta, winMax+=winDelta)
+    for(unsigned int s=0; s<sortedSamples->size(); s+=delta)
     {
         DataClusterLeafNode *newLeaf = new DataClusterLeafNode();
-        newLeaf->samples = d->createDimRangeQuery(dim, winMin, winMax);
+        qreal winMin = sortedSamples->at(s).val;
+        qreal winMax = winMin;
+        for(unsigned int sidx=s; sidx<s+winSize; sidx++)
+        {
+            if(sidx >= sortedSamples->size())
+                break;
+
+            newLeaf->samples.insert(sortedSamples->at(sidx).idx);
+            winMax = sortedSamples->at(sidx).val;
+        }
+
+        if(newLeaf->samples.empty())
+            break;
+
         newLeaf->setRange(winMin,winMax);
         leafNodes.push_back(newLeaf);
     }
 
-    // Add last (partial) window
-    DataClusterLeafNode *newLeaf = new DataClusterLeafNode();
-    newLeaf->samples = d->createDimRangeQuery(dim, winMin, d->maxAt(dim));
-    leafNodes.push_back(newLeaf);
-
-    return leafNodes;
-}
-
-std::vector<DataClusterLeafNode *> DataClusterTree::createEqualSizedLeaves(DataObject *d, int dim, int targetLeaves)
-{
-    std::vector<DataClusterLeafNode*> leafNodes;
+    // merge last two leaves (better to have one bigger than one smaller
+    leafNodes.at(leafNodes.size()-2)->samples.insert(
+                leafNodes.back()->samples.begin(),
+                leafNodes.back()->samples.end());
+    leafNodes.erase(leafNodes.end()-1);
 
     return leafNodes;
 }
@@ -113,7 +117,7 @@ std::vector<DataClusterNode *> DataClusterTree::getNodesAtDepth(int depth)
     return root->getNodesAtDepth(depth);
 }
 
-void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataClusterLeafNode *> &leafNodes)
+void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataClusterLeafNode *> &leafNodes, METRIC_TYPE m)
 {
     // Create an internal node for each leaf
     std::vector<DataClusterInternalNode*> levelNodes;
@@ -126,7 +130,7 @@ void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataCluster
     {
         HardwareClusterAggregate *agg1 = (HardwareClusterAggregate*)levelNodes.at(i)->aggregate;
         HardwareClusterAggregate *agg2 = (HardwareClusterAggregate*)levelNodes.at(i+1)->aggregate;
-        qreal dist = agg1->distance(agg2);
+        qreal dist = agg1->distance(agg2,m);
         nodeDistances[i] = dist;
     }
 
@@ -168,7 +172,7 @@ void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataCluster
             // with (before n1) to (newNode)
             DataClusterInternalNode *beforen1 = levelNodes.at(n1NodeIndex-1);
             HardwareClusterAggregate *beforen1agg = (HardwareClusterAggregate*) beforen1->aggregate;
-            qreal newDist = beforen1agg->distance(newAgg);
+            qreal newDist = beforen1agg->distance(newAgg,m);
 
             nodeDistances[n1NodeIndex] = newDist;
         }
@@ -178,7 +182,7 @@ void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataCluster
             // with (newNode) to (after n2)
             DataClusterInternalNode *aftern1 = levelNodes.at(n2NodeIndex+1);
             HardwareClusterAggregate *aftern1agg = (HardwareClusterAggregate*) aftern1->aggregate;
-            qreal newDist = newAgg->distance(aftern1agg);
+            qreal newDist = newAgg->distance(aftern1agg,m);
 
             nodeDistances[n2NodeIndex] = newDist;
         }

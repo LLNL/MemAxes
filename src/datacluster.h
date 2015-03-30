@@ -42,6 +42,8 @@
 #include "dataobject.h"
 #include "clustermetrics.h"
 
+enum METRIC_TYPE;
+
 class ClusterAggregate;
 
 class DataClusterTree;
@@ -55,16 +57,15 @@ public:
     DataClusterTree();
     ~DataClusterTree();
 
-    void build(DataObject *d, int dim);
+    void build(DataObject *d, int dim, METRIC_TYPE m);
     DataClusterNode* getRoot() { return root; }
     std::vector<DataClusterNode*> getNodesAtDepth(int depth);
 
 private:
-    std::vector<DataClusterLeafNode*> createUniformWindowLeaves(DataObject *d, int dim, int overlap, int targetLeaves);
-    std::vector<DataClusterLeafNode*> createEqualSizedLeaves(DataObject *d, int dim, int targetLeaves);
+    std::vector<DataClusterLeafNode*> createWindows(DataObject *d, int dim, int delta, int winSize);
     std::vector<DataClusterInternalNode *> createInternalFromLeaves(DataObject *d, std::vector<DataClusterLeafNode *> &leafNodes);
 
-    void hierarchicalCluster(DataObject *d, std::vector<DataClusterLeafNode*> &leafNodes);
+    void hierarchicalCluster(DataObject *d, std::vector<DataClusterLeafNode*> &leafNodes, METRIC_TYPE m);
     
 private:
     DataClusterNode *root;

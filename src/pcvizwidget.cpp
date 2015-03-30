@@ -79,8 +79,6 @@ PCVizWidget::PCVizWidget(QWidget *parent)
     selectionAxis = -1;
     animationAxis = -1;
     movingAxis = -1;
-    clusterAxis = -1;
-
 
     // Event Filters
     this->installEventFilter(this);
@@ -473,10 +471,6 @@ void PCVizWidget::showContextMenu(const QPoint &pos)
     connect(&actionAnimate, SIGNAL(triggered()), this, SLOT(beginAnimation()));
     contextMenu.addAction(&actionAnimate);
 
-    QAction actionCluster("Cluster", this);
-    connect(&actionCluster, SIGNAL(triggered()), this, SLOT(requestCluster()));
-    contextMenu.addAction(&actionCluster);
-
     contextMenu.exec(mapToGlobal(pos));
 }
 
@@ -619,16 +613,6 @@ void PCVizWidget::endAnimation()
 
     dataSet->setSelectionMode(s,true);
     animSet.clear();
-}
-
-void PCVizWidget::requestCluster()
-{
-    clusterAxis = getClosestAxis(contextMenuMousePos.x());
-    dataSet->con->log("Creating cluster tree along axis: " + QString::number(clusterAxis));
-    dataSet->createClusterTree(clusterAxis);
-    dataSet->con->log("Cluster tree created.");
-
-    emit clusterCreated();
 }
 
 void PCVizWidget::paintGL()

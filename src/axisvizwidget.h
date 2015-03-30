@@ -86,7 +86,6 @@ public slots:
     void setMetric(int type);
     void beginAnimation();
     void endAnimation();
-    void requestCluster();
 
 protected:
     void resizeEvent(QResizeEvent *e);
@@ -101,6 +100,8 @@ protected:
 private:
     void calcMinMax();
     void calcHistBins();
+    void calcMetrics();
+    void gatherMetricBins();
     void gatherClusters();
     void resizeClusters();
 
@@ -109,6 +110,7 @@ private:
     int dim;
     int clusterDepth;
     int numHistBins;
+    int numMetricBins;
 
     int drawHists;
     int drawClusters;
@@ -120,6 +122,7 @@ private:
     // frame updating
     bool needsResizeClusters;
     bool needsCalcHistBins;
+    bool needsCalcMetrics;
     bool needsCalcMinMaxes;
     bool needsGatherClusters;
     bool needsProcessData;
@@ -131,6 +134,13 @@ private:
 
     qreal histMax;
     std::vector<qreal> histVals;
+
+    qreal metricMax;
+    std::vector<qreal> metricVals;
+    ColorMap metricColorMap;
+
+    std::vector<ElemSet> bins;
+    std::vector<HardwareClusterAggregate> binAggs;
 
     std::vector<topoBox> clusterAggregates;
 

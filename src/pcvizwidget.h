@@ -56,9 +56,6 @@ public:
 public:
     void recalcLines(int dirtyAxis = -1);
 
-signals:
-    void clusterCreated();
-
 public slots:
     void frameUpdate();
     void selectionChangedSlot();
@@ -70,7 +67,6 @@ public slots:
     void setShowHistograms(bool checked);
     void beginAnimation();
     void endAnimation();
-    void requestCluster();
 
 protected:
     void processData();
@@ -125,7 +121,6 @@ private:
     int selectionAxis;
     int animationAxis;
     int movingAxis;
-    int clusterAxis;
 
     bool showHistograms;
 

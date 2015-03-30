@@ -65,7 +65,7 @@ public:
     HardwareClusterAggregate();
     virtual void createAggregateFromSamples(DataObject *d, ElemSet *s);
 
-    qreal distance(HardwareClusterAggregate *other);
+    qreal distance(HardwareClusterAggregate *other, METRIC_TYPE m);
     void initFrom(DataObject *d, HardwareClusterAggregate *hcm);
     void combineAggregate(DataObject *d, HardwareClusterAggregate *hcm);
 

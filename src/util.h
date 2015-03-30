@@ -48,6 +48,7 @@
 
 #define COLMAJOR_2D(x,y,d) x*d+y
 #define ROWMAJOR_2D(x,y,d) y*d+x
+#define DBGFN std::cerr << __FUNCTION__ << std::endl;
 #define DBGLN(x) std::cerr << #x << std::endl; x;
 #define DBGVAR(x) std::cerr << #x << " : " << x << std::endl;
 
@@ -68,5 +69,7 @@ QVector<QPointF> rectToRadialSegment(QRectF rect, QRectF rectSpace);
 
 ColorMap gradientColorMap(QColor col0, QColor col1, int steps);
 QColor valToColor(qreal val, ColorMap colorMap);
+
+int getHistBin(qreal val, qreal vmin, qreal vmax, int nbins);
 
 #endif // UTIL_H

@@ -39,6 +39,7 @@
 #include "clustermetrics.h"
 
 #include <limits>
+#include <cmath>
 
 HardwareClusterAggregate::HardwareClusterAggregate()
 {
@@ -113,9 +114,9 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
     // Compute imbalance
     for(unsigned int i=0; i<topo->hardwareResourceMatrix.size(); i++)
     {
-        qreal minsam = 999999999;
-        qreal maxsam = 0;
-        //qreal stddev = 0;
+        qreal minsam = std::numeric_limits<qreal>::max();
+        qreal maxsam = std::numeric_limits<qreal>::min();
+
         qreal numres = topo->hardwareResourceMatrix.at(i).size();
         depthAvgSamples[i] = depthSamples.at(i) / numres;
         for(unsigned int r=0; r<numres; r++)
@@ -123,34 +124,18 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
             qreal rd_i = (qreal)topo->hardwareResourceMatrix.at(i).at(r)->allSamples.size();
             qreal m_i = depthAvgSamples[i];
             qreal sqddiff = (rd_i-m_i)*(rd_i-m_i);
-            //stddev += sqddiff;
             maxsam = std::max(sqddiff,maxsam);
             minsam = std::min(sqddiff,minsam);
         }
-
-        //stddev = sqrt(stddev/numres);
-        //depthImbalances[i] = stddev;
 
         depthImbalances[i] = maxsam / depthStddevs.at(i);
     }
 
 }
 
-qreal HardwareClusterAggregate::distance(HardwareClusterAggregate *other)
+qreal HardwareClusterAggregate::distance(HardwareClusterAggregate *other, METRIC_TYPE m)
 {
-    // Assume same topology (for now)
-
-    // Euclidean length of means vector
-    qreal dist = 0;
-    for(int i=0; i<topo->totalDepth; i++)
-    {
-        dist += (depthMeans.at(i) - other->depthMeans.at(i))
-                *(depthMeans.at(i) - other->depthMeans.at(i));
-
-    }
-    dist = sqrt(dist);
-
-    return dist;
+    return std::abs(getMetric(m)-other->getMetric(m));
 }
 
 void HardwareClusterAggregate::initFrom(DataObject *d, HardwareClusterAggregate *hcm)

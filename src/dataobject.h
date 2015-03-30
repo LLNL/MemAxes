@@ -137,8 +137,9 @@ public:
     // Calculated statistics
     void calcStatistics();
     void constructSortedLists();
+    IndexList* getSortedList(int dim) { return &dimSortedLists.at(dim); }
 
-    void createClusterTree(int dim);
+    void createClusterTrees();
 
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
