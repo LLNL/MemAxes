@@ -9,10 +9,6 @@ find_package(Qt5 REQUIRED Core Widgets OpenGL Xml)
 # OpenGL
 find_package(OpenGL)
 
-# VTK
-# find_package(VTK REQUIRED)
-# set(VTK_USE_QVTK ON)
-
 # Top-level build just includes subdirectories.
 add_subdirectory(src)
 add_subdirectory(example_data)

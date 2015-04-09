@@ -40,14 +40,12 @@ set(HEADERS
   util.h
   varvizwidget.h
   vizwidget.h)
-  #volumevizwidget.h)
 
 set(UIC
   ui_form.h)
 
 # Build Target
 add_executable(MemAxes MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIC})
-# add_executable(MemAxes ${SOURCES} ${HEADERS} ${UIC})
 
 qt5_use_modules(MemAxes Widgets OpenGL)
 

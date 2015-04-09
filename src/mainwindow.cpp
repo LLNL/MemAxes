@@ -129,27 +129,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(codeViz, SIGNAL(sourceLineSelected(int)), codeEditor, SLOT(setLine(int)));
 
     /*
-     * Volume Viz
-     */
-
-    /*
-    volumeVizWidget = new VolumeVizWidget(this);
-    ui->volVizLayout->addWidget(volumeVizWidget);
-
-    connect(ui->minAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMinOpacity(int)));
-    connect(ui->midAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMidOpacity(int)));
-    connect(ui->maxAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMaxOpacity(int)));
-
-    connect(ui->minVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMinVal(double)));
-    connect(ui->midVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMidVal(double)));
-    connect(ui->maxVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMaxVal(double)));
-
-    connect(volumeVizWidget, SIGNAL(minValSet(double)), ui->minVal, SLOT(setValue(double)));
-    connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
-    connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
-    */
-
-    /*
      * Memory Topology Viz
      */
 
@@ -186,7 +165,6 @@ MainWindow::MainWindow(QWidget *parent) :
         vizWidgets[i]->setDataSet(dataSet);
         vizWidgets[i]->setConsole(con);
     }
-    //volumeVizWidget->setDataSet(dataSet);
 
     dataSet->setConsole(con);
 
@@ -216,13 +194,11 @@ void MainWindow::frameUpdateAll()
     {
         vizWidgets[i]->frameUpdate();
     }
-    //volumeVizWidget->frameUpdate();
 }
 
 void MainWindow::selectionChangedSlot()
 {
     dataSet->selectionChanged();
-    //volumeVizWidget->selectionChangedSlot();
     emit selectionChangedSig();
 }
 
@@ -273,8 +249,6 @@ int MainWindow::loadData()
     }
 
     visibilityChangedSlot();
-
-    //volumeVizWidget->processData();
 
     return 0;
 }
