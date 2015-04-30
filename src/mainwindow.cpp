@@ -198,7 +198,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->treeDepthBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterDepth(int)));
 
     vizWidgets.push_back(clusterTreeViz);
-    *
+    */
 
     /*
      * All VizWidgets

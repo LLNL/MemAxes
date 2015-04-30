@@ -68,7 +68,7 @@ QPointF reverseRadialTransform(QPointF point, QRectF rectSpace);
 QVector<QPointF> rectToRadialSegment(QRectF rect, QRectF rectSpace);
 
 ColorMap gradientColorMap(QColor col0, QColor col1, int steps);
-QColor valToColor(qreal val, ColorMap colorMap);
+QColor valToColor(qreal val, ColorMap &colorMap);
 
 int getHistBin(qreal val, qreal vmin, qreal vmax, int nbins);
 

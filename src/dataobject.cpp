@@ -581,15 +581,6 @@ void DataObject::constructSortedLists()
 
 void DataObject::createClusterTrees()
 {
-    clusterTrees.resize(numDimensions);
-    for(int d=0; d<numDimensions; d++)
-    {
-        std::cerr << "creating cluster tree for dimension " << d << std::endl;
-        std::cerr << meta.at(d).toStdString() << std::endl;
-        DataClusterTree *newTree = new DataClusterTree();
-        newTree->build(this,d,CORE_IMBALANCE);
-        clusterTrees[d] = newTree;
-        std::cerr << "done" << std::endl;
-    }
+    clusterTrees.resize(numDimensions,NULL);
 }
 

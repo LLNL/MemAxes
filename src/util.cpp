@@ -38,6 +38,8 @@
 
 #include "util.h"
 
+#include <assert.h>
+
 qreal normalize(qreal val, qreal min, qreal max)
 {
     return (val-min) / (max-min);
@@ -137,10 +139,12 @@ ColorMap gradientColorMap(QColor col0, QColor col1, int steps)
     return result;
 }
 
-QColor valToColor(qreal val, ColorMap colorMap)
+QColor valToColor(qreal val, ColorMap &colorMap)
 {
     qreal sv = scale(val,0,1,0,colorMap.size());
     int colIdx = min(colorMap.size()-1,(int)floor(sv));
+
+    assert(colIdx >= 0 && colIdx < colorMap.size());
 
     return colorMap.at(colIdx);
 }
