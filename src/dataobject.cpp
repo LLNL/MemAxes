@@ -393,7 +393,6 @@ int DataObject::parseCSVFile(QString dataFileName)
     yDim = this->meta.indexOf("yidx");
     zDim = this->meta.indexOf("zidx");
 
-
     QVector<QString> varVec;
     QVector<QString> sourceVec;
 
