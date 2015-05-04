@@ -41,17 +41,9 @@
 
 #include "dataobject.h"
 #include "hwtopo.h"
+#include "typedefs.h"
 
 class HWTopo;
-
-enum METRIC_TYPE
-{
-    CORE_IMBALANCE = 0,
-    L1_IMBALANCE,
-    L2_IMBALANCE,
-    L3_IMBALANCE,
-    NUMA_IMBALANCE
-};
 
 class ClusterAggregate
 {

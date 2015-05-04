@@ -42,8 +42,6 @@
 #include "dataobject.h"
 #include "clustermetrics.h"
 
-enum METRIC_TYPE;
-
 class ClusterAggregate;
 
 class DataClusterTree;

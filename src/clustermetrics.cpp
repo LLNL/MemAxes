@@ -128,7 +128,10 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
             minsam = std::min(sqddiff,minsam);
         }
 
-        depthImbalances[i] = maxsam / depthStddevs.at(i);
+        if(depthStddevs.at(i) == 0)
+            depthImbalances[i] = maxsam;
+        else
+            depthImbalances[i] = maxsam / depthStddevs.at(i);
     }
 
 }

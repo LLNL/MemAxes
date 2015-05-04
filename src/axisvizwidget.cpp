@@ -473,6 +473,9 @@ void AxisVizWidget::gatherClusters()
 
     DataClusterTree *tree = dataSet->clusterTrees.at(dim);
 
+    if(!tree)
+        return;
+
     std::vector<DataClusterNode*> depthNodes = tree->getNodesAtDepth(clusterDepth);
 
     for(unsigned int i=0; i<depthNodes.size(); i++)
