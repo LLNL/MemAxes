@@ -49,84 +49,55 @@ size_t createUniqueID(QVector<QString> &existing, QString name)
     return existing.size()-1;
 }
 
-int dseDepth(int enc)
+int stringToDepth(QString str)
 {
-    int src = enc & 0xF;
-    switch(src)
-    {
-        case(0x0): return -1; // at least L3
-        case(0x1): return 1; // L1
-        case(0x2): return 1; // cache hit pending (don't draw)
-        case(0x3): return 2; // L2
-        case(0x4): return 3; // L3
-        case(0x5): return 3; // from another core L2/L1 (clean)
-        case(0x6): return 3; // from another core L2/L1 (dirty)
-        case(0x7): return -1; // no LLC now
-        case(0x8): return 4; // local ram?
-        case(0x9): return -1; // reserved (shouldn't happen)
-        case(0xA): return 4; // local RAM (clean)
-        case(0xB): return 4; // remote RAM (clean)
-        case(0xC): return 4; // local RAM (dirty)
-        case(0xD): return 4; // remote RAM (dirty)
-        case(0xE): return -1; // I/O
-        case(0xF): return -1; // Uncacheable
-    }
-
+    if(str == "L1" || str == "LFB")
+        return 1;
+    else if(str == "L2")
+        return 2;
+    else if(str == "L3")
+        return 3;
+    else if(str == "Local RAM")
+        return 4;
+    else if(str == "Remote RAM 1 Hop")
+        return 5;
+    else if(str == "Remote RAM 2 Hops")
+        return 6;
     return -1;
 }
 
-int dseDirty(int enc)
+int dseToDepth(uint64_t dse)
 {
-    int src = enc & 0xF;
-    switch(src)
-    {
-        case(0x5): return 0; // from another core L2/L1 (clean)
-        case(0x6): return 1; // from another core L2/L1 (dirty)
-        case(0xA): return 0; // local RAM (clean)
-        case(0xB): return 0; // remote RAM (clean)
-        case(0xC): return 1; // local RAM (dirty)
-        case(0xD): return 1; // remote RAM (dirty)
-    }
+    dse >>= PERF_MEM_LVL_SHIFT;
 
-    // N/A
+    switch(dse)
+    {
+    case(PERF_MEM_LVL_NA):
+        return -1;
+    case(PERF_MEM_LVL_L1):
+        return 1;
+    case(PERF_MEM_LVL_LFB):
+        return 1;
+    case(PERF_MEM_LVL_L2):
+        return 2;
+    case(PERF_MEM_LVL_L3):
+        return 3;
+    case(PERF_MEM_LVL_LOC_RAM):
+        return 4;
+    case(PERF_MEM_LVL_REM_RAM1):
+        return 5;
+    case(PERF_MEM_LVL_REM_RAM2):
+        return 6;
+    case(PERF_MEM_LVL_REM_CCE1):
+        return 5;
+    case(PERF_MEM_LVL_REM_CCE2):
+        return 6;
+    case(PERF_MEM_LVL_IO):
+        return -1;
+    case(PERF_MEM_LVL_UNC):
+        return -1;
+    default:
+        break;
+    }
     return -1;
-}
-
-
-std::string encToString(int enc)
-{
-    int src = enc & 0xF;
-
-    switch(src)
-    {
-        case(0x0): return "Unknown L3 Miss";
-        case(0x1): return "L1";
-        case(0x2): return "TLB";
-        case(0x3): return "L2";
-        case(0x4): return "L3";
-        case(0x5): return "L3 Snoop (clean)"; // from another core L2/L1
-        case(0x6): return "L3 Snoop (dirty)"; // from another core L2/L1
-        case(0x7): return "LLC Snoop (dirty)";
-        case(0x8): return "L3 Miss (dirty)"; // local ram?
-        case(0x9): return "MONKEYS"; // reserved (shouldn't happen)
-        case(0xA): return "Local RAM";
-        case(0xB): return "Remote RAM";
-        case(0xC): return "Local RAM";
-        case(0xD): return "Remote RAM";
-        case(0xE): return "I/O";
-        case(0xF): return "Uncacheable";
-    }
-
-    return "???"; // really weird
-}
-
-
-int dseSTLB(int enc)
-{
-    return enc & 0x10;
-}
-
-int dseLocked(int enc)
-{
-    return enc & 0x20;
 }

@@ -92,7 +92,7 @@ void AxisVizWidget::frameUpdate()
     }
     if(needsGatherClusters)
     {
-        gatherClusters();
+        //gatherClusters();
         needsResizeClusters = true;
         needsGatherClusters = false;
     }
@@ -276,7 +276,7 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
         }
     }
 
-    if(drawMetrics)
+    if(0)//drawMetrics)
     {
         // Draw metrics
         painter->setPen(Qt::black);

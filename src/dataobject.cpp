@@ -383,8 +383,8 @@ int DataObject::parseCSVFile(QString dataFileName)
 
     sourceDim = this->meta.indexOf("source");
     lineDim = this->meta.indexOf("line");
-    variableDim = this->meta.indexOf("variable");
-    dataSourceDim = this->meta.indexOf("dataSource");
+    variableDim = this->meta.indexOf("phase");
+    dataSourceDim = this->meta.indexOf("data_source");
     indexDim = this->meta.indexOf("index");
     latencyDim = this->meta.indexOf("latency");
     nodeDim = this->meta.indexOf("node");
@@ -429,8 +429,7 @@ int DataObject::parseCSVFile(QString dataFileName)
             }
             else if(i==dataSourceDim)
             {
-                int dseVal = tok.toInt(NULL,16);
-                this->vals.push_back(dseDepth(dseVal));
+                this->vals.push_back(dseToDepth(tok.toLongLong()));
             }
             else
             {

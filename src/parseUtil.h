@@ -39,9 +39,26 @@
 #include <QVector>
 #include <QString>
 
+#include <stdint.h>
+
+/* perf_event.h */
+/* memory hierarchy (memory level, hit or miss) */
+#define PERF_MEM_LVL_NA     0x01  /* not available */
+#define PERF_MEM_LVL_HIT    0x02  /* hit level */
+#define PERF_MEM_LVL_MISS   0x04  /* miss level  */
+#define PERF_MEM_LVL_L1     0x08  /* L1 */
+#define PERF_MEM_LVL_LFB    0x10  /* Line Fill Buffer */
+#define PERF_MEM_LVL_L2     0x20  /* L2 */
+#define PERF_MEM_LVL_L3     0x40  /* L3 */
+#define PERF_MEM_LVL_LOC_RAM    0x80  /* Local DRAM */
+#define PERF_MEM_LVL_REM_RAM1   0x100 /* Remote DRAM (1 hop) */
+#define PERF_MEM_LVL_REM_RAM2   0x200 /* Remote DRAM (2 hops) */
+#define PERF_MEM_LVL_REM_CCE1   0x400 /* Remote Cache (1 hop) */
+#define PERF_MEM_LVL_REM_CCE2   0x800 /* Remote Cache (2 hops) */
+#define PERF_MEM_LVL_IO     0x1000 /* I/O memory */
+#define PERF_MEM_LVL_UNC    0x2000 /* Uncached memory */
+#define PERF_MEM_LVL_SHIFT  5
+
 size_t createUniqueID(QVector<QString> &existing, QString name);
-int dseDepth(int enc);
-int dseDirty(int enc);
-std::string encToString(int enc);
-int dseSTLB(int enc);
-int dseLocked(int enc);
+int stringToDepth(QString str);
+int dseToDepth(uint64_t dse);

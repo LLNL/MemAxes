@@ -56,7 +56,7 @@ public:
     HWNode();
     HWNode(HWNode *other, HWNode *p);
 
-    QString name;
+    QString type;
 
     int id;
     int depth;

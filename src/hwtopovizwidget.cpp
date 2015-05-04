@@ -137,14 +137,7 @@ void HWTopoVizWidget::mouseMoveEvent(QMouseEvent* e)
     {
         QString label;
 
-        if(node->depth == dataSet->getTopo()->totalDepth)
-            label = "CPU " + QString::number(node->id) + "\n";
-        else if(node->depth > 1)
-            label = "L" + QString::number(node->id) + " Cache\n";
-        else if(node->depth == 1)
-            label = "NUMA Node " + QString::number(node->id) + "\n";
-        else
-            label = "RAM\n";
+        label = node->type + " " + QString::number(node->id) + "\n";
 
         label += "\n";
         label += "Size: " + QString::number(node->size) + " bytes\n";

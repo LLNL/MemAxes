@@ -177,6 +177,11 @@ void HWTopoPainter::draw(QPainter *painter)
     if(topo == NULL)
         return;
 
+    // Draw background
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(QColor(248,248,255));
+    painter->drawEllipse(rect);
+
     // Draw node outlines
     painter->setPen(QPen(Qt::black));
     for(int b=0; b<nodeBoxes.size(); b++)

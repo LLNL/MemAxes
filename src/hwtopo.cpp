@@ -43,6 +43,14 @@ using namespace std;
 
 HWNode::HWNode()
 {
+    parent = NULL;
+    id = -1;
+    depth = -1;
+    size = -1;
+
+    numAllCycles = 0;
+    numSelectedCycles = 0;
+    numTransactions = 0;
 }
 
 HWNode::HWNode(HWNode *other, HWNode *p)
@@ -51,7 +59,7 @@ HWNode::HWNode(HWNode *other, HWNode *p)
     parent = p;
 
     // copy everything else
-    name = other->name;
+    type = other->type;
     id = other->id;
     depth = other->depth;
     size = other->size;
@@ -109,27 +117,56 @@ HWNode *HWTopo::hardwareResourceNodeFromXMLNode(QXmlStreamReader *xml, HWNode *p
     HWNode *newLevel = new HWNode();
 
     newLevel->parent = parent;
-    newLevel->name = xml->name().toString(); // Hardware, NUMA, Cache, CPU
     newLevel->depth = (parent == NULL) ? 0 : parent->depth + 1;
 
     totalDepth = max(totalDepth, newLevel->depth);
 
-    if(xml->attributes().hasAttribute("id"))
-        newLevel->id = xml->attributes().value("id").toString().toLongLong();
+    if(xml->attributes().hasAttribute("type"))
+        newLevel->type = xml->attributes().value("type").toString();
+    if(xml->attributes().hasAttribute("os_index"))
+        newLevel->id = xml->attributes().value("os_index").toString().toLongLong();
+    if(xml->attributes().hasAttribute("depth"))
+        newLevel->id = xml->attributes().value("depth").toString().toLongLong();
 
     if(xml->attributes().hasAttribute("size"))
         newLevel->size = xml->attributes().value("size").toString().toLongLong();
+    if(xml->attributes().hasAttribute("cache_size"))
+        newLevel->size = xml->attributes().value("cache_size").toString().toLongLong();
 
     // Read and add children if existent
     xml->readNext();
 
-    while(!(xml->isEndElement() && xml->name() == newLevel->name))
+    int xmlDepth = 0;
+    while(!xml->atEnd() && !xml->hasError())
     {
+        // Maintain depth info
         if(xml->isStartElement())
+            xmlDepth++;
+        if(xml->isEndElement())
+            xmlDepth--;
+
+        // Object in hardware
+        if(xml->isStartElement() && xml->name() == "object")
         {
-            HWNode *child = hardwareResourceNodeFromXMLNode(xml, newLevel);
-            newLevel->children.push_back(child);
+            // Check type
+            if(xml->attributes().hasAttribute("type"))
+            {
+                QString type = xml->attributes().value("type").toString();
+
+                // Types that we are interested in
+                if(type == "NUMANode"
+                   || type == "Cache"
+                   || type == "PU")
+                {
+                    HWNode *child = hardwareResourceNodeFromXMLNode(xml, newLevel);
+                    newLevel->children.push_back(child);
+                    xmlDepth--;
+                }
+            }
         }
+
+        if(xmlDepth < 0)
+            break;
 
         xml->readNext();
     }
@@ -154,11 +191,18 @@ int HWTopo::loadHardwareTopologyFromXML(QString fileName)
             continue;
 
         if(xml.isStartElement())
-            if(xml.name() == "Hardware")
+        {
+            if(xml.name() == "object")
+            {
                 hardwareResourceRoot = hardwareResourceNodeFromXMLNode(&xml,NULL);
+                break;
+            }
+        }
     }
 
     if(xml.hasError()) {
+        std::cerr << "xml error!" << std::endl;
+        std::cerr << xml.errorString().toStdString() << std::endl;
         return -1;
     }
 
@@ -266,12 +310,22 @@ void HWTopo::collectSamples(DataObject *d, ElemSet *s)
             continue;
 
         // Go up to data source
-        for( /*init*/; dse>0 && node->parent; dse--, node=node->parent)
+        HWNode *child = node;
+        for( /*init*/; dse>0 && node->parent; dse--)
         {
             if(tsel)
             {
                 node->numTransactions++;
             }
+            child = node;
+            node = node->parent;
+        }
+
+        if(node->depth < 1)
+        {
+            // Remote hit
+            int serviceNode = node->children.size() % (child->id+1);
+            node = node->children.at(serviceNode);
         }
 
         // Update data for core

@@ -289,7 +289,7 @@ int MainWindow::loadData()
         return err;
     }
 
-    dataSet->createClusterTrees();
+    //dataSet->createClusterTrees();
 
     for(int i=0; i<vizWidgets.size(); i++)
     {
