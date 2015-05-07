@@ -44,6 +44,7 @@ using namespace std;
 
 #include <QTimer>
 #include <QFileDialog>
+#include <QApplication>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -122,27 +123,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(codeViz, SIGNAL(sourceLineSelected(int)), codeEditor, SLOT(setLine(int)));
 
     /*
-     * Volume Viz
-     */
-
-    /*
-    volumeVizWidget = new VolumeVizWidget(this);
-    ui->volVizLayout->addWidget(volumeVizWidget);
-
-    connect(ui->minAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMinOpacity(int)));
-    connect(ui->midAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMidOpacity(int)));
-    connect(ui->maxAlpha, SIGNAL(valueChanged(int)), volumeVizWidget, SLOT(setMaxOpacity(int)));
-
-    connect(ui->minVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMinVal(double)));
-    connect(ui->midVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMidVal(double)));
-    connect(ui->maxVal, SIGNAL(valueChanged(double)), volumeVizWidget, SLOT(setMaxVal(double)));
-
-    connect(volumeVizWidget, SIGNAL(minValSet(double)), ui->minVal, SLOT(setValue(double)));
-    connect(volumeVizWidget, SIGNAL(midValSet(double)), ui->midVal, SLOT(setValue(double)));
-    connect(volumeVizWidget, SIGNAL(maxValSet(double)), ui->maxVal, SLOT(setValue(double)));
-    */
-
-    /*
      * Memory Topology Viz
      */
 
@@ -163,10 +143,6 @@ MainWindow::MainWindow(QWidget *parent) :
     PCVizWidget *parallelCoordinatesViz = new PCVizWidget(this);
     ui->parallelCoordinatesLayout->addWidget(parallelCoordinatesViz);
 
-    connect(ui->selOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setSelOpacity(int)));
-    connect(ui->unselOpacity, SIGNAL(valueChanged(int)), parallelCoordinatesViz, SLOT(setUnselOpacity(int)));
-    connect(ui->histogramBox, SIGNAL(clicked(bool)), parallelCoordinatesViz, SLOT(setShowHistograms(bool)));
-
     vizWidgets.push_back(parallelCoordinatesViz);
 
     /*
@@ -183,22 +159,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
     connect(ui->axisDrawMetrics, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawMetrics(int)));
     connect(ui->metricBox, SIGNAL(currentIndexChanged(int)), axisViz, SLOT(setMetric(int)));
+    connect(ui->calcMetrics, SIGNAL(clicked()), axisViz, SLOT(setCalcMetrics()));
+    connect(ui->calcClusters, SIGNAL(clicked()), axisViz, SLOT(setCalcClusters()));
 
     vizWidgets.push_back(axisViz);
-
-    /*
-     * Cluster Tree Viz
-     */
-
-    /*
-    ClusterTreeVizWidget *clusterTreeViz = new ClusterTreeVizWidget(this);
-    ui->clusterTreeLayout->addWidget(clusterTreeViz);
-
-    connect(ui->treeIndexBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterIndex(int)));
-    connect(ui->treeDepthBox, SIGNAL(valueChanged(int)), clusterTreeViz, SLOT(setClusterDepth(int)));
-
-    vizWidgets.push_back(clusterTreeViz);
-    */
 
     /*
      * All VizWidgets
@@ -209,7 +173,6 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         vizWidgets[i]->setDataSet(dataSet);
     }
-    //volumeVizWidget->setDataSet(dataSet);
 
     dataSet->setConsole(con);
 
@@ -239,13 +202,11 @@ void MainWindow::frameUpdateAll()
     {
         vizWidgets[i]->frameUpdate();
     }
-    //volumeVizWidget->frameUpdate();
 }
 
 void MainWindow::selectionChangedSlot()
 {
     dataSet->selectionChanged();
-    //volumeVizWidget->selectionChangedSlot();
     emit selectionChangedSig();
 }
 
@@ -281,7 +242,7 @@ int MainWindow::loadData()
         return err;
     }
 
-    QString dataSetDir(dataDir+QString("/data/samples.out"));
+    QString dataSetDir(dataDir+QString("/data/samples.csv"));
     err = dataSet->loadData(dataSetDir);
     if(err != 0)
     {
@@ -298,8 +259,6 @@ int MainWindow::loadData()
     }
 
     visibilityChangedSlot();
-
-    //volumeVizWidget->processData();
 
     return 0;
 }
@@ -376,4 +335,10 @@ void MainWindow::setSelectModeXOR(bool on)
 void MainWindow::setCodeLabel(QFile *file)
 {
     ui->codeLabel->setText(file->fileName());
+}
+
+void MainWindow::setProgress(int p)
+{
+    ui->progressBar->setValue(p);
+    QApplication::processEvents();
 }

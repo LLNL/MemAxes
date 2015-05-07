@@ -84,6 +84,8 @@ public slots:
     void setDrawClusters(int on);
     void setDrawMetrics(int on);
     void setMetric(int type);
+    void setCalcMetrics();
+    void setCalcClusters();
     void beginAnimation();
     void endAnimation();
 
@@ -124,7 +126,7 @@ private:
     bool needsCalcHistBins;
     bool needsCalcMetrics;
     bool needsCalcMinMaxes;
-    bool needsGatherClusters;
+    bool needsCalcClusters;
     bool needsProcessData;
 
     bool animating;

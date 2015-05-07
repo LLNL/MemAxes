@@ -66,14 +66,9 @@ PCVizWidget::PCVizWidget(QWidget *parent)
     needsCalcMinMaxes = true;
     needsProcessData = true;
     needsProcessSelection = true;
-    needsRecalcLines = true;
     needsRepaint = true;
 
-    selOpacity = 0.4;
-    unselOpacity = 0.1;
-
     numHistBins = 100;
-    showHistograms = true;
 
     cursorPos.setX(-1);
     selectionAxis = -1;
@@ -138,7 +133,6 @@ void PCVizWidget::processData()
 
     needsCalcMinMaxes = true;
     needsCalcHistBins = true;
-    needsRecalcLines = true;
 }
 
 void PCVizWidget::leaveEvent(QEvent *e)
@@ -249,7 +243,6 @@ bool PCVizWidget::eventFilter(QObject *obj, QEvent *event)
                 }
             }
 
-            needsRecalcLines = true;
             needsRepaint = true;
         }
     }
@@ -329,7 +322,8 @@ void PCVizWidget::processSelection()
         selMaxes.fill(-1);
     }
 
-    needsRecalcLines = true;
+    needsCalcMinMaxes = true;
+    needsCalcHistBins = true;
 
     emit selectionChangedSig();
 }
@@ -391,76 +385,6 @@ void PCVizWidget::calcHistBins()
             histVals[i][j] = scale(histVals[i][j],0,histMaxVals[i],0,1);
 }
 
-void PCVizWidget::recalcLines(int dirtyAxis)
-{
-    QVector4D col;
-    QVector2D a, b;
-    int i, axis, nextAxis, elem;
-    QVector<double>::Iterator p;
-
-    if(!processed)
-        return;
-
-    verts.clear();
-    colors.clear();
-
-    QVector4D redVec = QVector4D(255,0,0,255);
-    QColor dataSetColor = colorMap.at(0);
-    qreal Cr,Cg,Cb;
-    dataSetColor.getRgbF(&Cr,&Cg,&Cb);
-    QVector4D dataColor = QVector4D(Cr,Cg,Cb,1);
-
-    for(p=dataSet->begin, elem=0; p!=dataSet->end; p+=numDimensions, elem++)
-    {
-        if(!dataSet->visible(elem))
-        {
-            continue;
-        }
-        else if(dataSet->selected(elem))
-        {
-            col = redVec;
-            col.setW(selOpacity);
-        }
-        else
-        {
-            col = dataColor;
-            col.setW(unselOpacity);
-        }
-
-
-        for(i=0; i<numDimensions-1; i++)
-        {
-            if(dirtyAxis != -1  && i != dirtyAxis && i != dirtyAxis-1)
-                continue;
-
-            axis = axesOrder[i];
-            nextAxis = axesOrder[i+1];
-
-            float aVal = 1-scale(*(p+axis),dimMins[axis],dimMaxes[axis],0,1);
-            a = QVector2D(axesPositions[axis],aVal);
-
-            float bVal = 1-scale(*(p+nextAxis),dimMins[nextAxis],dimMaxes[nextAxis],0,1);
-            b = QVector2D(axesPositions[nextAxis],bVal);
-
-            verts.push_back(a.x());
-            verts.push_back(a.y());
-
-            verts.push_back(b.x());
-            verts.push_back(b.y());
-
-            colors.push_back(col.x());
-            colors.push_back(col.y());
-            colors.push_back(col.z());
-            colors.push_back(col.w());
-
-            colors.push_back(col.x());
-            colors.push_back(col.y());
-            colors.push_back(col.z());
-            colors.push_back(col.w());
-        }
-    }
-}
-
 void PCVizWidget::showContextMenu(const QPoint &pos)
 {
     contextMenuMousePos = pos;
@@ -478,7 +402,6 @@ void PCVizWidget::selectionChangedSlot()
 {
     needsCalcMinMaxes = true;
     needsCalcHistBins = true;
-    needsRecalcLines = true;
     needsRepaint = true;
 }
 
@@ -486,26 +409,6 @@ void PCVizWidget::visibilityChangedSlot()
 {
     needsProcessData = true;
     needsCalcMinMaxes = true;
-    needsRepaint = true;
-}
-
-void PCVizWidget::setSelOpacity(int val)
-{
-    selOpacity = (qreal)val/1000.0;
-    needsRecalcLines = true;
-    needsRepaint = true;
-}
-
-void PCVizWidget::setUnselOpacity(int val)
-{
-    unselOpacity = (qreal)val/1000.0;
-    needsRecalcLines = true;
-    needsRepaint = true;
-}
-
-void PCVizWidget::setShowHistograms(bool checked)
-{
-    showHistograms = checked;
     needsRepaint = true;
 }
 
@@ -547,11 +450,6 @@ void PCVizWidget::frameUpdate()
     {
         calcHistBins();
         needsCalcHistBins = false;
-    }
-    if(needsRecalcLines)
-    {
-        recalcLines();
-        needsRecalcLines = false;
     }
     if(needsRepaint)
     {
@@ -613,46 +511,6 @@ void PCVizWidget::endAnimation()
 
     dataSet->setSelectionMode(s,true);
     animSet.clear();
-}
-
-void PCVizWidget::paintGL()
-{
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    if(!processed)
-        return;
-
-    makeCurrent();
-
-    int mx=40;
-    int my=30;
-
-    glViewport(mx,
-               my,
-               width()-2*mx,
-               height()-2*my);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0, 1.0, 0.0, 1.0, 0, 1);
-
-    glShadeModel(GL_FLAT);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    glVertexPointer(FLOATS_PER_POINT,GL_FLOAT,0,verts.constData());
-    glColorPointer(FLOATS_PER_COLOR,GL_FLOAT,0,colors.constData());
-
-    //glDrawArrays(GL_LINES,0,verts.size() / POINTS_PER_LINE);
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
 }
 
 void PCVizWidget::drawQtPainter(QPainter *painter)
@@ -725,7 +583,6 @@ void PCVizWidget::drawQtPainter(QPainter *painter)
         }
     }
 
-    if(showHistograms)
     {
         // Draw histograms
         a = plotBBox.bottomLeft();

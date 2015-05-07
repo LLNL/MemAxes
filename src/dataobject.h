@@ -41,6 +41,7 @@
 
 #include <QWidget>
 #include <QBitArray>
+#include <QProgressBar>
 
 #include <map>
 #include <set>
@@ -52,6 +53,7 @@
 #include "console.h"
 #include "datacluster.h"
 #include "typedefs.h"
+//#include "mainwindow.h"
 
 struct indexedValue;
 
@@ -139,7 +141,7 @@ public:
     void constructSortedLists();
     IndexList* getSortedList(int dim) { return &dimSortedLists.at(dim); }
 
-    void createClusterTrees();
+    void createClusterTree(int dim, METRIC_TYPE m);
 
     qreal at(int i, int d) const { return vals[i*numDimensions+d]; }
     qreal sumAt(int d) const { return dimSums[d]; }
@@ -167,13 +169,10 @@ public:
     int lineDim;
     int variableDim;
     int dataSourceDim;
-    int indexDim;
     int latencyDim;
     int cpuDim;
     int nodeDim;
-    int xDim;
-    int yDim;
-    int zDim;
+    int timeDim;
 
     QVector<qreal> vals;
     QVector<QString> fileNames;
@@ -201,6 +200,9 @@ private:
     QVector<qreal> correlationMatrix;
 
 public:
+    int progress;
+    int getProgress() { return progress;}
+
     console *con;
     selection_mode selMode;
 };

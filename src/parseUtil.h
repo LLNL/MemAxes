@@ -62,3 +62,4 @@
 size_t createUniqueID(QVector<QString> &existing, QString name);
 int stringToDepth(QString str);
 int dseToDepth(uint64_t dse);
+int PEBS_dseToDepth(uint64_t dse);

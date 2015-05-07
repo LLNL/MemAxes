@@ -57,8 +57,6 @@
 #include "codeeditor.h"
 #include "console.h"
 
-//#include "volumevizwidget.h"
-
 namespace Ui {
 class MainWindow;
 }
@@ -91,6 +89,7 @@ public slots:
     void setSelectModeOR(bool on);
     void setSelectModeXOR(bool on);
     void setCodeLabel(QFile *file);
+    void setProgress(int p);
 
 private:
     Ui::MainWindow *ui;
@@ -103,7 +102,6 @@ private:
     VarViz *varViz;
 
     QVector<VizWidget*> vizWidgets;
-    //VolumeVizWidget *volumeVizWidget;
 
     QString dataDir;
     DataObject *dataSet;

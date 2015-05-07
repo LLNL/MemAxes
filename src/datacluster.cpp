@@ -195,7 +195,8 @@ void DataClusterTree::hierarchicalCluster(DataObject *d, std::vector<DataCluster
         levelNodes.insert(levelNodes.begin()+n1NodeIndex,newNode);
     }
 
-    root = levelNodes.front();
+    DataClusterNode *lastNode = levelNodes.front();
+    root = lastNode;
 }
 
 DataClusterNode::DataClusterNode()

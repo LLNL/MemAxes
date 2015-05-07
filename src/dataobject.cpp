@@ -85,6 +85,8 @@ void DataObject::allocate()
     begin = vals.begin();
     end = vals.end();
 
+    clusterTrees.resize(numDimensions,NULL);
+
     visibility.resize(numElements);
     visibility.fill(VISIBLE);
 
@@ -371,8 +373,19 @@ int DataObject::parseCSVFile(QString dataFileName)
     if (!dataFile.open(QIODevice::ReadOnly | QIODevice::Text))
         return -1;
 
-    // Create text stream
+    // Get number of lines
     QTextStream dataStream(&dataFile);
+    unsigned long long numLines = 0;
+    while(!dataStream.atEnd())
+    {
+        dataStream.readLine();
+        numLines++;
+    }
+    numLines--; // one header line
+
+    // rewind
+    dataStream.device()->seek(0);
+
     QString line;
     QStringList lineValues;
 
@@ -383,20 +396,21 @@ int DataObject::parseCSVFile(QString dataFileName)
 
     sourceDim = this->meta.indexOf("source");
     lineDim = this->meta.indexOf("line");
-    variableDim = this->meta.indexOf("phase");
+    variableDim = this->meta.indexOf("variable");
     dataSourceDim = this->meta.indexOf("data_source");
-    indexDim = this->meta.indexOf("index");
     latencyDim = this->meta.indexOf("latency");
     nodeDim = this->meta.indexOf("node");
     cpuDim = this->meta.indexOf("cpu");
-    xDim = this->meta.indexOf("xidx");
-    yDim = this->meta.indexOf("yidx");
-    zDim = this->meta.indexOf("zidx");
+    timeDim = this->meta.indexOf("time");
 
     QVector<QString> varVec;
     QVector<QString> sourceVec;
 
+    unsigned long long minTime = std::numeric_limits<unsigned long long>::max();
+    unsigned long long maxTime = 0;
+
     // Get data
+    progress = 0;
     ElemIndex elem = 0;
     while(!dataStream.atEnd())
     {
@@ -428,7 +442,16 @@ int DataObject::parseCSVFile(QString dataFileName)
             }
             else if(i==dataSourceDim)
             {
-                this->vals.push_back(dseToDepth(tok.toLongLong()));
+                this->vals.push_back(PEBS_dseToDepth(tok.toULongLong()));
+            }
+            else if(i==timeDim)
+            {
+                unsigned long long time = tok.toULongLong();
+                minTime = std::min(time,minTime);
+                maxTime = std::max(time,maxTime);
+
+                this->vals.push_back(time);
+
             }
             else
             {
@@ -438,10 +461,21 @@ int DataObject::parseCSVFile(QString dataFileName)
 
         allElems.insert(elem);
         elem++;
+
+        if(numLines/elem > progress)
+        {
+            progress = numLines / elem;
+        }
     }
 
     // Close and return
     dataFile.close();
+
+    for(int i=timeDim; i<(int)vals.size(); i+=numDimensions)
+    {
+        // scale time to [0,1M]
+        vals[i] = scale(vals[i],minTime,maxTime,0,1000000);
+    }
 
     this->allocate();
 
@@ -577,8 +611,9 @@ void DataObject::constructSortedLists()
     }
 }
 
-void DataObject::createClusterTrees()
+void DataObject::createClusterTree(int dim, METRIC_TYPE m)
 {
-    clusterTrees.resize(numDimensions,NULL);
+    clusterTrees[dim] = new DataClusterTree();
+    clusterTrees[dim]->build(this,dim,m);
 }
 

@@ -54,7 +54,6 @@ public:
     PCVizWidget(QWidget *parent = 0);
 
 public:
-    void recalcLines(int dirtyAxis = -1);
 
 public slots:
     void frameUpdate();
@@ -62,15 +61,11 @@ public slots:
     void visibilityChangedSlot();
 
     void showContextMenu(const QPoint &);
-    void setSelOpacity(int val);
-    void setUnselOpacity(int val);
-    void setShowHistograms(bool checked);
     void beginAnimation();
     void endAnimation();
 
 protected:
     void processData();
-    void paintGL();
     void drawQtPainter(QPainter *painter);
 
     void leaveEvent(QEvent *e);
@@ -85,7 +80,6 @@ private:
     void calcHistBins();
 
 private:
-    bool needsRecalcLines;
     bool needsCalcHistBins;
     bool needsCalcMinMaxes;
     bool needsProcessData;
@@ -122,13 +116,8 @@ private:
     int animationAxis;
     int movingAxis;
 
-    bool showHistograms;
-
     qreal firstSel;
     qreal lastSel;
-
-    qreal selOpacity;
-    qreal unselOpacity;
 
     // OpenGL
     QVector<GLfloat> verts;
