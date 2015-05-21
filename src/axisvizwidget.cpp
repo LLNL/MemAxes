@@ -265,7 +265,7 @@ void AxisVizWidget::drawQtPainter(QPainter *painter)
     center = b + QPointF(-fm.width(text),fm.height());
     painter->drawText(center,text);
 
-    if(drawHists)
+    if(drawHists && !histVals.empty())
     {
         // Draw histograms
         painter->setPen(Qt::NoPen);
