@@ -494,8 +494,6 @@ int DataObject::parseCSVFile(QString dataFileName)
             else if(i==dataSourceDim)
             {
                 int depth = dseToDepth(tok.toULongLong());
-                DBGVAR(tok.toULongLong());
-                DBGVAR(depth);
                 this->vals.push_back(depth);
             }
             else if(i==timeDim)
