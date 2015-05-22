@@ -171,7 +171,6 @@ public:
     int dataSourceDim;
     int latencyDim;
     int cpuDim;
-    int nodeDim;
     int timeDim;
 
     QVector<qreal> vals;
@@ -199,6 +198,7 @@ private:
     QVector<qreal> covarianceMatrix;
     QVector<qreal> correlationMatrix;
 
+    int getDimensions();
 public:
     int progress;
     int getProgress() { return progress;}

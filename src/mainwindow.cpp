@@ -218,9 +218,9 @@ void MainWindow::visibilityChangedSlot()
 
 void errdiag(QString str)
 {
-        QErrorMessage errmsg;
-        errmsg.showMessage(str);
-        errmsg.exec();
+    QErrorMessage errmsg;
+    errmsg.showMessage(str);
+    errmsg.exec();
 }
 
 int MainWindow::loadData()
@@ -249,8 +249,6 @@ int MainWindow::loadData()
         errdiag("Error loading dataset: "+dataSetDir);
         return err;
     }
-
-    //dataSet->createClusterTrees();
 
     for(int i=0; i<vizWidgets.size(); i++)
     {

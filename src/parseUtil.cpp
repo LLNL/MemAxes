@@ -71,8 +71,6 @@ int dseToDepth(uint64_t dse)
 {
     dse >>= PERF_MEM_LVL_SHIFT; // shift for mem lvl
 
-    if(dse & PERF_MEM_LVL_NA)
-        return -1;
     if(dse & PERF_MEM_LVL_L1)
        return 1;
     if(dse & PERF_MEM_LVL_LFB)
@@ -91,12 +89,14 @@ int dseToDepth(uint64_t dse)
        return 5;
     if(dse & PERF_MEM_LVL_REM_CCE2)
        return 6;
-    if(dse & PERF_MEM_LVL_IO)
-       return -1;
-    if(dse & PERF_MEM_LVL_UNC)
+    if(dse & PERF_MEM_LVL_NA)
         return -1;
+    if(dse & PERF_MEM_LVL_IO)
+       return -2;
+    if(dse & PERF_MEM_LVL_UNC)
+        return -3;
 
-    return -1;
+    return -4;
 }
 
 int PEBS_dseToDepth(uint64_t dse)

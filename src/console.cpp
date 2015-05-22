@@ -104,7 +104,7 @@ void console::inspectCommand(QStringList *args)
     Q_UNUSED(args);
 
     // Print out some info about the current selection
-    int numSel = dataSet->numSelected;
+    int numSel = dataSet->getSelectionSet().size();
     int numTot = dataSet->numElements;
 
     log("Selected Samples : ");

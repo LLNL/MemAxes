@@ -365,6 +365,63 @@ void DataObject::collectTopoSamples()
     topo->collectSamples(this,&allElems);
 }
 
+int DataObject::getDimensions()
+{
+    sourceDim = this->meta.indexOf("source");
+    if(sourceDim < 0)
+    {
+        std::cerr << "Error: source dimension not found!" << std::endl;
+        return -1;
+    }
+
+    lineDim = this->meta.indexOf("line");
+    if(lineDim < 0)
+    {
+        std::cerr << "Error: line dimension not found!" << std::endl;
+        return -1;
+    }
+
+    variableDim = this->meta.indexOf("variable");
+    if(variableDim < 0)
+    {
+        std::cerr << "Error: variable dimension not found!" << std::endl;
+        return -1;
+    }
+
+    dataSourceDim = this->meta.indexOf("data_source");
+    if(dataSourceDim < 0)
+    {
+        dataSourceDim = this->meta.indexOf("dataSource");
+    }
+    if(dataSourceDim < 0)
+    {
+        std::cerr << "Error: data source dimension not found!" << std::endl;
+        return -1;
+    }
+
+    latencyDim = this->meta.indexOf("latency");
+    if(latencyDim < 0)
+    {
+        std::cerr << "Error: latency dimension not found!" << std::endl;
+        return -1;
+    }
+    cpuDim = this->meta.indexOf("cpu");
+    if(cpuDim < 0)
+    {
+        std::cerr << "Error: cpu dimension not found!" << std::endl;
+        return -1;
+    }
+
+    timeDim = this->meta.indexOf("time");
+    if(timeDim < 0)
+    {
+        std::cerr << "Error: time dimension not found!" << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
 int DataObject::parseCSVFile(QString dataFileName)
 {
     // Open the file
@@ -394,14 +451,8 @@ int DataObject::parseCSVFile(QString dataFileName)
     this->meta = line.split(',');
     this->numDimensions = this->meta.size();
 
-    sourceDim = this->meta.indexOf("source");
-    lineDim = this->meta.indexOf("line");
-    variableDim = this->meta.indexOf("variable");
-    dataSourceDim = this->meta.indexOf("data_source");
-    latencyDim = this->meta.indexOf("latency");
-    nodeDim = this->meta.indexOf("node");
-    cpuDim = this->meta.indexOf("cpu");
-    timeDim = this->meta.indexOf("time");
+    // Get dimensions from metadata
+    this->getDimensions();
 
     QVector<QString> varVec;
     QVector<QString> sourceVec;
@@ -442,7 +493,10 @@ int DataObject::parseCSVFile(QString dataFileName)
             }
             else if(i==dataSourceDim)
             {
-                this->vals.push_back(PEBS_dseToDepth(tok.toULongLong()));
+                int depth = dseToDepth(tok.toULongLong());
+                DBGVAR(tok.toULongLong());
+                DBGVAR(depth);
+                this->vals.push_back(depth);
             }
             else if(i==timeDim)
             {
