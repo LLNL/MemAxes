@@ -384,11 +384,19 @@ int DataObject::getDimensions()
     variableDim = this->meta.indexOf("variable");
     if(variableDim < 0)
     {
+        variableDim = this->meta.indexOf("instruction");
+    }
+    if(variableDim < 0)
+    {
         std::cerr << "Error: variable dimension not found!" << std::endl;
         return -1;
     }
 
-    dataSourceDim = this->meta.indexOf("data_source");
+    dataSourceDim = this->meta.indexOf("data_src");
+    if(dataSourceDim < 0)
+    {
+        dataSourceDim = this->meta.indexOf("data_source");
+    }
     if(dataSourceDim < 0)
     {
         dataSourceDim = this->meta.indexOf("dataSource");
