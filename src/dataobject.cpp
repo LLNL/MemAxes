@@ -432,7 +432,6 @@ int DataObject::getDimensions()
 
 int DataObject::parseCaliFile(QString caliFileName)
 {
-
     return 0;
 }
 
