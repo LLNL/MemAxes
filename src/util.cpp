@@ -144,7 +144,11 @@ QColor valToColor(qreal val, ColorMap &colorMap)
     qreal sv = scale(val,0,1,0,colorMap.size());
     int colIdx = min(colorMap.size()-1,(int)floor(sv));
 
-    assert(colIdx >= 0 && colIdx < colorMap.size());
+    // Clamp results
+    if(colIdx < 0)
+        colIdx = 0;
+    if(colIdx >= colorMap.size())
+        colIdx = colorMap.size();
 
     return colorMap.at(colIdx);
 }

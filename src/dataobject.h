@@ -105,6 +105,7 @@ private:
     void allocate();
     void collectTopoSamples();
     int parseCSVFile(QString dataFileName);
+    int parseCaliFile(QString caliFileName);
 
 public:
     // Selection & Visibility

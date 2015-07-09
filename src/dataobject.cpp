@@ -430,6 +430,12 @@ int DataObject::getDimensions()
     return 0;
 }
 
+int DataObject::parseCaliFile(QString caliFileName)
+{
+
+    return 0;
+}
+
 int DataObject::parseCSVFile(QString dataFileName)
 {
     // Open the file
