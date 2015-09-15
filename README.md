@@ -1,10 +1,10 @@
 # MemAxes
 
 MemAxes is a tool for visualizing memory access samples
-acquired by load/store sampling mechanisms like Intel PEBS or AMD
-IBS. It allows a user to view the data projected into various domains;
+acquired by [Mitos](http://github.com/scalability-llnl/Mitos).
+It allows a user to view the data projected into various domains;
 specifically, the layout of the hardware resources, the
-code/variables, the dataset domain, and parallel coordinates.
+code/variables, and parallel coordinates.
 
 ----
 
@@ -13,14 +13,14 @@ code/variables, the dataset domain, and parallel coordinates.
 ## Requirements
 
 MemAxes requires [Qt5](http://qt-project.org/qt5) and
-[VTK](http://www.vtk.org).  It also requires
 [CMake](http://www.cmake.org) version 2.8.9 or higher, in order to
 build Qt5.
 
 ## Building
 
-1. Make sure that Qt5 and VTK are installed, and add their install
-   locations to the `CMAKE_PREFIX_PATH` environment variable.
+1. Make sure that Qt5 is installed, and add its install
+   locations to the `CMAKE_PREFIX_PATH` environment variable,
+   or set `Qt5_DIR` to the directory containing Qt5Config.cmake
 
 2. Run the following commands from the root of the MemAxes source:
    ```
@@ -31,8 +31,8 @@ build Qt5.
    ```
 
 ## Running
-1. Select **File &rarr; Load Data** from the menu.
-2. Select the lulesh directory from the `example_data` directory.
+1. Select **File &rarr; Open Dataset** from the menu.
+2. Select either the `XSBench` or `lulesh2` directory from the `example_data` directory.
    In an installed version of MemAxes, this is in `$prefix/share/example_data`.
 
 ----
@@ -66,22 +66,6 @@ top offending line of code (not shown).
 
 Either lines or variables may be selected by clicking, upon which all
 samples associated with that line or variable will be selected.
-
-## Application Context
-![image](images/application.png)
-
-If samples are mapped to x, y, and z locations, the application
-context view shows a direct volume rendering of the number of samples
-associated with each location on a uniform grid. The transfer function
-automatically configures based on the selection, such that the average
-values are shown in green with half opacity, the maximum values are
-shown in red with full opacity, and the lowest values are shown in
-blue with nearly zero opacity. The user may manually configure the
-transfer function as well (though primitively, for now).
-
-There is no selection capability in this view, but the rendering will
-represent the current selection only (or the entire dataset, if
-nothing is selected).
 
 ## Parallel Coordinates
 ![image](images/pcoords.png)
