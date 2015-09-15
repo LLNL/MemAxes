@@ -608,7 +608,7 @@
      <x>0</x>
      <y>0</y>
      <width>1749</width>
-     <height>31</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -630,7 +630,10 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionImport_Data">
    <property name="text">
-    <string>Load Data</string>
+    <string>Open Dataset...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="actionImport_Source">

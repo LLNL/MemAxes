@@ -260,7 +260,7 @@ int PCVizWidget::getClosestAxis(int xval)
     int closestAxis = -1;
     for(int i=0; i<numDimensions; i++)
     {
-        dist = abs(40+axesPositions[i]*plotBBox.width()-xval);
+        dist = fabs((qreal)(40+axesPositions[i]*plotBBox.width()-xval));
         if(dist < closestDistance)
         {
             closestDistance = dist;
