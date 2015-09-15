@@ -1,1 +1,1 @@
-*.user*.o*.app*~*.swpmoc_*.cppui_*.h*.plistMakefile
+build/*.user*.o*.app*~*.swpmoc_*.cppui_*.h*.plist
