@@ -69,7 +69,7 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
         int depth = d->at(elem,d->dataSourceDim);
         qreal cycles = d->at(elem,d->latencyDim);
 
-        if(depth == -1)
+        if(depth < 0)
             continue;
 
         depthSamples[depth] = depthSamples.at(depth) + 1;
@@ -97,7 +97,7 @@ void HardwareClusterAggregate::createAggregateFromSamples(DataObject *d, ElemSet
         int depth = d->at(elem,d->dataSourceDim);
         qreal cycles = d->at(elem,d->latencyDim);
 
-        if(depth == -1)
+        if(depth < 0)
             continue;
 
         depthStddevs[depth] = depthStddevs.at(depth)
