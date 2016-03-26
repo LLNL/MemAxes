@@ -7,7 +7,10 @@ cmake_minimum_required(VERSION 3.1.0)
 find_package(Qt5 REQUIRED Core Widgets OpenGL Xml)
 
 # OpenGL
-find_package(OpenGL)
+find_package(OpenGL REQUIRED)
+
+# Caliper
+find_package(caliper REQUIRED)
 
 # Top-level build just includes subdirectories.
 add_subdirectory(src)

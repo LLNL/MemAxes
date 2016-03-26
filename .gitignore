@@ -1,1 +1,11 @@
-build/*.user*.o*.app*~*.swpmoc_*.cppui_*.h*.plist
+build/
+*.user
+*.o
+*.app
+
+*~
+*.swp
+
+moc_*.cpp
+ui_*.h
+*.plist

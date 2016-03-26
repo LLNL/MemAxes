@@ -43,6 +43,8 @@
 #include <algorithm>
 #include <functional>
 
+#include <caliper/SimpleReader.h>
+
 #include <QFile>
 #include <QTextStream>
 
@@ -432,6 +434,18 @@ int DataObject::getDimensions()
 
 int DataObject::parseCaliFile(QString caliFileName)
 {
+    cali::SimpleReader sr;
+
+    sr.open(caliFileName.toStdString());
+
+    cali::ExpandedRecordMap rec;
+    while (sr.nextSnapshot(rec)) {
+        for (auto attr : rec) {
+            std::cout << attr.first << "=" << attr.second << ",";
+        }
+        std::cout << std::endl;
+    }
+
     return 0;
 }
 

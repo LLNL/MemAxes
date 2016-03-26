@@ -4,8 +4,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTOUIC ON) # tested, not working
 
+
 # Includes, Definitions, Flags
-include_directories(${Qt5Widgets_INCLUDE_DIRS})# ${VTK_INCLUDE_DIRS})
+include_directories("${caliper_INCLUDE_DIR}")
+include_directories(${Qt5Widgets_INCLUDE_DIRS})
 add_definitions(${Qt5Widgets_DEFINITIONS})
 
 # ui files
@@ -57,14 +59,14 @@ set(UIC
   ui_form.h)
 
 # Build Target
-add_executable(MemAxes MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIC})
-# add_executable(MemAxes ${SOURCES} ${HEADERS} ${UIC})
+# add_executable(MemAxes MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIC})
+add_executable(MemAxes ${SOURCES} ${HEADERS} ${UIC})
 
 # C++11 support
 target_compile_features(MemAxes PRIVATE cxx_range_for)
 
 qt5_use_modules(MemAxes Widgets OpenGL)
 
-target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL ${OPENGL_LIBRARIES})# ${VTK_LIBRARIES})
+target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL caliper-reader ${OPENGL_LIBRARIES})# ${VTK_LIBRARIES})
 
 install(TARGETS MemAxes DESTINATION bin)
