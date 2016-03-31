@@ -474,6 +474,7 @@ int DataObject::parseCaliFile(QString caliFileName)
                 break;
             }
         }
+        rec.clear();
     }
 
     std::vector< QVector<QString> > unique_ids;
@@ -488,7 +489,6 @@ int DataObject::parseCaliFile(QString caliFileName)
     QVector<QString> varVec;
     QVector<QString> sourceVec;
     QVector<QString> phaseVec;
-
 
     int elem = 0;
     QString unknown("??");
@@ -535,6 +535,13 @@ int DataObject::parseCaliFile(QString caliFileName)
                 else
                 {
                     vals.push_back(rec[attr].to_double());
+                }
+                if (attr == std::string("lulesh.cycle") && rec["omp.thread"].to_double() != 0)
+                {
+                    for (auto r : rec) {
+                        std::cerr << r.first << "=" << r.second << ", ";
+                    }
+                    std::cerr << std::endl;
                 }
             }
             else {
