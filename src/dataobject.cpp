@@ -40,6 +40,7 @@
 #include "parseUtil.h"
 
 #include <iostream>
+#include <string>
 #include <algorithm>
 #include <functional>
 
@@ -69,7 +70,8 @@ int DataObject::loadHardwareTopology(QString filename)
 
 int DataObject::loadData(QString filename)
 {
-    int err = parseCSVFile(filename);
+    //int err = parseCSVFile(filename);
+    int err = parseCaliFile(filename);
     if(err)
         return err;
 
@@ -434,17 +436,121 @@ int DataObject::getDimensions()
 
 int DataObject::parseCaliFile(QString caliFileName)
 {
-    cali::SimpleReader sr;
+    // Get MetaData this->meta, this->numDimensions
+    this->meta << "Source" << "Line" << "Variable"
+               << "MemLvl" << "Latency" << "CPU"
+               << "Timestamp" << "IP" << "Address";
+               /*
+               << "Lulesh Phase" << "Lulesh Cycle" 
+               << "Lulesh Time" << "Lulesh DeltaT";
+               */
 
+    sourceDim = 0;
+    lineDim = 1;
+    variableDim = 2;
+    dataSourceDim = 3;
+    latencyDim = 4;
+    cpuDim = 5;
+    timeDim = 6;
+
+    // Get Data 
+    std::set<std::string> extra_attrs;
+
+    cali::SimpleReader sr;
     sr.open(caliFileName.toStdString());
 
     cali::ExpandedRecordMap rec;
-    while (sr.nextSnapshot(rec)) {
+    std::vector<cali::ExpandedRecordMap> all_recs;
+    while(sr.nextSnapshot(rec)) {
         for (auto attr : rec) {
-            std::cout << attr.first << "=" << attr.second << ",";
+            if(strncmp(attr.first.c_str(), "mitos", strlen("mitos")) == 0) {
+                all_recs.push_back(rec);
+                for (auto it : rec) {
+                    if(strncmp(it.first.c_str(), "mitos", strlen("mitos")) != 0
+                       && strncmp(it.first.c_str(), "cali", strlen("cali")) != 0) {
+                        extra_attrs.insert(it.first);
+                    }
+                }
+                break;
+            }
         }
-        std::cout << std::endl;
     }
+
+    std::vector< QVector<QString> > unique_ids;
+    unique_ids.resize(extra_attrs.size());
+
+    for (auto attr : extra_attrs) {
+        this->meta << attr.c_str();
+    }
+
+    this->numDimensions = this->meta.size();
+
+    QVector<QString> varVec;
+    QVector<QString> sourceVec;
+    QVector<QString> phaseVec;
+
+
+    int elem = 0;
+    QString unknown("??");
+    ElemIndex uid;
+    for(auto rec : all_recs) {
+
+        uid = createUniqueID(sourceVec, unknown);
+        fileNames.push_back(unknown);
+        int source = uid;
+
+        int line = -1;
+
+        uid = createUniqueID(varVec, unknown);
+        varNames.push_back(unknown);
+        int var = uid;
+
+        uint64_t ip = rec["mitos.ip"].to_uint();
+        int depth = dseToDepth(rec["mitos.datasource"].to_uint());
+        uint64_t address = rec["mitos.address"].to_uint();
+        uint64_t latency = rec["mitos.latency"].to_uint();
+        uint64_t cpu = rec["mitos.cpu"].to_uint();
+        uint64_t timestamp = rec["mitos.timestamp"].to_uint();
+
+        vals.push_back(source);
+        vals.push_back(line);
+        vals.push_back(var);
+        vals.push_back(depth);
+        vals.push_back(latency);
+        vals.push_back(cpu);
+        vals.push_back(timestamp);
+        vals.push_back(ip);
+        vals.push_back(address);
+
+        int i=0;
+        for (auto attr : extra_attrs) {
+            if (rec.find(attr) != rec.end()) {
+                cali_attr_type t = rec[attr].type();
+                if (t == CALI_TYPE_INV || t == CALI_TYPE_USR ||
+                    t == CALI_TYPE_STRING || t == CALI_TYPE_TYPE)
+                {
+                    uid = createUniqueID(unique_ids[i], QString(rec[attr].to_string().c_str()));
+                    vals.push_back(uid);
+                }
+                else
+                {
+                    vals.push_back(rec[attr].to_double());
+                }
+            }
+            else {
+                vals.push_back(-1);
+            }
+            i++;
+        }
+
+        allElems.insert(elem);
+        elem++;
+    }
+
+    // Scale the time values (timestamps are big)
+
+    // Run this->allocate()
+    this->allocate();
 
     return 0;
 }

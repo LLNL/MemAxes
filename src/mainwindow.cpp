@@ -242,7 +242,7 @@ int MainWindow::loadData()
         return err;
     }
 
-    QString dataSetDir(dataDir+QString("/data/samples.csv"));
+    QString dataSetDir(dataDir+QString("/mitos.cali"));
     err = dataSet->loadData(dataSetDir);
     if(err != 0)
     {

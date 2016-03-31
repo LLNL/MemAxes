@@ -14,4 +14,3 @@ find_package(caliper REQUIRED)
 
 # Top-level build just includes subdirectories.
 add_subdirectory(src)
-add_subdirectory(example_data)
