@@ -356,6 +356,11 @@ void PCVizWidget::calcHistBins()
     if(!processed)
         return;
 
+    for(int i=0; i<numDimensions; i++)
+    {
+        histVals[i].fill(0);
+    }
+
     histMaxVals.fill(0);
 
     int elem;

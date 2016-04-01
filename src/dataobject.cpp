@@ -495,11 +495,12 @@ int DataObject::parseCaliFile(QString caliFileName)
     ElemIndex uid;
     for(auto rec : all_recs) {
 
-        uid = createUniqueID(sourceVec, unknown);
-        fileNames.push_back(unknown);
+        QString sourcefile(rec["source.file.mitos.ip"].to_string().c_str());
+        uid = createUniqueID(sourceVec, sourcefile);
+        fileNames.push_back(sourcefile);
         int source = uid;
 
-        int line = -1;
+        uint64_t line = rec["source.line.mitos.ip"].to_uint();
 
         uid = createUniqueID(varVec, unknown);
         varNames.push_back(unknown);
