@@ -337,6 +337,6 @@ void MainWindow::setCodeLabel(QFile *file)
 
 void MainWindow::setProgress(int p)
 {
-    ui->progressBar->setValue(p);
+    //ui->progressBar->setValue(p);
     QApplication::processEvents();
 }

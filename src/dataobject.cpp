@@ -537,13 +537,6 @@ int DataObject::parseCaliFile(QString caliFileName)
                 {
                     vals.push_back(rec[attr].to_double());
                 }
-                if (attr == std::string("lulesh.cycle") && rec["omp.thread"].to_double() != 0)
-                {
-                    for (auto r : rec) {
-                        std::cerr << r.first << "=" << r.second << ", ";
-                    }
-                    std::cerr << std::endl;
-                }
             }
             else {
                 vals.push_back(-1);

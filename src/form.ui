@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1749</width>
-    <height>919</height>
+    <width>1113</width>
+    <height>796</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,6 +17,12 @@
    <layout class="QHBoxLayout" name="horizontalLayout_4">
     <item>
      <widget class="QSplitter" name="topBottomSplitter">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -24,13 +30,19 @@
        <bool>true</bool>
       </property>
       <widget class="QSplitter" name="topSplitter">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
        <widget class="QGroupBox" name="codeDomainGroupBox">
         <property name="minimumSize">
          <size>
-          <width>555</width>
+          <width>0</width>
           <height>0</height>
          </size>
         </property>
@@ -47,7 +59,7 @@
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>200</height>
+              <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -206,7 +218,7 @@
           <widget class="QGroupBox" name="console">
            <property name="minimumSize">
             <size>
-             <width>500</width>
+             <width>0</width>
              <height>0</height>
             </size>
            </property>
@@ -330,6 +342,9 @@
        </widget>
       </widget>
       <widget class="QTabWidget" name="bottomTabWidget">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -337,7 +352,7 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="parallelAxesTab">
         <attribute name="title">
@@ -350,6 +365,9 @@
         </layout>
        </widget>
        <widget class="QWidget" name="singleAxisTab">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <attribute name="title">
          <string>Single Axis</string>
         </attribute>
@@ -452,6 +470,9 @@
                 </item>
                 <item>
                  <widget class="QCheckBox" name="axisDrawClusters">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
                   <property name="text">
                    <string>Cluster Aggregates</string>
                   </property>
@@ -489,6 +510,9 @@
                 </item>
                 <item>
                  <widget class="QCheckBox" name="axisDrawMetrics">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
                   <property name="text">
                    <string>Performance Metric</string>
                   </property>
@@ -504,6 +528,9 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_14">
                   <item>
                    <widget class="QLabel" name="label_7">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="maximumSize">
                      <size>
                       <width>51</width>
@@ -517,6 +544,9 @@
                   </item>
                   <item>
                    <widget class="QComboBox" name="metricBox">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <item>
                      <property name="text">
                       <string>Core Imbalance</string>
@@ -564,13 +594,22 @@
                  <layout class="QHBoxLayout" name="horizontalLayout">
                   <item>
                    <widget class="QPushButton" name="calcMetrics">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string>Metrics</string>
+                    </property>
+                    <property name="flat">
+                     <bool>false</bool>
                     </property>
                    </widget>
                   </item>
                   <item>
                    <widget class="QPushButton" name="calcClusters">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string>Clusters</string>
                     </property>
@@ -585,16 +624,6 @@
            </item>
           </layout>
          </item>
-         <item>
-          <widget class="QProgressBar" name="progressBar">
-           <property name="value">
-            <number>0</number>
-           </property>
-           <property name="textVisible">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
       </widget>
@@ -607,7 +636,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1749</width>
+     <width>1113</width>
      <height>22</height>
     </rect>
    </property>
