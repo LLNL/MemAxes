@@ -60,9 +60,9 @@ CodeViz::CodeViz(QWidget *parent) :
     margin = 0;
 
     numVisibleSourceBlocks = 2;
-    numVisibleLineBlocks = 8;
+    numVisibleLineBlocks = 5;
 
-    this->setMinimumHeight(20);
+    this->setMinimumHeight(60);
     this->installEventFilter(this);
 
     processed = false;
@@ -123,6 +123,9 @@ void CodeViz::processData()
     for(elem=0, p=dataSet->begin; p!=dataSet->end; elem++, p+=dataSet->numDimensions)
     {
         if(dataSet->selectionDefined() && !dataSet->selected(elem))
+            continue;
+
+        if(dataSet->fileNames[elem].isEmpty())
             continue;
 
         int sourceIdx = this->getFileID(dataSet->fileNames[elem]);

@@ -57,6 +57,7 @@ DataObject::DataObject()
     numVisible = 0;
 
     topo = NULL;
+    con = NULL;
 
     selMode = MODE_NEW;
 }
@@ -217,9 +218,10 @@ struct indexedValueLtFunctor
 
 ElemSet& DataObject::createDimRangeQuery(int dim, qreal vmin, qreal vmax)
 {
-    con->log("DIMRANGE"+QString::number(dim)
-             +"="+ QString::number(vmin)
-             +":"+QString::number(vmax));
+    if(con)
+        con->log("DIMRANGE"+QString::number(dim)
+                 +"="+ QString::number(vmin)
+                 +":"+QString::number(vmax));
 
     ElemSet& selSet = *(new ElemSet);
 
@@ -481,6 +483,8 @@ int DataObject::parseCaliFile(QString caliFileName)
     unique_ids.resize(extra_attrs.size());
 
     for (auto attr : extra_attrs) {
+        if (attr == "source.line.mitos.ip" || attr == "source.file.mitos.ip")
+            continue;
         this->meta << attr.c_str();
     }
 
@@ -500,7 +504,7 @@ int DataObject::parseCaliFile(QString caliFileName)
         fileNames.push_back(sourcefile);
         int source = uid;
 
-        uint64_t line = rec["source.line.mitos.ip"].to_uint();
+        int line = (sourcefile.isEmpty()) ? -1 : rec["source.line.mitos.ip"].to_uint();
 
         uid = createUniqueID(varVec, unknown);
         varNames.push_back(unknown);
@@ -525,6 +529,8 @@ int DataObject::parseCaliFile(QString caliFileName)
 
         int i=0;
         for (auto attr : extra_attrs) {
+            if (attr == "source.line.mitos.ip" || attr == "source.file.mitos.ip")
+                continue;
             if (rec.find(attr) != rec.end()) {
                 cali_attr_type t = rec[attr].type();
                 if (t == CALI_TYPE_INV || t == CALI_TYPE_USR ||
@@ -688,7 +694,8 @@ void DataObject::setSelectionMode(selection_mode mode, bool silent)
             selcmd += "filter";
             break;
     }
-    con->log(selcmd);
+    if(con)
+        con->log(selcmd);
 }
 
 void DataObject::calcStatistics()

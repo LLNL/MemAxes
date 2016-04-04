@@ -56,16 +56,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     dataSet = new DataObject();
 
-    con = new console(this);
-    ui->consoleLayout->addWidget(con);
+    //con = new console(this);
+    //ui->consoleLayout->addWidget(con);
 
-    QPlainTextEdit *console_input = new QPlainTextEdit();
-    console_input->setFont(QFont("Consolas"));
-    console_input->setMaximumHeight(28);
-    ui->consoleLayout->addWidget(console_input);
+    //QPlainTextEdit *console_input = new QPlainTextEdit();
+    //console_input->setFont(QFont("Consolas"));
+    //console_input->setMaximumHeight(28);
+    //ui->consoleLayout->addWidget(console_input);
 
-    con->setConsoleInput(console_input);
-    con->setDataSet(dataSet);
+    //con->setConsoleInput(console_input);
+    //con->setDataSet(dataSet);
 
     /*
      * MainWindow
@@ -152,15 +152,15 @@ MainWindow::MainWindow(QWidget *parent) :
     AxisVizWidget *axisViz = new AxisVizWidget(this);
     ui->singleAxisLayout->addWidget(axisViz);
 
-    connect(ui->selectAxis, SIGNAL(valueChanged(int)), axisViz, SLOT(setDimension(int)));
-    connect(ui->setClusterDepth, SIGNAL(valueChanged(int)), axisViz, SLOT(setClusterDepth(int)));
+    connect(ui->selectAxis, SIGNAL(currentIndexChanged(int)), axisViz, SLOT(setDimension(int)));
+    //connect(ui->setClusterDepth, SIGNAL(valueChanged(int)), axisViz, SLOT(setClusterDepth(int)));
     connect(ui->setNumBins, SIGNAL(valueChanged(int)), axisViz, SLOT(setNumBins(int)));
     connect(ui->axisDrawHists, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawHists(int)));
-    connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
+    //connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
     connect(ui->axisDrawMetrics, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawMetrics(int)));
     connect(ui->metricBox, SIGNAL(currentIndexChanged(int)), axisViz, SLOT(setMetric(int)));
-    connect(ui->calcMetrics, SIGNAL(clicked()), axisViz, SLOT(setCalcMetrics()));
-    connect(ui->calcClusters, SIGNAL(clicked()), axisViz, SLOT(setCalcClusters()));
+    //connect(ui->calcMetrics, SIGNAL(clicked()), axisViz, SLOT(setCalcMetrics()));
+    //connect(ui->calcClusters, SIGNAL(clicked()), axisViz, SLOT(setCalcClusters()));
 
     vizWidgets.push_back(axisViz);
 
@@ -174,9 +174,9 @@ MainWindow::MainWindow(QWidget *parent) :
         vizWidgets[i]->setDataSet(dataSet);
     }
 
-    dataSet->setConsole(con);
+    //dataSet->setConsole(con);
 
-    connect(con, SIGNAL(selectionChangedSig()), this, SLOT(selectionChangedSlot()));
+    //connect(con, SIGNAL(selectionChangedSig()), this, SLOT(selectionChangedSlot()));
 
     for(int i=0; i<vizWidgets.size(); i++)
     {
@@ -250,6 +250,9 @@ int MainWindow::loadData()
         return err;
     }
 
+    ui->selectAxis->clear();
+    ui->selectAxis->addItems(dataSet->meta);
+
     for(int i=0; i<vizWidgets.size(); i++)
     {
         vizWidgets[i]->processData();
@@ -271,7 +274,7 @@ int MainWindow::selectDataDirectory()
     if(dataDir.isNull())
         return -1;
 
-    con->append("Selected Data Directory : "+dataDir);
+    //con->append("Selected Data Directory : "+dataDir);
 
     return 0;
 }
