@@ -196,8 +196,8 @@ void CodeViz::drawQtPainter(QPainter *painter)
             sourceBlocks[i].lineBlocks[j].block.setHeight(lineHeight);
 
             painter->fillRect(sourceBlocks[i].lineBlocks[j].block,Qt::gray);
-            painter->setPen(Qt::white);
-            painter->drawText(QPoint(sourceBlocks[i].block.right(),sourceBlocks[i].lineBlocks[j].block.top())
+            painter->setPen(Qt::black);
+            painter->drawText(QPoint(drawSpace.right(),sourceBlocks[i].lineBlocks[j].block.top())
                               +QPoint(-40,16),
                               QString::number(sourceBlocks[i].lineBlocks[j].line));
         }

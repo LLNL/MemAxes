@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     codeViz = new CodeViz(this);
     ui->codeVizLayout->addWidget(codeViz);
+    //ui->codeScrollArea->setWidget(codeViz);
 
     //connect(codeViz, SIGNAL(sourceFileSelected(QFile*)), this, SLOT(setCodeLabel(QString)));
 
@@ -106,6 +107,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     varViz = new VarViz(this);
     ui->varVizLayout->addWidget(varViz);
+
+    connect(ui->selectInfoAxis, SIGNAL(currentIndexChanged(QString)), varViz, SLOT(setVariable(QString)));
+    connect(ui->maxVars, SIGNAL(valueChanged(int)), varViz, SLOT(setMaxVars(int)));
 
     vizWidgets.push_back(varViz);
 
@@ -252,6 +256,10 @@ int MainWindow::loadData()
 
     ui->selectAxis->clear();
     ui->selectAxis->addItems(dataSet->meta);
+
+    ui->selectInfoAxis->clear();
+    ui->selectInfoAxis->addItems(dataSet->infometa);
+    varViz->setVariable(dataSet->infometa.first());
 
     for(int i=0; i<vizWidgets.size(); i++)
     {

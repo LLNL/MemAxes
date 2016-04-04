@@ -57,7 +57,6 @@ DataObject::DataObject()
     numVisible = 0;
 
     topo = NULL;
-    con = NULL;
 
     selMode = MODE_NEW;
 }
@@ -218,11 +217,6 @@ struct indexedValueLtFunctor
 
 ElemSet& DataObject::createDimRangeQuery(int dim, qreal vmin, qreal vmax)
 {
-    if(con)
-        con->log("DIMRANGE"+QString::number(dim)
-                 +"="+ QString::number(vmin)
-                 +":"+QString::number(vmax));
-
     ElemSet& selSet = *(new ElemSet);
 
     std::vector<indexedValue>::iterator itMin;
@@ -371,75 +365,10 @@ void DataObject::collectTopoSamples()
     topo->collectSamples(this,&allElems);
 }
 
-int DataObject::getDimensions()
-{
-    sourceDim = this->meta.indexOf("source");
-    if(sourceDim < 0)
-    {
-        std::cerr << "Error: source dimension not found!" << std::endl;
-        return -1;
-    }
-
-    lineDim = this->meta.indexOf("line");
-    if(lineDim < 0)
-    {
-        std::cerr << "Error: line dimension not found!" << std::endl;
-        return -1;
-    }
-
-    variableDim = this->meta.indexOf("variable");
-    if(variableDim < 0)
-    {
-        variableDim = this->meta.indexOf("instruction");
-    }
-    if(variableDim < 0)
-    {
-        std::cerr << "Error: variable dimension not found!" << std::endl;
-        return -1;
-    }
-
-    dataSourceDim = this->meta.indexOf("data_src");
-    if(dataSourceDim < 0)
-    {
-        dataSourceDim = this->meta.indexOf("data_source");
-    }
-    if(dataSourceDim < 0)
-    {
-        dataSourceDim = this->meta.indexOf("dataSource");
-    }
-    if(dataSourceDim < 0)
-    {
-        std::cerr << "Error: data source dimension not found!" << std::endl;
-        return -1;
-    }
-
-    latencyDim = this->meta.indexOf("latency");
-    if(latencyDim < 0)
-    {
-        std::cerr << "Error: latency dimension not found!" << std::endl;
-        return -1;
-    }
-    cpuDim = this->meta.indexOf("cpu");
-    if(cpuDim < 0)
-    {
-        std::cerr << "Error: cpu dimension not found!" << std::endl;
-        return -1;
-    }
-
-    timeDim = this->meta.indexOf("time");
-    if(timeDim < 0)
-    {
-        std::cerr << "Error: time dimension not found!" << std::endl;
-        return -1;
-    }
-
-    return 0;
-}
-
 int DataObject::parseCaliFile(QString caliFileName)
 {
     // Get MetaData this->meta, this->numDimensions
-    this->meta << "Source" << "Line" << "Variable"
+    this->meta << "Source" << "Line" 
                << "MemLvl" << "Latency" << "CPU"
                << "Timestamp" << "IP" << "Address";
                /*
@@ -449,14 +378,15 @@ int DataObject::parseCaliFile(QString caliFileName)
 
     sourceDim = 0;
     lineDim = 1;
-    variableDim = 2;
-    dataSourceDim = 3;
-    latencyDim = 4;
-    cpuDim = 5;
-    timeDim = 6;
+    dataSourceDim = 2;
+    latencyDim = 3;
+    cpuDim = 4;
+    timeDim = 5;
+
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
     // Get Data 
-    std::set<std::string> extra_attrs;
+    std::set<std::pair<std::string, cali::Variant> > extra_attrs;
 
     cali::SimpleReader sr;
     sr.open(caliFileName.toStdString());
@@ -470,7 +400,7 @@ int DataObject::parseCaliFile(QString caliFileName)
                 for (auto it : rec) {
                     if(strncmp(it.first.c_str(), "mitos", strlen("mitos")) != 0
                        && strncmp(it.first.c_str(), "cali", strlen("cali")) != 0) {
-                        extra_attrs.insert(it.first);
+                        extra_attrs.insert(it);
                     }
                 }
                 break;
@@ -479,13 +409,23 @@ int DataObject::parseCaliFile(QString caliFileName)
         rec.clear();
     }
 
-    std::vector< QVector<QString> > unique_ids;
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+
+    QVector<QVector<QString> > unique_ids;
     unique_ids.resize(extra_attrs.size());
 
     for (auto attr : extra_attrs) {
-        if (attr == "source.line.mitos.ip" || attr == "source.file.mitos.ip")
+        if (attr.first == "source.line.mitos.ip" || attr.first == "source.file.mitos.ip")
             continue;
-        this->meta << attr.c_str();
+        this->meta << attr.first.c_str();
+
+        cali_attr_type t = attr.second.type();
+        if (t == CALI_TYPE_INV || t == CALI_TYPE_USR ||
+            t == CALI_TYPE_STRING || t == CALI_TYPE_TYPE)
+        {
+            this->infometa << attr.first.c_str();
+            infovals[QString(attr.first.c_str())] = QVector<QString>();
+        }
     }
 
     this->numDimensions = this->meta.size();
@@ -493,6 +433,8 @@ int DataObject::parseCaliFile(QString caliFileName)
     QVector<QString> varVec;
     QVector<QString> sourceVec;
     QVector<QString> phaseVec;
+
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
     int elem = 0;
     QString unknown("??");
@@ -506,10 +448,6 @@ int DataObject::parseCaliFile(QString caliFileName)
 
         int line = (sourcefile.isEmpty()) ? -1 : rec["source.line.mitos.ip"].to_uint();
 
-        uid = createUniqueID(varVec, unknown);
-        varNames.push_back(unknown);
-        int var = uid;
-
         uint64_t ip = rec["mitos.ip"].to_uint();
         int depth = dseToDepth(rec["mitos.datasource"].to_uint());
         uint64_t address = rec["mitos.address"].to_uint();
@@ -519,7 +457,6 @@ int DataObject::parseCaliFile(QString caliFileName)
 
         vals.push_back(source);
         vals.push_back(line);
-        vals.push_back(var);
         vals.push_back(depth);
         vals.push_back(latency);
         vals.push_back(cpu);
@@ -529,22 +466,30 @@ int DataObject::parseCaliFile(QString caliFileName)
 
         int i=0;
         for (auto attr : extra_attrs) {
-            if (attr == "source.line.mitos.ip" || attr == "source.file.mitos.ip")
+            if (attr.first == "source.line.mitos.ip" || attr.first == "source.file.mitos.ip")
                 continue;
-            if (rec.find(attr) != rec.end()) {
-                cali_attr_type t = rec[attr].type();
+            if (rec.find(attr.first) != rec.end()) {
+                cali_attr_type t = attr.second.type();
                 if (t == CALI_TYPE_INV || t == CALI_TYPE_USR ||
                     t == CALI_TYPE_STRING || t == CALI_TYPE_TYPE)
                 {
-                    uid = createUniqueID(unique_ids[i], QString(rec[attr].to_string().c_str()));
+                    QString info(rec[attr.first].to_string().c_str());
+                    uid = createUniqueID(unique_ids[i], info);
+
+                    infovals[QString(attr.first.c_str())].push_back(info);
                     vals.push_back(uid);
                 }
                 else
                 {
-                    vals.push_back(rec[attr].to_double());
+                    vals.push_back(rec[attr.first].to_double());
                 }
             }
             else {
+                cali_attr_type t = attr.second.type();
+                if (t == CALI_TYPE_INV || t == CALI_TYPE_USR ||
+                    t == CALI_TYPE_STRING || t == CALI_TYPE_TYPE)
+                    infovals[QString(attr.first.c_str())].push_back("");
+
                 vals.push_back(-1);
             }
             i++;
@@ -554,122 +499,14 @@ int DataObject::parseCaliFile(QString caliFileName)
         elem++;
     }
 
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+
     // Scale the time values (timestamps are big)
 
     // Run this->allocate()
     this->allocate();
 
-    return 0;
-}
-
-int DataObject::parseCSVFile(QString dataFileName)
-{
-    // Open the file
-    QFile dataFile(dataFileName);
-
-    if (!dataFile.open(QIODevice::ReadOnly | QIODevice::Text))
-        return -1;
-
-    // Get number of lines
-    QTextStream dataStream(&dataFile);
-    unsigned long long numLines = 0;
-    while(!dataStream.atEnd())
-    {
-        dataStream.readLine();
-        numLines++;
-    }
-    numLines--; // one header line
-
-    // rewind
-    dataStream.device()->seek(0);
-
-    QString line;
-    QStringList lineValues;
-
-    // Get metadata from first line
-    line = dataStream.readLine();
-    this->meta = line.split(',');
-    this->numDimensions = this->meta.size();
-
-    // Get dimensions from metadata
-    this->getDimensions();
-
-    QVector<QString> varVec;
-    QVector<QString> sourceVec;
-
-    unsigned long long minTime = std::numeric_limits<unsigned long long>::max();
-    unsigned long long maxTime = 0;
-
-    // Get data
-    progress = 0;
-    ElemIndex elem = 0;
-    while(!dataStream.atEnd())
-    {
-        line = dataStream.readLine();
-        lineValues = line.split(',');
-
-        if(lineValues.size() != this->numDimensions)
-        {
-            std::cerr << "ERROR: element dimensions do not match metadata!" << std::endl;
-            std::cerr << "At element " << elem << std::endl;
-            return -1;
-        }
-
-        // Process individual dimensions differently
-        for(int i=0; i<lineValues.size(); i++)
-        {
-            QString tok = lineValues[i];
-            if(i==variableDim)
-            {
-                ElemIndex uid = createUniqueID(varVec,tok);
-                this->vals.push_back(uid);
-                varNames.push_back(tok);
-            }
-            else if(i==sourceDim)
-            {
-                ElemIndex uid = createUniqueID(sourceVec,tok);
-                this->vals.push_back(uid);
-                fileNames.push_back(tok);
-            }
-            else if(i==dataSourceDim)
-            {
-                int depth = dseToDepth(tok.toULongLong());
-                this->vals.push_back(depth);
-            }
-            else if(i==timeDim)
-            {
-                unsigned long long time = tok.toULongLong();
-                minTime = std::min(time,minTime);
-                maxTime = std::max(time,maxTime);
-
-                this->vals.push_back(time);
-
-            }
-            else
-            {
-                this->vals.push_back(tok.toLongLong());
-            }
-        }
-
-        allElems.insert(elem);
-        elem++;
-
-        if(numLines/elem > progress)
-        {
-            progress = numLines / elem;
-        }
-    }
-
-    // Close and return
-    dataFile.close();
-
-    for(int i=timeDim; i<(int)vals.size(); i+=numDimensions)
-    {
-        // scale time to [0,1M]
-        vals[i] = scale(vals[i],minTime,maxTime,0,1000000);
-    }
-
-    this->allocate();
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
     return 0;
 }
@@ -694,8 +531,6 @@ void DataObject::setSelectionMode(selection_mode mode, bool silent)
             selcmd += "filter";
             break;
     }
-    if(con)
-        con->log(selcmd);
 }
 
 void DataObject::calcStatistics()

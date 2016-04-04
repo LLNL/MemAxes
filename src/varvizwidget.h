@@ -58,6 +58,12 @@ public:
 signals:
     void variableSelected(int id);
 
+public slots:
+    void setVariable(QString var) 
+        { variable = var; processData(); repaint(); }
+    void setMaxVars(int num) 
+        { numVariableBlocks = num; processData(); repaint(); }
+
 protected:
     void processData();
     void selectionChangedSlot();
@@ -69,6 +75,8 @@ private:
     int getVariableID(QString name);
 
 private:
+    QString variable;
+
     int margin;
     QRect drawSpace;
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>882</width>
-    <height>747</height>
+    <width>970</width>
+    <height>779</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,7 +39,7 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QGroupBox" name="codeDomainGroupBox">
+       <widget class="QGroupBox" name="codeLayout">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -47,81 +47,31 @@
          </size>
         </property>
         <property name="title">
-         <string>Code and Variables</string>
+         <string>Source Code</string>
         </property>
-        <layout class="QVBoxLayout" name="codeDomainParent">
+        <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <widget class="QSplitter" name="splitter">
+          <widget class="QSplitter" name="splitter_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
-           <widget class="QGroupBox" name="codeBox">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="title">
-             <string>Top Offenders</string>
-            </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
-              <widget class="QSplitter" name="varCodeSplitter">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <widget class="QWidget" name="codeVizLayoutWidget">
-                <layout class="QVBoxLayout" name="codeVizLayout">
-                 <item>
-                  <widget class="QLabel" name="label_10">
-                   <property name="text">
-                    <string>Source Lines</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="varVizLayoutWidget">
-                <layout class="QVBoxLayout" name="varVizLayout">
-                 <item>
-                  <widget class="QLabel" name="label_11">
-                   <property name="text">
-                    <string>Data Objects</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-            </layout>
+           <widget class="QWidget" name="verticalLayoutWidget_2">
+            <layout class="QVBoxLayout" name="codeVizLayout"/>
            </widget>
-           <widget class="QSplitter" name="splitter_3">
+           <widget class="QSplitter" name="splitter">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
-            <widget class="QSplitter" name="splitter_4">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <widget class="QWidget" name="verticalLayoutWidget">
-              <layout class="QVBoxLayout" name="codeEditorLayout">
-               <item>
-                <widget class="QLabel" name="codeLabel">
-                 <property name="text">
-                  <string>Source.cpp</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
+            <widget class="QWidget" name="verticalLayoutWidget">
+             <layout class="QVBoxLayout" name="codeEditorLayout">
+              <item>
+               <widget class="QLabel" name="codeLabel">
+                <property name="text">
+                 <string>sourcefile.cpp</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </widget>
           </widget>
@@ -342,11 +292,11 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="parallelAxesTab">
         <attribute name="title">
-         <string>Parallel Axes</string>
+         <string>Parallel Numerical Histograms</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_12">
          <item>
@@ -359,179 +309,247 @@
          <bool>true</bool>
         </property>
         <attribute name="title">
-         <string>Single Axis</string>
+         <string>Single Numerical Histogram</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_7">
+        <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
-          <layout class="QHBoxLayout" name="singleAxisLayout">
-           <item>
-            <widget class="QGroupBox" name="groupBox_3">
-             <property name="maximumSize">
-              <size>
-               <width>238</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="title">
-              <string>Options</string>
-             </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="maximumSize">
+            <size>
+             <width>210</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Options</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_8">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_13">
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_9">
-                <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_13">
-                  <item>
-                   <widget class="QLabel" name="label_6">
-                    <property name="maximumSize">
-                     <size>
-                      <width>40</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                    <property name="text">
-                     <string>Axis:</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QComboBox" name="selectAxis"/>
-                  </item>
-                 </layout>
-                </item>
-                <item>
-                 <widget class="Line" name="line_2">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="axisDrawHists">
-                  <property name="text">
-                   <string>Histogram</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_11">
-                  <item>
-                   <widget class="QLabel" name="label_4">
-                    <property name="maximumSize">
-                     <size>
-                      <width>36</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                    <property name="text">
-                     <string>Bins:</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QSpinBox" name="setNumBins">
-                    <property name="prefix">
-                     <string/>
-                    </property>
-                    <property name="minimum">
-                     <number>2</number>
-                    </property>
-                    <property name="maximum">
-                     <number>1000</number>
-                    </property>
-                    <property name="singleStep">
-                     <number>5</number>
-                    </property>
-                    <property name="value">
-                     <number>100</number>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-                <item>
-                 <widget class="Line" name="line_3">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="axisDrawMetrics">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Performance Metric</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                  <property name="tristate">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_14">
-                  <item>
-                   <widget class="QLabel" name="label_7">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>51</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                    <property name="text">
-                     <string>Metric:</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QComboBox" name="metricBox">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <item>
-                     <property name="text">
-                      <string>Core Imbalance</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>L1 Imbalance</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>L2 Imbalance</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>L3 Imbalance</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>NUMA Imbalance</string>
-                     </property>
-                    </item>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
+               <widget class="QLabel" name="label_6">
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Axis:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="selectAxis"/>
               </item>
              </layout>
-            </widget>
-           </item>
-          </layout>
+            </item>
+            <item>
+             <widget class="Line" name="line_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="axisDrawHists">
+              <property name="text">
+               <string>Histogram</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_11">
+              <item>
+               <widget class="QLabel" name="label_4">
+                <property name="maximumSize">
+                 <size>
+                  <width>36</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Bins:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="setNumBins">
+                <property name="prefix">
+                 <string/>
+                </property>
+                <property name="minimum">
+                 <number>2</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+                <property name="singleStep">
+                 <number>5</number>
+                </property>
+                <property name="value">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="axisDrawMetrics">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Performance Metric</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <property name="tristate">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_14">
+              <item>
+               <widget class="QLabel" name="label_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Metric:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="metricBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Core Imbalance</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>L1 Imbalance</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>L2 Imbalance</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>L3 Imbalance</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>NUMA Imbalance</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="singleAxisLayout"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="singleInfoTab">
+        <attribute name="title">
+         <string>Single Information Histogram</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QGroupBox" name="groupBox_4">
+           <property name="maximumSize">
+            <size>
+             <width>210</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Options</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_15">
+              <property name="sizeConstraint">
+               <enum>QLayout::SetDefaultConstraint</enum>
+              </property>
+              <item>
+               <widget class="QLabel" name="label_8">
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Axis:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="selectInfoAxis"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="Line" name="line_5">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>Max Columns:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="maxVars">
+                <property name="value">
+                 <number>20</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="varVizLayout" stretch=""/>
          </item>
         </layout>
        </widget>
@@ -545,7 +563,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>882</width>
+     <width>970</width>
      <height>22</height>
     </rect>
    </property>

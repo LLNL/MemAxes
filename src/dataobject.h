@@ -99,12 +99,9 @@ public:
     void selectionChanged() { collectTopoSamples(); }
     void visibilityChanged() { collectTopoSamples(); }
 
-    void setConsole(console *c) { con = c; }
-
 private:
     void allocate();
     void collectTopoSamples();
-    int parseCSVFile(QString dataFileName);
     int parseCaliFile(QString caliFileName);
 
 public:
@@ -157,6 +154,7 @@ public:
 
 public:
     QStringList meta;
+    QStringList infometa;
     HWTopo *topo;
 
     // Counts
@@ -168,7 +166,6 @@ public:
     // Hard-coded dimensions
     int sourceDim;
     int lineDim;
-    int variableDim;
     int dataSourceDim;
     int latencyDim;
     int cpuDim;
@@ -177,6 +174,7 @@ public:
     QVector<qreal> vals;
     QVector<QString> fileNames;
     QVector<QString> varNames;
+    std::map<QString, QVector<QString> > infovals;
     QVector<qreal>::Iterator begin;
     QVector<qreal>::Iterator end;
 
@@ -199,12 +197,7 @@ private:
     QVector<qreal> covarianceMatrix;
     QVector<qreal> correlationMatrix;
 
-    int getDimensions();
 public:
-    int progress;
-    int getProgress() { return progress;}
-
-    console *con;
     selection_mode selMode;
 };
 

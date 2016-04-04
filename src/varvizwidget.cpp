@@ -55,7 +55,8 @@ VarViz::VarViz(QWidget *parent) :
     VizWidget(parent)
 {
     margin = 0;
-    numVariableBlocks = 8;
+    numVariableBlocks = 20;
+    variable = QString("");
 
     this->setMinimumHeight(20);
     this->installEventFilter(this);
@@ -95,7 +96,10 @@ void VarViz::processData()
         if(dataSet->selectionDefined() && !dataSet->selected(elem))
             continue;
 
-        int varIdx = this->getVariableID(dataSet->varNames[elem]);
+        if(dataSet->infovals[variable][elem].isEmpty())
+            continue;
+
+        int varIdx = this->getVariableID(dataSet->infovals[variable][elem]);
         varBlocks[varIdx].val += *(p+dataSet->latencyDim);
         varMaxVal = std::max(varMaxVal,varBlocks[varIdx].val);
     }
@@ -128,17 +132,25 @@ void VarViz::drawQtPainter(QPainter *painter)
     if(numBlocks == 0)
         return;
 
-    int blockheight = drawSpace.height() / numBlocks;
+    int blockwidth = drawSpace.width() / numBlocks;
     for(int i=0; i<numBlocks; i++)
     {
-        varBlocks[i].block.setLeft(drawSpace.left());
-        varBlocks[i].block.setTop(drawSpace.top()+i*blockheight);
-        varBlocks[i].block.setWidth(varBlocks[i].val/varMaxVal*drawSpace.width());
-        varBlocks[i].block.setHeight(blockheight);
+        varBlocks[i].block.setLeft(drawSpace.left()+i*blockwidth);
+        varBlocks[i].block.setWidth(blockwidth);
+        varBlocks[i].block.setTop(drawSpace.height() - varBlocks[i].val/varMaxVal*drawSpace.height());
+        varBlocks[i].block.setBottom(drawSpace.bottom());
 
         painter->fillRect(varBlocks[i].block,Qt::lightGray);
+    }
+
+    for(int i=0; i<numBlocks; i++)
+    {
+        painter->save();
+        painter->translate(varBlocks[i].block.bottomRight() - QPoint(10, 10));
+        painter->rotate(-90);
         painter->setPen(Qt::black);
-        painter->drawText(varBlocks[i].block.topLeft()+QPoint(0,16),varBlocks[i].name);
+        painter->drawText(0, 0, varBlocks[i].name);
+        painter->restore();
     }
 }
 
@@ -152,11 +164,11 @@ void VarViz::mouseReleaseEvent(QMouseEvent *e)
                               varBlocks[i].block.height());
         if(varSelectionBox.contains(e->pos()))
         {
-            ElemSet es = dataSet->createVarNameQuery(varBlocks[i].name);
-            dataSet->selectSet(es);
+            //ElemSet es = dataSet->createVarNameQuery(varBlocks[i].name);
+            //dataSet->selectSet(es);
 
-            emit variableSelected(i);
-            emit selectionChangedSig();
+            //emit variableSelected(i);
+            //emit selectionChangedSig();
 
             return;
         }
