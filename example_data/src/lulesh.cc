@@ -163,6 +163,8 @@ Additional BSD Notice
 #include <caliper/Annotation.h>
 #include <caliper/Caliper.h>
 
+cali::Annotation phase("lulesh.phase");
+
 #include "lulesh.h"
 
 
@@ -197,6 +199,7 @@ void Release(T **ptr)
 static inline
 void TimeIncrement(Domain& domain)
 {
+   phase.set(__func__);
    Real_t targetdt = domain.stoptime() - domain.time() ;
 
    if ((domain.dtfixed() <= Real_t(0.0)) && (domain.cycle() != Int_t(0))) {
@@ -261,6 +264,7 @@ void CollectDomainNodesToElemNodes(Domain &domain,
                                    Real_t elemY[8],
                                    Real_t elemZ[8])
 {
+   //phase.set(__func__);
    Index_t nd0i = elemToNode[0] ;
    Index_t nd1i = elemToNode[1] ;
    Index_t nd2i = elemToNode[2] ;
@@ -306,6 +310,7 @@ void InitStressTermsForElems(Domain &domain,
                              Real_t *sigxx, Real_t *sigyy, Real_t *sigzz,
                              Index_t numElem)
 {
+   phase.set(__func__);
    //
    // pull in the stresses appropriate to the hydro integration
    //
@@ -325,6 +330,7 @@ void CalcElemShapeFunctionDerivatives( Real_t const x[],
                                        Real_t b[][8],
                                        Real_t* const volume )
 {
+  //phase.set(__func__);
   const Real_t x0 = x[0] ;   const Real_t x1 = x[1] ;
   const Real_t x2 = x[2] ;   const Real_t x3 = x[3] ;
   const Real_t x4 = x[4] ;   const Real_t x5 = x[5] ;
@@ -419,6 +425,7 @@ void SumElemFaceNormal(Real_t *normalX0, Real_t *normalY0, Real_t *normalZ0,
                        const Real_t x2, const Real_t y2, const Real_t z2,
                        const Real_t x3, const Real_t y3, const Real_t z3)
 {
+   //phase.set(__func__);
    Real_t bisectX0 = Real_t(0.5) * (x3 + x2 - x1 - x0);
    Real_t bisectY0 = Real_t(0.5) * (y3 + y2 - y1 - y0);
    Real_t bisectZ0 = Real_t(0.5) * (z3 + z2 - z1 - z0);
@@ -455,6 +462,7 @@ void CalcElemNodeNormals(Real_t pfx[8],
                          const Real_t y[8],
                          const Real_t z[8])
 {
+   //phase.set(__func__);
    for (Index_t i = 0 ; i < 8 ; ++i) {
       pfx[i] = Real_t(0.0);
       pfy[i] = Real_t(0.0);
@@ -513,6 +521,7 @@ void SumElemStressesToNodeForces( const Real_t B[][8],
                                   const Real_t stress_zz,
                                   Real_t fx[], Real_t fy[], Real_t fz[] )
 {
+   //phase.set(__func__);
    for(Index_t i = 0; i < 8; i++) {
       fx[i] = -( stress_xx * B[0][i] );
       fy[i] = -( stress_yy * B[1][i]  );
@@ -527,6 +536,7 @@ void IntegrateStressForElems( Domain &domain,
                               Real_t *sigxx, Real_t *sigyy, Real_t *sigzz,
                               Real_t *determ, Index_t numElem, Index_t numNode)
 {
+   phase.set(__func__);
 #if _OPENMP
    Index_t numthreads = omp_get_max_threads();
 #else
@@ -628,6 +638,7 @@ void VoluDer(const Real_t x0, const Real_t x1, const Real_t x2,
              const Real_t z3, const Real_t z4, const Real_t z5,
              Real_t* dvdx, Real_t* dvdy, Real_t* dvdz)
 {
+   //phase.set(__func__);
    const Real_t twelfth = Real_t(1.0) / Real_t(12.0) ;
 
    *dvdx =
@@ -659,6 +670,7 @@ void CalcElemVolumeDerivative(Real_t dvdx[8],
                               const Real_t y[8],
                               const Real_t z[8])
 {
+   //phase.set(__func__);
    VoluDer(x[1], x[2], x[3], x[4], x[5], x[7],
            y[1], y[2], y[3], y[4], y[5], y[7],
            z[1], z[2], z[3], z[4], z[5], z[7],
@@ -700,6 +712,7 @@ void CalcElemFBHourglassForce(Real_t *xd, Real_t *yd, Real_t *zd,  Real_t hourga
                               Real_t coefficient,
                               Real_t *hgfx, Real_t *hgfy, Real_t *hgfz )
 {
+   //phase.set(__func__);
    Real_t hxx[4];
    for(Index_t i = 0; i < 4; i++) {
       hxx[i] = hourgam[0][i] * xd[0] + hourgam[1][i] * xd[1] +
@@ -746,6 +759,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
                                    Real_t hourg, Index_t numElem,
                                    Index_t numNode)
 {
+   //phase.set(__func__);
 
 #if _OPENMP
    Index_t numthreads = omp_get_max_threads();
@@ -1027,6 +1041,7 @@ static inline
 void CalcHourglassControlForElems(Domain& domain,
                                   Real_t determ[], Real_t hgcoef)
 {
+   phase.set(__func__);
    Index_t numElem = domain.numElem() ;
    Index_t numElem8 = numElem * 8 ;
    Real_t *dvdx = Allocate<Real_t>(numElem8) ;
@@ -1092,6 +1107,7 @@ void CalcHourglassControlForElems(Domain& domain,
 static inline
 void CalcVolumeForceForElems(Domain& domain)
 {
+   phase.set(__func__);
    Index_t numElem = domain.numElem() ;
    if (numElem != 0) {
       Real_t  hgcoef = domain.hgcoef() ;
@@ -1134,6 +1150,7 @@ void CalcVolumeForceForElems(Domain& domain)
 
 static inline void CalcForceForNodes(Domain& domain)
 {
+  phase.set(__func__);
   Index_t numNode = domain.numNode() ;
 
 #if USE_MPI  
@@ -1170,6 +1187,7 @@ static inline void CalcForceForNodes(Domain& domain)
 static inline
 void CalcAccelerationForNodes(Domain &domain, Index_t numNode)
 {
+   phase.set(__func__);
    
 #pragma omp parallel for firstprivate(numNode)
    for (Index_t i = 0; i < numNode; ++i) {
@@ -1184,6 +1202,7 @@ void CalcAccelerationForNodes(Domain &domain, Index_t numNode)
 static inline
 void ApplyAccelerationBoundaryConditionsForNodes(Domain& domain)
 {
+   phase.set(__func__);
    Index_t size = domain.sizeX();
    Index_t numNodeBC = (size+1)*(size+1) ;
 
@@ -1215,6 +1234,7 @@ static inline
 void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
                           Index_t numNode)
 {
+   phase.set(__func__);
 
 #pragma omp parallel for firstprivate(numNode)
    for ( Index_t i = 0 ; i < numNode ; ++i )
@@ -1240,6 +1260,7 @@ void CalcVelocityForNodes(Domain &domain, const Real_t dt, const Real_t u_cut,
 static inline
 void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
 {
+   phase.set(__func__);
 #pragma omp parallel for firstprivate(numNode)
    for ( Index_t i = 0 ; i < numNode ; ++i )
    {
@@ -1254,6 +1275,7 @@ void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
 static inline
 void LagrangeNodal(Domain& domain)
 {
+   phase.set(__func__);
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
    Domain_member fieldData[6] ;
 #endif
@@ -1315,6 +1337,7 @@ Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
                const Real_t z4, const Real_t z5,
                const Real_t z6, const Real_t z7 )
 {
+  //phase.set(__func__);
   Real_t twelveth = Real_t(1.0)/Real_t(12.0);
 
   Real_t dx61 = x6 - x1;
@@ -1390,7 +1413,8 @@ Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
 
 //inline
 Real_t CalcElemVolume( const Real_t x[8], const Real_t y[8], const Real_t z[8] )
-{
+{ 
+   //phase.set(__func__);
 return CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
                        y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7],
                        z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7]);
@@ -1406,6 +1430,7 @@ Real_t AreaFace( const Real_t x0, const Real_t x1,
                  const Real_t z0, const Real_t z1,
                  const Real_t z2, const Real_t z3)
 {
+   //phase.set(__func__);
    Real_t fx = (x2 - x0) - (x3 - x1);
    Real_t fy = (y2 - y0) - (y3 - y1);
    Real_t fz = (z2 - z0) - (z3 - z1);
@@ -1428,6 +1453,7 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
                                      const Real_t z[8],
                                      const Real_t volume)
 {
+   //phase.set(__func__);
    Real_t a, charLength = Real_t(0.0);
 
    a = AreaFace(x[0],x[1],x[2],x[3],
@@ -1475,6 +1501,7 @@ void CalcElemVelocityGradient( const Real_t* const xvel,
                                 const Real_t detJ,
                                 Real_t* const d )
 {
+   //phase.set(__func__);
   const Real_t inv_detJ = Real_t(1.0) / detJ ;
   Real_t dyddx, dxddy, dzddx, dxddz, dzddy, dyddz;
   const Real_t* const pfx = b[0];
@@ -1536,6 +1563,7 @@ void CalcElemVelocityGradient( const Real_t* const xvel,
 void CalcKinematicsForElems( Domain &domain,
                              Real_t deltaTime, Index_t numElem )
 {
+   //phase.set(__func__);
 
   // loop over all elements
 #pragma omp parallel for firstprivate(numElem, deltaTime)
@@ -1603,6 +1631,7 @@ void CalcKinematicsForElems( Domain &domain,
 static inline
 void CalcLagrangeElements(Domain& domain)
 {
+   phase.set(__func__);
    Index_t numElem = domain.numElem() ;
    if (numElem > 0) {
       const Real_t deltatime = domain.deltatime() ;
@@ -1644,6 +1673,7 @@ void CalcLagrangeElements(Domain& domain)
 static inline
 void CalcMonotonicQGradientsForElems(Domain& domain)
 {
+   //phase.set(__func__);
    Index_t numElem = domain.numElem();
 
 #pragma omp parallel for firstprivate(numElem)
@@ -1793,6 +1823,7 @@ static inline
 void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
                                   Real_t ptiny)
 {
+   //phase.set(__func__);
    Real_t monoq_limiter_mult = domain.monoq_limiter_mult();
    Real_t monoq_max_slope = domain.monoq_max_slope();
    Real_t qlc_monoq = domain.qlc_monoq();
@@ -1956,6 +1987,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
 static inline
 void CalcMonotonicQForElems(Domain& domain)
 {  
+   //phase.set(__func__);
    //
    // initialize parameters
    // 
@@ -1976,6 +2008,7 @@ void CalcMonotonicQForElems(Domain& domain)
 static inline
 void CalcQForElems(Domain& domain)
 {
+   phase.set(__func__);
    //
    // MONOTONIC Q option
    //
@@ -2050,6 +2083,7 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
                           Real_t p_cut, Real_t eosvmax,
                           Index_t length, Index_t *regElemList)
 {
+   //phase.set(__func__);
 #pragma omp parallel for firstprivate(length)
    for (Index_t i = 0; i < length ; ++i) {
       Real_t c1s = Real_t(2.0)/Real_t(3.0) ;
@@ -2088,6 +2122,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
                         Real_t eosvmax,
                         Index_t length, Index_t *regElemList)
 {
+   //phase.set(__func__);
    Real_t *pHalfStep = Allocate<Real_t>(length) ;
 
 #pragma omp parallel for firstprivate(length, emin)
@@ -2215,6 +2250,7 @@ void CalcSoundSpeedForElems(Domain &domain,
                             Real_t *bvc, Real_t ss4o3,
                             Index_t len, Index_t *regElemList)
 {
+   //phase.set(__func__);
 #pragma omp parallel for firstprivate(rho0, ss4o3)
    for (Index_t i = 0; i < len ; ++i) {
       Index_t ielem = regElemList[i];
@@ -2236,6 +2272,7 @@ static inline
 void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                      Int_t numElemReg, Index_t *regElemList, Int_t rep)
 {
+   //phase.set(__func__);
    Real_t  e_cut = domain.e_cut() ;
    Real_t  p_cut = domain.p_cut() ;
    Real_t  ss4o3 = domain.ss4o3() ;
@@ -2359,6 +2396,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
 static inline
 void ApplyMaterialPropertiesForElems(Domain& domain)
 {
+   phase.set(__func__);
    Index_t numElem = domain.numElem() ;
 
   if (numElem != 0) {
@@ -2442,6 +2480,7 @@ static inline
 void UpdateVolumesForElems(Domain &domain,
                            Real_t v_cut, Index_t length)
 {
+   phase.set(__func__);
    if (length != 0) {
 #pragma omp parallel for firstprivate(length, v_cut)
       for(Index_t i=0 ; i<length ; ++i) {
@@ -2462,6 +2501,7 @@ void UpdateVolumesForElems(Domain &domain,
 static inline
 void LagrangeElements(Domain& domain, Index_t numElem)
 {
+  phase.set(__func__);
   CalcLagrangeElements(domain) ;
 
   /* Calculate Q.  (Monotonic q option requires communication) */
@@ -2480,6 +2520,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
                                    Index_t *regElemlist,
                                    Real_t qqc, Real_t& dtcourant)
 {
+   //phase.set(__func__);
 #if _OPENMP
    const Index_t threads = omp_get_max_threads();
    Index_t courant_elem_per_thread[threads];
@@ -2549,6 +2590,7 @@ static inline
 void CalcHydroConstraintForElems(Domain &domain, Index_t length,
                                  Index_t *regElemlist, Real_t dvovmax, Real_t& dthydro)
 {
+   //phase.set(__func__);
 #if _OPENMP
    const Index_t threads = omp_get_max_threads();
    Index_t hydro_elem_per_thread[threads];
@@ -2606,6 +2648,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
 
 static inline
 void CalcTimeConstraintsForElems(Domain& domain) {
+   phase.set(__func__);
 
    // Initialize conditions to a very large value
    domain.dtcourant() = 1.0e+20;
@@ -2631,6 +2674,7 @@ void CalcTimeConstraintsForElems(Domain& domain) {
 static inline
 void LagrangeLeapFrog(Domain& domain)
 {
+   phase.set(__func__);
 #ifdef SEDOV_SYNC_POS_VEL_LATE
    Domain_member fieldData[6] ;
 #endif
@@ -2680,12 +2724,10 @@ void LagrangeLeapFrog(Domain& domain)
 
 int main(int argc, char *argv[])
 {
-  Domain *locDom ;
+   Domain *locDom ;
    Int_t numRanks ;
    Int_t myRank ;
    struct cmdLineOpts opts;
-
-   cali::Annotation phase("lulesh.phase");
 
    phase.set("init");
 
