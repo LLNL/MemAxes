@@ -158,17 +158,17 @@ void VarViz::mouseReleaseEvent(QMouseEvent *e)
 {
     for(int i=0; i<varBlocks.size(); i++)
     {
-        QRect varSelectionBox(drawSpace.left(),
-                              varBlocks[i].block.top(),
-                              drawSpace.width(),
-                              varBlocks[i].block.height());
+        QRect varSelectionBox(varBlocks[i].block.left(),
+                              drawSpace.top(),
+                              varBlocks[i].block.width(),
+                              drawSpace.height());
         if(varSelectionBox.contains(e->pos()))
         {
-            //ElemSet es = dataSet->createVarNameQuery(varBlocks[i].name);
-            //dataSet->selectSet(es);
+            ElemSet es = dataSet->createStringQuery(variable, varBlocks[i].name);
+            dataSet->selectSet(es);
 
-            //emit variableSelected(i);
-            //emit selectionChangedSig();
+            emit variableSelected(i);
+            emit selectionChangedSig();
 
             return;
         }

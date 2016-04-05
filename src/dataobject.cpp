@@ -275,7 +275,7 @@ ElemSet& DataObject::createMultiDimRangeQuery(QVector<int> dims, QVector<qreal> 
     return selSet;
 }
 
-ElemSet& DataObject::createVarNameQuery(QString str)
+ElemSet& DataObject::createStringQuery(QString var, QString str)
 {
     ElemSet& selSet = *(new ElemSet);
 
@@ -283,7 +283,7 @@ ElemSet& DataObject::createVarNameQuery(QString str)
     QVector<qreal>::Iterator p;
     for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
     {
-        if(varNames[elem] == str)
+        if(infovals[var][elem] == str)
             selSet.insert(elem);
     }
 

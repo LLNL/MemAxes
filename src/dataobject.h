@@ -129,7 +129,7 @@ public:
     ElemSet& createDimRangeQuery(int dim, qreal vmin, qreal vmax);
     ElemSet& createMultiDimRangeQuery(QVector<int> dims, QVector<qreal> mins, QVector<qreal> maxes);
     ElemSet& createSourceFileQuery(QString str);
-    ElemSet& createVarNameQuery(QString str);
+    ElemSet& createStringQuery(QString var, QString str);
     ElemSet& createResourceQuery(HWNode *node);
 
     ElemSet& getSelectionSet(int group = 1) { return selectionSets.at(group); }
