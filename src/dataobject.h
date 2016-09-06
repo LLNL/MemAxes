@@ -102,6 +102,8 @@ public:
 private:
     void allocate();
     void collectTopoSamples();
+    int getDimensions();
+    int parseCSVFile(QString dataFileName);
     int parseCaliFile(QString caliFileName);
 
 public:
@@ -167,13 +169,14 @@ public:
     int sourceDim;
     int lineDim;
     int dataSourceDim;
+	int variableDim;
     int latencyDim;
     int cpuDim;
     int timeDim;
 
     QVector<qreal> vals;
-    QVector<QString> fileNames;
-    QVector<QString> varNames;
+    //QVector<QString> fileNames;
+    //QVector<QString> varNames;
     std::map<QString, QVector<QString> > infovals;
     QVector<qreal>::Iterator begin;
     QVector<qreal>::Iterator end;

@@ -48,6 +48,7 @@
 #include "vizwidget.h"
 #include "codevizwidget.h"
 #include "varvizwidget.h"
+#include "infovizwidget.h"
 #include "axisvizwidget.h"
 #include "pcvizwidget.h"
 #include "hwtopovizwidget.h"
@@ -100,6 +101,7 @@ private:
     CodeViz *codeViz;
     HWTopoVizWidget *memViz;
     VarViz *varViz;
+    InfoViz *infoViz;
 
     QVector<VizWidget*> vizWidgets;
 

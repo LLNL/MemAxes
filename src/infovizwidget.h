@@ -36,27 +36,33 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef VARVIZ_H
-#define VARVIZ_H
+#ifndef INFOVIZ_H
+#define INFOVIZ_H
 
 #include "vizwidget.h"
 
-struct varBlock
+struct infoBlock
 {
     QString name;
     qreal val;
     QRect block;
 };
 
-class VarViz : public VizWidget
+class InfoViz : public VizWidget
 {
     Q_OBJECT
 public:
-    VarViz(QWidget *parent = 0);
-    ~VarViz();
+    InfoViz(QWidget *parent = 0);
+    ~InfoViz();
 
 signals:
     void variableSelected(int id);
+
+public slots:
+    void setVariable(QString var) 
+        { variable = var; processData(); repaint(); }
+    void setMaxVars(int num) 
+        { numVariableBlocks = num; processData(); repaint(); }
 
 protected:
     void processData();
@@ -69,13 +75,15 @@ private:
     int getVariableID(QString name);
 
 private:
+    QString variable;
+
     int margin;
     QRect drawSpace;
 
     int numVariableBlocks;
 
-    QVector<varBlock> varBlocks;
+    QVector<infoBlock> varBlocks;
     qreal varMaxVal;
 };
 
-#endif // VARVIZ_H
+#endif // INFOVIZ_H

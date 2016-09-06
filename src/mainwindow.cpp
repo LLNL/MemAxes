@@ -106,12 +106,21 @@ MainWindow::MainWindow(QWidget *parent) :
      */
 
     varViz = new VarViz(this);
-    ui->varVizLayout->addWidget(varViz);
-
-    connect(ui->selectInfoAxis, SIGNAL(currentIndexChanged(QString)), varViz, SLOT(setVariable(QString)));
-    connect(ui->maxVars, SIGNAL(valueChanged(int)), varViz, SLOT(setMaxVars(int)));
+    ui->codeVizLayout->addWidget(varViz);
 
     vizWidgets.push_back(varViz);
+
+    /*
+     * Information Viz
+     */
+
+    infoViz = new InfoViz(this);
+    ui->infoVizLayout->addWidget(infoViz);
+
+    connect(ui->selectInfoAxis, SIGNAL(currentIndexChanged(QString)), infoViz, SLOT(setVariable(QString)));
+    connect(ui->maxVars, SIGNAL(valueChanged(int)), infoViz, SLOT(setMaxVars(int)));
+
+    vizWidgets.push_back(infoViz);
 
     /*
      * Code Editor
@@ -157,14 +166,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->singleAxisLayout->addWidget(axisViz);
 
     connect(ui->selectAxis, SIGNAL(currentIndexChanged(int)), axisViz, SLOT(setDimension(int)));
-    //connect(ui->setClusterDepth, SIGNAL(valueChanged(int)), axisViz, SLOT(setClusterDepth(int)));
+    connect(ui->setClusterDepth, SIGNAL(valueChanged(int)), axisViz, SLOT(setClusterDepth(int)));
     connect(ui->setNumBins, SIGNAL(valueChanged(int)), axisViz, SLOT(setNumBins(int)));
     connect(ui->axisDrawHists, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawHists(int)));
-    //connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
+    connect(ui->axisDrawClusters, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawClusters(int)));
     connect(ui->axisDrawMetrics, SIGNAL(stateChanged(int)), axisViz, SLOT(setDrawMetrics(int)));
     connect(ui->metricBox, SIGNAL(currentIndexChanged(int)), axisViz, SLOT(setMetric(int)));
-    //connect(ui->calcMetrics, SIGNAL(clicked()), axisViz, SLOT(setCalcMetrics()));
-    //connect(ui->calcClusters, SIGNAL(clicked()), axisViz, SLOT(setCalcClusters()));
+    connect(ui->calcMetrics, SIGNAL(clicked()), axisViz, SLOT(setCalcMetrics()));
+    connect(ui->calcClusters, SIGNAL(clicked()), axisViz, SLOT(setCalcClusters()));
 
     vizWidgets.push_back(axisViz);
 
@@ -246,7 +255,7 @@ int MainWindow::loadData()
         return err;
     }
 
-    QString dataSetDir(dataDir+QString("/mitos.cali"));
+    QString dataSetDir(dataDir+QString("/data/samples.csv"));
     err = dataSet->loadData(dataSetDir);
     if(err != 0)
     {
@@ -258,8 +267,12 @@ int MainWindow::loadData()
     ui->selectAxis->addItems(dataSet->meta);
 
     ui->selectInfoAxis->clear();
-    ui->selectInfoAxis->addItems(dataSet->infometa);
-    varViz->setVariable(dataSet->infometa.first());
+
+    for (auto it=dataSet->infovals.begin(); it!=dataSet->infovals.end(); ++it) {
+        ui->selectInfoAxis->addItem(it->first);
+    }
+    ui->selectInfoAxis->setCurrentIndex(4);
+    //varViz->setVariable(dataSet->meta[dataSet->variableDim]);
 
     for(int i=0; i<vizWidgets.size(); i++)
     {

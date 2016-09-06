@@ -44,7 +44,7 @@
 #include <algorithm>
 #include <functional>
 
-#include <caliper/SimpleReader.h>
+// #include <caliper/SimpleReader.h>
 
 #include <QFile>
 #include <QTextStream>
@@ -70,8 +70,8 @@ int DataObject::loadHardwareTopology(QString filename)
 
 int DataObject::loadData(QString filename)
 {
-    //int err = parseCSVFile(filename);
-    int err = parseCaliFile(filename);
+    int err = parseCSVFile(filename);
+    //int err = parseCaliFile(filename);
     if(err)
         return err;
 
@@ -197,7 +197,7 @@ ElemSet& DataObject::createSourceFileQuery(QString str)
     QVector<qreal>::Iterator p;
     for(elem=0, p=this->begin; p!=this->end; elem++, p+=this->numDimensions)
     {
-        if(fileNames[elem] == str)
+        if(infovals[meta[sourceDim]][elem] == str)
             selSet.insert(elem);
     }
     return selSet;
@@ -365,16 +365,189 @@ void DataObject::collectTopoSamples()
     topo->collectSamples(this,&allElems);
 }
 
+int DataObject::getDimensions()
+{
+    sourceDim = this->meta.indexOf("source");
+    if(sourceDim < 0)
+    {
+        std::cerr << "Error: source dimension not found!" << std::endl;
+        return -1;
+    }
+
+    lineDim = this->meta.indexOf("line");
+    if(lineDim < 0)
+    {
+        std::cerr << "Error: line dimension not found!" << std::endl;
+        return -1;
+    }
+
+    variableDim = this->meta.indexOf("variable");
+    if(variableDim < 0)
+    {
+        variableDim = this->meta.indexOf("instruction");
+    }
+    if(variableDim < 0)
+    {
+        std::cerr << "Error: variable dimension not found!" << std::endl;
+        return -1;
+    }
+
+    dataSourceDim = this->meta.indexOf("data_src");
+    if(dataSourceDim < 0)
+    {
+        dataSourceDim = this->meta.indexOf("data_source");
+    }
+    if(dataSourceDim < 0)
+    {
+        dataSourceDim = this->meta.indexOf("dataSource");
+    }
+    if(dataSourceDim < 0)
+    {
+        dataSourceDim = this->meta.indexOf("level");
+    }
+    if(dataSourceDim < 0)
+    {
+        std::cerr << "Error: data source dimension not found!" << std::endl;
+        return -1;
+    }
+
+    latencyDim = this->meta.indexOf("latency");
+    if(latencyDim < 0)
+    {
+        std::cerr << "Error: latency dimension not found!" << std::endl;
+        return -1;
+    }
+    cpuDim = this->meta.indexOf("cpu");
+    if(cpuDim < 0)
+    {
+        std::cerr << "Error: cpu dimension not found!" << std::endl;
+        return -1;
+    }
+
+    timeDim = this->meta.indexOf("time");
+    if(timeDim < 0)
+    {
+        std::cerr << "Error: time dimension not found!" << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
+int DataObject::parseCSVFile(QString dataFileName)
+{
+    // Open the file
+    QFile dataFile(dataFileName);
+
+    if (!dataFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        return -1;
+
+    // Get number of lines
+    QTextStream dataStream(&dataFile);
+    unsigned long long numLines = 0;
+    while(!dataStream.atEnd())
+    {
+        dataStream.readLine();
+        numLines++;
+    }
+    numLines--; // one header line
+
+    // rewind
+    dataStream.device()->seek(0);
+
+    QString line;
+    QStringList lineValues;
+
+    // Get metadata from first line
+    line = dataStream.readLine();
+    this->meta = line.split(',');
+    this->numDimensions = this->meta.size();
+
+    // Get dimensions from metadata
+    this->getDimensions();
+
+    QVector<QString> varVec;
+    QVector<QString> sourceVec;
+
+    unsigned long long minTime = std::numeric_limits<unsigned long long>::max();
+    unsigned long long maxTime = 0;
+
+    // Get data
+    ElemIndex elem = 0;
+    while(!dataStream.atEnd())
+    {
+        line = dataStream.readLine();
+        lineValues = line.split(',');
+
+        if(lineValues.size() != this->numDimensions)
+        {
+            std::cerr << "ERROR: element dimensions do not match metadata!" << std::endl;
+            std::cerr << "At element " << elem << std::endl;
+            return -1;
+        }
+
+        // Process individual dimensions differently
+        for(int i=0; i<lineValues.size(); i++)
+        {
+            QString tok = lineValues[i];
+            if(i==variableDim)
+            {
+                ElemIndex uid = createUniqueID(varVec,tok);
+                this->vals.push_back(uid);
+            }
+            else if(i==sourceDim)
+            {
+                ElemIndex uid = createUniqueID(sourceVec,tok);
+                this->vals.push_back(uid);
+            }
+            else if(i==dataSourceDim)
+            {
+                //int depth = dseToDepth(tok.toULongLong());
+                int depth = stringToDepth(tok);
+                this->vals.push_back(depth);
+            }
+            else if(i==timeDim)
+            {
+                unsigned long long time = tok.toULongLong();
+                minTime = std::min(time,minTime);
+                maxTime = std::max(time,maxTime);
+
+                this->vals.push_back(time);
+            }
+            else
+            {
+                this->vals.push_back(tok.toLongLong());
+            }
+            this->infovals[this->meta[i]].push_back(tok);
+        }
+
+        allElems.insert(elem);
+        elem++;
+    }
+
+    // Close and return
+    dataFile.close();
+
+    for(int i=timeDim; i<(int)vals.size(); i+=numDimensions)
+    {
+        // scale time to [0,1M]
+        vals[i] = scale(vals[i],minTime,maxTime,0,1000000);
+    }
+
+    this->allocate();
+
+    return 0;
+}
+
 int DataObject::parseCaliFile(QString caliFileName)
 {
+    /*
     // Get MetaData this->meta, this->numDimensions
     this->meta << "Source" << "Line" 
                << "MemLvl" << "Latency" << "CPU"
                << "Timestamp" << "IP" << "Address";
-               /*
-               << "Lulesh Phase" << "Lulesh Cycle" 
-               << "Lulesh Time" << "Lulesh DeltaT";
-               */
+               //<< "Lulesh Phase" << "Lulesh Cycle"
+               //<< "Lulesh Time" << "Lulesh DeltaT";
 
     sourceDim = 0;
     lineDim = 1;
@@ -507,7 +680,7 @@ int DataObject::parseCaliFile(QString caliFileName)
     this->allocate();
 
     std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-
+    */
     return 0;
 }
 

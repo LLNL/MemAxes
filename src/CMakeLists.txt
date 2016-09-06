@@ -6,7 +6,7 @@ set(CMAKE_AUTOMOC ON)
 
 
 # Includes, Definitions, Flags
-include_directories("${caliper_INCLUDE_DIR}")
+# include_directories("${caliper_INCLUDE_DIR}")
 include_directories(${Qt5Widgets_INCLUDE_DIRS})
 add_definitions(${Qt5Widgets_DEFINITIONS})
 
@@ -31,6 +31,7 @@ set(SOURCES
   pcvizwidget.cpp
   parseUtil.cpp
   util.cpp
+  infovizwidget.cpp
   varvizwidget.cpp
   vizwidget.cpp)
 
@@ -51,6 +52,7 @@ set(HEADERS
   parseUtil.h
   typedefs.h
   util.h
+  infovizwidget.h
   varvizwidget.h
   vizwidget.h)
   #volumevizwidget.h)
@@ -59,14 +61,14 @@ set(UIC
   ui_form.h)
 
 # Build Target
-# add_executable(MemAxes MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIC})
-add_executable(MemAxes ${SOURCES} ${HEADERS} ${UIC})
+add_executable(MemAxes MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIC})
+# add_executable(MemAxes ${SOURCES} ${HEADERS} ${UIC})
 
 # C++11 support
 target_compile_features(MemAxes PRIVATE cxx_range_for)
 
 qt5_use_modules(MemAxes Widgets OpenGL)
 
-target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL caliper-reader ${OPENGL_LIBRARIES})# ${VTK_LIBRARIES})
+target_link_libraries(MemAxes Qt5::Widgets Qt5::OpenGL ${OPENGL_LIBRARIES})# ${VTK_LIBRARIES})
 
 install(TARGETS MemAxes DESTINATION bin)

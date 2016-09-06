@@ -171,6 +171,12 @@ void HWTopoVizWidget::resizeEvent(QResizeEvent *e)
     QRectF drawBox = this->rect();
     drawBox.adjust(margin,margin,-margin,-margin);
 
+    if(needsCalcMinMaxes)
+    {
+        hwPainter->calcMinMaxes();
+        needsCalcMinMaxes = false;
+    }
+
     hwPainter->resize(drawBox);
 
     needsRepaint = true;

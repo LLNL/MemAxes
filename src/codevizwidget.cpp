@@ -125,10 +125,10 @@ void CodeViz::processData()
         if(dataSet->selectionDefined() && !dataSet->selected(elem))
             continue;
 
-        if(dataSet->fileNames[elem].isEmpty())
+        if(dataSet->infovals[dataSet->meta[dataSet->sourceDim]][elem].isEmpty())
             continue;
 
-        int sourceIdx = this->getFileID(dataSet->fileNames[elem]);
+        int sourceIdx = this->getFileID(dataSet->infovals[dataSet->meta[dataSet->sourceDim]][elem]);
         sourceBlocks[sourceIdx].val += *(p+dataSet->latencyDim);
         sourceMaxVal = std::max(sourceMaxVal,sourceBlocks[sourceIdx].val);
 

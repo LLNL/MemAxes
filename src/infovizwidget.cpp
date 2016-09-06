@@ -36,7 +36,7 @@
 // privately-owned rights.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "varvizwidget.h"
+#include "infovizwidget.h"
 
 #include <QFile>
 #include <QMouseEvent>
@@ -46,26 +46,27 @@
 
 #include <math.h>
 
-bool operator<(const varBlock &lhs, const varBlock &rhs)
+bool operator<(const infoBlock &lhs, const infoBlock &rhs)
 {
     return lhs.val > rhs.val; // reverse sort ;-)
 }
 
-VarViz::VarViz(QWidget *parent) :
+InfoViz::InfoViz(QWidget *parent) :
     VizWidget(parent)
 {
     margin = 0;
-    numVariableBlocks = 8;
+    numVariableBlocks = 20;
+    variable = QString("");
 
     this->setMinimumHeight(20);
     this->installEventFilter(this);
 }
 
-VarViz::~VarViz()
+InfoViz::~InfoViz()
 {
 }
 
-int VarViz::getVariableID(QString name)
+int InfoViz::getVariableID(QString name)
 {
     for(int i=0; i<varBlocks.size(); i++)
     {
@@ -74,13 +75,13 @@ int VarViz::getVariableID(QString name)
     }
 
     // First time we see this name, new entry
-    varBlock newBlock = {name, 0, QRect()};
+    infoBlock newBlock = {name, 0, QRect()};
     varBlocks.push_back(newBlock);
 
     return varBlocks.size()-1;
 }
 
-void VarViz::processData()
+void InfoViz::processData()
 {
     processed = false;
 
@@ -95,7 +96,10 @@ void VarViz::processData()
         if(dataSet->selectionDefined() && !dataSet->selected(elem))
             continue;
 
-        int varIdx = this->getVariableID(dataSet->infovals[dataSet->meta[dataSet->variableDim]][elem]);
+        if(dataSet->infovals[variable][elem].isEmpty())
+            continue;
+
+        int varIdx = this->getVariableID(dataSet->infovals[variable][elem]);
         varBlocks[varIdx].val += *(p+dataSet->latencyDim);
         varMaxVal = std::max(varMaxVal,varBlocks[varIdx].val);
     }
@@ -106,7 +110,7 @@ void VarViz::processData()
     processed = true;
 }
 
-void VarViz::selectionChangedSlot()
+void InfoViz::selectionChangedSlot()
 {
     if(processed)
     {
@@ -115,7 +119,7 @@ void VarViz::selectionChangedSlot()
     }
 }
 
-void VarViz::drawQtPainter(QPainter *painter)
+void InfoViz::drawQtPainter(QPainter *painter)
 {
     drawSpace = rect();
 
@@ -128,31 +132,39 @@ void VarViz::drawQtPainter(QPainter *painter)
     if(numBlocks == 0)
         return;
 
-    int blockheight = drawSpace.height() / numBlocks;
+    int blockwidth = drawSpace.width() / numBlocks;
     for(int i=0; i<numBlocks; i++)
     {
-        varBlocks[i].block.setLeft(drawSpace.left());
-        varBlocks[i].block.setTop(drawSpace.top()+i*blockheight);
-        varBlocks[i].block.setWidth(varBlocks[i].val/varMaxVal*drawSpace.width());
-        varBlocks[i].block.setHeight(blockheight);
+        varBlocks[i].block.setLeft(drawSpace.left()+i*blockwidth);
+        varBlocks[i].block.setWidth(blockwidth);
+        varBlocks[i].block.setTop(drawSpace.height() - varBlocks[i].val/varMaxVal*drawSpace.height());
+        varBlocks[i].block.setBottom(drawSpace.bottom());
 
         painter->fillRect(varBlocks[i].block,Qt::lightGray);
+    }
+
+    for(int i=0; i<numBlocks; i++)
+    {
+        painter->save();
+        painter->translate(varBlocks[i].block.bottomRight() - QPoint(10, 10));
+        painter->rotate(-90);
         painter->setPen(Qt::black);
-        painter->drawText(varBlocks[i].block.topLeft()+QPoint(0,16),varBlocks[i].name);
+        painter->drawText(0, 0, varBlocks[i].name);
+        painter->restore();
     }
 }
 
-void VarViz::mouseReleaseEvent(QMouseEvent *e)
+void InfoViz::mouseReleaseEvent(QMouseEvent *e)
 {
     for(int i=0; i<varBlocks.size(); i++)
     {
-        QRect varSelectionBox(drawSpace.left(),
-                              varBlocks[i].block.top(),
-                              drawSpace.width(),
-                              varBlocks[i].block.height());
+        QRect varSelectionBox(varBlocks[i].block.left(),
+                              drawSpace.top(),
+                              varBlocks[i].block.width(),
+                              drawSpace.height());
         if(varSelectionBox.contains(e->pos()))
         {
-            ElemSet es = dataSet->createStringQuery(dataSet->meta[dataSet->variableDim], varBlocks[i].name);
+            ElemSet es = dataSet->createStringQuery(variable, varBlocks[i].name);
             dataSet->selectSet(es);
 
             emit variableSelected(i);

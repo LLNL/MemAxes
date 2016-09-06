@@ -10,7 +10,7 @@ find_package(Qt5 REQUIRED Core Widgets OpenGL Xml)
 find_package(OpenGL REQUIRED)
 
 # Caliper
-find_package(caliper REQUIRED)
+# find_package(caliper REQUIRED)
 
 # Top-level build just includes subdirectories.
 add_subdirectory(src)
