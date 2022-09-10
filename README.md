@@ -41,17 +41,17 @@ build Qt5.
 ![image](images/topo.png)
 
 The hardware resources of a node are displayed as a hierarchy.
-Internal nodes in the hierarchy represent memory resources, i.e. 
-NUMA nodes and caches, and leaves represent logical processors. 
-MemAxes can show this hierarchy either radially (as shown) or vertically, 
+Internal nodes in the hierarchy represent memory resources, i.e.
+NUMA nodes and caches, and leaves represent logical processors.
+MemAxes can show this hierarchy either radially (as shown) or vertically,
 by choosing either Sunburst or Icicle, respectively.
 
 The colors of the segments within the hierarchy represent either total
-memory access cycles associated with the resource or total memory access 
-samples associated with it (you can select an option in the top pane). 
+memory access cycles associated with the resource or total memory access
+samples associated with it (you can select an option in the top pane).
 
-The thick black lines between segments represent the total number of 
-transactions between pairs of resources, assuming the hardware copies 
+The thick black lines between segments represent the total number of
+transactions between pairs of resources, assuming the hardware copies
 memory between caches from largest to smallest after the memory is found.
 
 Nodes may be selected by clicking, upon which all samples associated
@@ -89,7 +89,7 @@ nothing is selected).
 ![image](images/pcoords.png)
 
 This view shows a histogram of each axis for the current selection (or
-for all the data, if nothing is selected). 
+for all the data, if nothing is selected).
 
 The user may select ranges on any axis by clicking and dragging
 vertically on an axis, as well as rearrange axes by dragging the name
@@ -109,6 +109,14 @@ MemAxes was written by Alfredo Gimenez.
 
 # License
 
-MemAxes is released under an LGPL license. For more details see the LICENSE file.
+MemAxes is distributed under the Apache-2.0 license with the LLVM exception.
+All new contributions must be made under this license. Copyrights and patents
+in the Mitos project are retained by contributors. No copyright assignment is
+required to contribute to MemAxes.
 
-`LLNL-CODE-663358`
+See [LICENSE](https://github.com/llnl/memaxes/blob/main/LICENSE) and
+[NOTICE](https://github.com/llnl/memaxes/blob/main/NOTICE) for details.
+
+SPDX-License-Identifier: (Apache-2.0 WITH LLVM-exception)
+
+`LLNL-CODE-838739`
